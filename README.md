@@ -1,7 +1,7 @@
 ## NRFLite
-Arduino nRF24L01+ library with the goal of being easy to operate.  You can send any size of data packet (up to 32 bytes), with or
-without acknowledgment, and send back any size of acknowledgment packet, all without having having to manage the various radio
-settings, TX and RX pipes, or FIFO buffers.
+Arduino nRF24L01+ library with the goal of being easy to operate.  You can send any size of data packet supported by the radio
+(up to 32 bytes), with or without acknowledgment, and send back any size of acknowledgment packet, all without having to manage
+the various radio settings, TX and RX pipes, or FIFO buffers.
 
 ### Features
 * Supports standard Arduino's.
@@ -24,14 +24,14 @@ settings, TX and RX pipes, or FIFO buffers.
 * IRQ provides interrupt support and is optional.
 
 ###### ATmega328
-*Arduino 10 is the hardware Slave Select pin and must stay as an OUTPUT for SPI operation.  You don't need to use pin 10
-with the radio's CSN pin but you must keep it an OUTPUT.  This goes for all hardware SPI use on the ATmega328, if you set it
-as an INPUT, SPI operation stops.*
 ```
 MOSI -> Arduino 11 MOSI
 MISO -> Arduino 12 MISO
 SCK  -> Arduino 13 SCK
 ```
+*Arduino 10 is the hardware Slave Select pin and must stay as an OUTPUT for SPI operation.  You don't need to use pin 10
+with the radio's CSN pin but you must keep it an OUTPUT.  This goes for all hardware SPI use on the ATmega328, if you set it
+as an INPUT, SPI operation stops.*
 
 ###### ATtiny84
 ```
