@@ -1,6 +1,6 @@
 ## NRFLite
 Arduino nRF24L01+ library with the goal of being easy to operate.  You can send any size of data packet (up to 32 bytes), with or
-without acknowledgment, send back any size of acknowledgment packet, all without having having to manage the various radio
+without acknowledgment, and send back any size of acknowledgment packet, all without having having to manage the various radio
 settings, TX and RX pipes, or FIFO buffers.
 
 ### Features
