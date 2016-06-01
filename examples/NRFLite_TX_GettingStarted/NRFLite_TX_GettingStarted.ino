@@ -32,7 +32,7 @@ RadioPacket _radioData;
 
 void setup()
 {
-	delay(500); // Give the serial monitor a little time to get read so it shows all serial output.
+	delay(500); // Give the serial monitor a little time to get ready so it shows all serial output.
 	
 	Serial.begin(SERIAL_SPEED);
 	
