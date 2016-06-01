@@ -1,34 +1,8 @@
-/*	NRFLite
-    Supports standard Arduino's.
-    Supports ATtiny84/85 when used with the MIT High-Low Tech Arduino library http://highlowtech.org/?p=1695.
-    Supports CE and CSN on the same microcontroller pin.
-	Supports operation with or without interrupts and the radio IRQ pin.
-    
-    Goals
-    Shared CE and CSN pin operation that works the same when separate pins are used.
-    No need for calling programs to add delay statements or implement timeouts.
-    No complicated radio addresses for calling programs to assign.
-    No need for calling programs to deal with the radio's TX and RX pipes.
-    No dealing with the radio's RX and TX FIFO buffers.
-    No dealing with enabling or disabling of features like retries, auto-acknowledgement packets, and dynamic packet sizes.
-    No radio reset is necessary if switching between TX and RX operation, switching speeds, changing packet sizes, or anything else.
-    Small set of methods.  Not everything the radio supports is exposed but the library is kept small and easy to use.
-	
-	Connections
-    CE, CSN, and IRQ are configurable.  CE and CSN can use the same pin.  IRQ provides interrupt support and is optional.
-	ATmega328: MOSI -> MOSI Arduino 11, MISO -> MISO Arduino 12, SCK -> SCK Arduino 13
-			   Note Arduino 10 must stay as an output pin for SPI operation, but doesn't need to be used as the CSN pin.
-			   If you set pin 10 to be an input, SPI will stop.  This goes for all SPI use in Arduino, not just this library.
-	ATtiny84: MOSI -> USI_DO PA5 Arduino 5, MISO -> USI_DI PA6 Arduino 6, SCK -> USI_SCK PA4 Arduino 4
-	ATtiny85: MOSI -> USI_DO PB1 Arduino 1, MISO -> USI_DI PB0 Arduino 0, SCK -> USI_SCK PB2 Arduino 2
-*/
-
 #ifndef _NRFLite_h_
 #define _NRFLite_h_
 
 #include <Arduino.h>
 #include <nRF24L01.h>
-
 
 class NRFLite {
 	
