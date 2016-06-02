@@ -82,12 +82,12 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
 	
 	// Assign this radio's address to RX pipe 1.  When another radio sends us data, this is the address
 	// it will use.  We use RX pipe 1 to store our address since the address in RX pipe 0 is reserved
-	// for use with auto-acknowledgement packets.
+	// for use with auto-acknowledgment packets.
 	writeRegister(RX_ADDR_P1, (uint8_t*)("radio" + radioId), 5);
 	
 	// Enable dynamically sized packets on the 2 RX pipes we use, 0 and 1.
 	// RX pipe address 1 is used to for normal packets from radios that send us data.
-	// RX pipe address 0 is used to for auto-acknowledgement packets from radios we transmit to.
+	// RX pipe address 0 is used to for auto-acknowledgment packets from radios we transmit to.
 	writeRegister(DYNPD, _BV(DPL_P0) | _BV(DPL_P1));
 	
 	// Enable dynamically sized payloads, ACK payloads, and TX support with or without an ACK request.
@@ -114,7 +114,7 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
 
 void NRFLite::addAckData(void* data, uint8_t length, uint8_t removeExistingAcks)
 {
-	// Up to 3 auto-acknowledgement packets can be queues up in the TX FIFO buffer.  Users might want to ensure
+	// Up to 3 auto-acknowledgment packets can be queues up in the TX FIFO buffer.  Users might want to ensure
 	// the next ACK packet provided has the most up to date data (like a battery voltage level),
 	// so this gives them the option to remove any previously added ACKs that have not yet gone out.
 	if (removeExistingAcks) {
@@ -123,13 +123,13 @@ void NRFLite::addAckData(void* data, uint8_t length, uint8_t removeExistingAcks)
 	
 	// Add the packet to the TX FIFO buffer for pipe 1, the pipe used to receive packets from radios that
 	// send us data.  When we receive the next transmission from a radio, we'll provide this ACK data in the
-	// auto-acknowledgement packet that goes back.
+	// auto-acknowledgment packet that goes back.
 	spiTransfer(WRITE_OPERATION, (W_ACK_PAYLOAD | 1), data, length);
 }
 
 uint8_t NRFLite::hasAckData()
 {
-	// If we have a pipe 0 packet sitting at the top of the RX FIFO buffer, we have auto-acknowledgement data.
+	// If we have a pipe 0 packet sitting at the top of the RX FIFO buffer, we have auto-acknowledgment data.
 	// We receive ACK data from other radios using the pipe 0 address.
 	if (getPipeOfFirstRxFifoPacket() == 0) {
 		return getRxFifoPacketLength(); // Return the length of the data packet in the RX FIFO buffer.
@@ -221,7 +221,7 @@ uint8_t NRFLite::send(uint8_t toRadioId, void* data, uint8_t length, SendType se
 	// If we have separate pins for CE and CSN, CE will be LOW and we must pulse it to start transmission.
 	// If we use the same pin for CE and CSN, CE will already be HIGH and transmission will have started
 	// when data was loaded into the TX FIFO.  CSN is kept HIGH so the radio does not listen to the SPI bus.
-	if (digitalRead(_cePin) == LOW) {
+	if (_cePin != _csnPin) {
 		digitalWrite(_cePin, HIGH);
 		delayMicroseconds(11); // 10 uS = Required CE time to initiate data transmission.
 		digitalWrite(_cePin, LOW);
@@ -357,11 +357,11 @@ uint8_t NRFLite::getRxFifoPacketLength()
 void NRFLite::prepForTransmission(uint8_t toRadioId, SendType sendType)
 {
 	// TX pipe address sets the destination radio for the data.
-	// RX pipe 0 is special and needs the same address in order to receive auto-acknowledgement packets back
+	// RX pipe 0 is special and needs the same address in order to receive auto-acknowledgment packets back
 	// from the destination radio.
 	writeRegister(TX_ADDR, (uint8_t*)("radio" + toRadioId), 5);
 	writeRegister(RX_ADDR_P0, (uint8_t*)("radio" + toRadioId), 5);
-
+	
 	// Ensure radio is powered on and ready for TX operation.
 	uint8_t originalConfigReg = readRegister(CONFIG);
 	uint8_t newConfigReg = originalConfigReg & ~_BV(PRIM_RX) | _BV(PWR_UP);
@@ -379,7 +379,7 @@ void NRFLite::prepForTransmission(uint8_t toRadioId, SendType sendType)
 		// 1500 uS = Powered Off mode to Standby-I mode transition time + 130 uS Standby to TX.
 		delayMicroseconds(1630);
 	}
-
+	
 	// If RX FIFO buffer is full and we require an ACK, clear it so we can receive the ACK response.
 	uint8_t fifoReg = readRegister(FIFO_STATUS);
 	if (fifoReg & _BV(RX_FULL) && sendType == REQUIRE_ACK) {

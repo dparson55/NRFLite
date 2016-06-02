@@ -30,14 +30,14 @@ class NRFLite {
 	void printDetails();
 
     // Methods for transmitters.
-    // send       = Sends a data packet and waits for success or failure.  If NO_ACK is specified, no acknowledgement is required.
+    // send       = Sends a data packet and waits for success or failure.  If NO_ACK is specified, no acknowledgment is required.
     // hasAckData = Checks to see if an ACK data packet was received and returns its length.
     uint8_t send(uint8_t toRadioId, void* data, uint8_t length, SendType sendType = REQUIRE_ACK);
     uint8_t hasAckData();
 
     // Methods for receivers.
     // hasData    = Checks to see if a data packet has been received and returns its length.
-    // addAckData = Queues an acknowledgement packet for sending back to a transmitter.  Whenever the transmitter sends the 
+    // addAckData = Queues an acknowledgment packet for sending back to a transmitter.  Whenever the transmitter sends the 
     //              next data packet, it will get this ACK packet back in the response.  The radio will store up to 3 ACK packets
     //              but you can clear this buffer if you like using the 'removeExistingAcks' parameter.
 	uint8_t hasData(uint8_t usingInterrupts = 0);
@@ -58,7 +58,7 @@ class NRFLite {
 
 	Stream* _serial;
 	uint8_t _cePin, _csnPin, _enableInterruptFlagsReset;
-	uint16_t _lastToRadioId, _transmissionRetryWaitMicros, _allowedDataCheckIntervalMicros;
+	uint16_t _transmissionRetryWaitMicros, _allowedDataCheckIntervalMicros;
 	uint64_t _microsSinceLastDataCheck;
 	
 	uint8_t getPipeOfFirstRxFifoPacket();
