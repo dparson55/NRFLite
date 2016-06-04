@@ -24,7 +24,7 @@ class NRFLite {
     // sleep    = Power down the radio.  It only draws 900 nA in this state.  The radio will be powered back on when one of the 
     //            'hasData' or 'send' methods is called.
     // printDetails = Just for debugging, it prints most radio registers using the serial object provided in the constructor.
-	uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate, uint8_t channel = 10); 
+	uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 10); 
     void readData(void* data);
 	void sleep();
 	void printDetails();
