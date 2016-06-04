@@ -33,8 +33,8 @@ void setup()
 	
 	Serial.begin(115200);
 	
-	if (_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE250KBPS)) {
-		Serial.println("Radio initialized successfully");
+	if (_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN)) {
+		Serial.println("Radio initialized");
 	}
 	else {
 		Serial.println("Cannot communicate with radio");
