@@ -7,7 +7,7 @@ the various radio settings, TX and RX pipes, or FIFO buffers.
 * Supports CE and CSN on the same pin.
 * Supports operation with or without interrupts using the radio's IRQ pin.
 * Supports ATtiny84/85 when used with the MIT High-Low Tech Arduino library http://highlowtech.org/?p=1695.
-  * If using an ATtiny with an older Arduino toolchain like 1.0.5, if you get a R_AVR_13_PCREL compilation error when your sketch is >4KB, see https://github.com/TCWORLD/ATTinyCore/tree/master/PCREL%20Patch%20for%20GCC
+  * When using an ATtiny with an older Arduino toolchain like 1.0.5, if you get a R_AVR_13_PCREL compilation error when your sketch is >4KB, a fix is available on https://github.com/TCWORLD/ATTinyCore/tree/master/PCREL%20Patch%20for%20GCC
     
 ### Goals
 * Small set of methods:  not everything the radio supports is exposed but the library is kept easy to use.
