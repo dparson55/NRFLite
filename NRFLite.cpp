@@ -4,15 +4,15 @@
 #define debugln(input) { if (_serial) _serial->println(input); }
 
 #if defined( __AVR_ATtiny84__ )
-const static uint8_t USI_DI = PA6;
-const static uint8_t USI_DO = PA5;
-const static uint8_t SCK    = PA4;
+	const static uint8_t USI_DI = PA6;
+	const static uint8_t USI_DO = PA5;
+	const static uint8_t SCK    = PA4;
 #elif defined( __AVR_ATtiny85__ )
-const static uint8_t USI_DI = PB0;
-const static uint8_t USI_DO = PB1;
-const static uint8_t SCK    = PB2;
+	const static uint8_t USI_DI = PB0;
+	const static uint8_t USI_DO = PB1;
+	const static uint8_t SCK    = PB2;
 #else
-#include <SPI.h> // Use the normal Arduino hardware SPI library if we are not on ATtiny.
+	#include <SPI.h> // Use the normal Arduino hardware SPI library if we are not on ATtiny.
 #endif
 
 ////////////////////
