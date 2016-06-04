@@ -14,7 +14,7 @@ the various radio settings, TX and RX pipes, or FIFO buffers.
 * No dealing with enabling or disabling of features like retries, auto-acknowledgment packets, and dynamic packet sizes.
 * Shared CE and CSN pin operation that behaves the same when separate pins are used.
 * No need for calling programs to add delays or implement timeouts.
-* No complicated radio addresses for calling programs to assign.
+* No long radio addresses for calling programs to manage.
 * No need for calling programs to deal with the radio's TX and RX pipes.
 * No dealing with the radio's RX and TX FIFO buffers.
 
