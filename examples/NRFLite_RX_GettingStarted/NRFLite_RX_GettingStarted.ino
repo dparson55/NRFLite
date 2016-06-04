@@ -17,12 +17,9 @@ GND   -> GND
 #include <SPI.h> // NRFLite uses Arduino SPI when used with an ATmega328.  This include is not necessary when using an ATtiny84/85.
 #include <NRFLite.h>
 
-const static uint32_t SERIAL_SPEED = 115200;
-
+const static uint8_t RADIO_ID      = 0;  // Our radio's id.  The transmitter will send to this id.
 const static uint8_t PIN_RADIO_CE  = 9;
 const static uint8_t PIN_RADIO_CSN = 10;
-
-const static uint8_t RADIO_ID = 0;       // Our radio's id.  The transmitter will send to this id.
 
 struct RadioPacket { uint8_t Counter; }; // Transmitter will send us these types of data packets.
 
@@ -33,10 +30,10 @@ void setup()
 {
 	delay(500); // Give the serial monitor a little time to get ready so it shows all serial output.
 	
-	Serial.begin(SERIAL_SPEED);
+	Serial.begin(115200);
 
-	if (_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE250KBPS)) {
-		Serial.println("Radio initialized successfully");
+	if (_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN)) {
+		Serial.println("Radio initialized");
 	}
 	else {
 		Serial.println("Cannot communicate with radio");
