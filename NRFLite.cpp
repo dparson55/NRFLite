@@ -279,7 +279,7 @@ void NRFLite::whatHappened(uint8_t& tx_ok, uint8_t& tx_fail, uint8_t& rx_ready)
     }
 }
 
-void NRFLite::sleep()
+void NRFLite::powerDown()
 {
     // If we have separate CE and CSN pins, we can gracefully stop listening or transmitting.
     if (_cePin != _csnPin) { digitalWrite(_cePin, LOW); }

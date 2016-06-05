@@ -19,14 +19,15 @@ class NRFLite {
     enum SendType { REQUIRE_ACK, NO_ACK };
     
     // Methods for both receivers and transmitters.
-    // init     = Turns the radio on and puts it into receiving mode.  Returns 0 if it cannot communicate with the radio.
-    // readData = Loads a received data packet or ACK packet into the specified data parameter.
-    // sleep    = Power down the radio.  It only draws 900 nA in this state.  The radio will be powered back on when one of the 
-    //            'hasData' or 'send' methods is called.
-    // printDetails = Just for debugging, it prints most radio registers using the serial object provided in the constructor.
-    uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 10); 
+    // init      = Turns the radio on and puts it into receiving mode.  Returns 0 if it cannot communicate with the radio.
+	//             Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
+    // readData  = Loads a received data packet or ACK packet into the specified data parameter.
+    // powerDown = Power down the radio.  It only draws 900 nA in this state.  The radio will be powered back on when one of the 
+    //             'hasData' or 'send' methods is called.
+    // printDetails = For debugging, it prints most radio registers using the serial object provided in the constructor.
+    uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100); 
     void readData(void* data);
-    void sleep();
+    void powerDown();
     void printDetails();
 
     // Methods for transmitters.
