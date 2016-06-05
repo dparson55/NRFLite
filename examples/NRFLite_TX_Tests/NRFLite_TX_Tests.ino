@@ -74,20 +74,22 @@ void setup() {
 }
 
 void loop() {}
-	
+
 void radioInterrupt() {
 	
 	uint8_t tx_ok, tx_fail, rx_ready;
 	_radio.whatHappened(tx_ok, tx_fail, rx_ready);
 	
 	if (tx_ok) {
+		
 		_successPacketCount++;
 		if (_showMessageInInterrupt) debugln("...Success");
-		
+
 		uint8_t ackLength = _radio.hasAckData();
 		
 		while (ackLength > 0) {
 			
+			// Determine type of ACK packet based on its length.
 			if (ackLength == sizeof(RadioAckPacketA)) {
 				_radio.readData(&_radioDataAckA);
 				_ackAPacketCount++;
@@ -139,6 +141,14 @@ void startSync() {
 
 void demoPolling() {
 	
+	/* Most demos have the same steps:
+	   Wait our demo interval time.
+	   Show demo message.
+	   Reset shared variables necessary for the demo.
+	   Calculate demo end time.
+	   Run a loop that lasts until the end time.
+	*/
+	
 	delay(DEMO_INTERVAL_MILLIS);
 	
 	debugln("Polling");
@@ -149,6 +159,7 @@ void demoPolling() {
 	while (millis() < _endMillis) {
 		
 		if (millis() - _lastMillis > 999) {
+			
 			_lastMillis = millis();
 			
 			debug("  Send "); debug(++_radioData.Counter);
@@ -179,7 +190,6 @@ void demoInterrupts() {
 		
 		if (millis() - _lastMillis > 999) {
 			_lastMillis = millis();
-			
 			debug("  Start send "); debug(++_radioData.Counter);
 			_radio.startSend(DESTINATION_RADIO_ID, &_radioData, sizeof(RadioPacket));
 		}
@@ -200,6 +210,7 @@ void demoAckPayload() {
 	while (millis() < _endMillis) {
 		
 		if (millis() - _lastMillis > 4000) {
+			
 			_lastMillis = millis();
 			
 			debug("  Send "); debug(++_radioData.Counter);
@@ -211,6 +222,7 @@ void demoAckPayload() {
 				
 				while (ackLength > 0) {
 					
+					// Determine type of ACK packet based on its length.
 					if (ackLength == sizeof(RadioAckPacketA)) {
 						_radio.readData(&_radioDataAckA);
 						debug(" - Received ACK A ");
@@ -422,6 +434,7 @@ void demoPollingBitrateAckPayload() {
 			
 			while (ackLength > 0) {
 				
+				// Count the number of each type of ACK packet we receive for display later.
 				if (ackLength == sizeof(RadioAckPacketA)) {
 					_radio.readData(&_radioDataAckA);
 					_ackAPacketCount++;
@@ -486,6 +499,8 @@ void demoInterruptsBitrateAckPayload() {
 
 void demoPollingBitrateAllPacketSizes() {
 	
+	// Sends a packet of ever increasing length, up to 32 bytes.
+	
 	delay(DEMO_INTERVAL_MILLIS);
 	
 	debugln("Polling bitrate all packet sizes");
@@ -495,7 +510,7 @@ void demoPollingBitrateAllPacketSizes() {
 	_lastMillis = millis();
 	
 	uint8_t packet[32];
-	uint8_t packetSize = 1;
+	uint8_t packetSize = 1; // We'll start with this packet size and work our way up.
 	
 	while (1) {
 
@@ -533,7 +548,7 @@ void demoPollingBitrateAllPacketSizes() {
 
 void demoPollingBitrateAllAckSizes() {
 	
-	// Sends a RadioData packet which is 32 bytes, but receives ACK packets that increase in length.
+	// Sends a packet which is 32 bytes, but receives ACK packets that increase in length.
 	
 	delay(DEMO_INTERVAL_MILLIS);
 	

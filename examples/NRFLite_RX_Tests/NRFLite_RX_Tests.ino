@@ -91,6 +91,8 @@ void radioInterrupt() {
 			if (_showMessageInInterrupt) debugln2("  Received ", _radioData.Counter);
 			
 			if (_addAckInInterrupt) {
+				
+				// Randomly pick the type of ACK packet to enqueue. 2/3 will be A, 1/3 will be B.
 				if (random(3) == 1) {
 					_radio.addAckData(&_radioDataAckB, sizeof(RadioAckPacketB));
 					_ackBPacketCount++;
@@ -115,8 +117,8 @@ void runDemos() {
 	demoInterruptsBitrateNoAck();
 	demoPollingBitrateAckPayload();
 	demoInterruptsBitrateAckPayload();
-	demoPollingBitrateAllPacketSizes(); // Receives packets of increasing length.
-	demoPollingBitrateAllAckSizes(); // Receives RadioData packets but queues ACK packets that increase in length.
+	demoPollingBitrateAllPacketSizes();
+	demoPollingBitrateAllAckSizes();
 }
 
 void startSync() {
@@ -183,6 +185,7 @@ void demoAckPayload() {
 		}
 		
 		if (_currentMillis - _lastMillis > 6000) {
+			
 			_lastMillis = _currentMillis;
 			
 			if (random(2) == 1) {
@@ -203,9 +206,6 @@ void demoAckPayload() {
 
 void demoPollingBitrate() {
 	
-	// CE and CSN share pin      = 160,000 bps
-	// CE and CSN different pins = 300,000 bps
-	
 	delay(DEMO_INTERVAL_MILLIS);
 	
 	debugln("Polling bitrate");
@@ -215,6 +215,7 @@ void demoPollingBitrate() {
 	_lastMillis = millis();
 	
 	while (millis() < _endMillis) {
+		
 		while (_radio.hasData()) {
 			_packetCount++;
 			_radio.readData(&_radioData);
@@ -243,6 +244,7 @@ void demoPollingBitrateNoAck() {
 	_lastMillis = millis();
 
 	while (millis() < _endMillis) {
+		
 		while (_radio.hasData()) {
 			_packetCount++;
 			_radio.readData(&_radioData);
@@ -261,9 +263,6 @@ void demoPollingBitrateNoAck() {
 }
 
 void demoInterruptsBitrate() {
-	
-	// CE and CSN share pin      = 182,000 bps
-	// CE and CSN different pins = 452,000 bps
 	
 	delay(DEMO_INTERVAL_MILLIS);
 	
@@ -341,6 +340,7 @@ void demoPollingBitrateAckPayload() {
 			_packetCount++;
 			_radio.readData(&_radioData);
 			
+			// Randomly pick the type of ACK packet to enqueue.  2/3 will be A, 1/3 will be B.
 			if (random(3) == 1) {
 				_radio.addAckData(&_radioDataAckB, sizeof(RadioAckPacketB));
 				_ackBPacketCount++;
