@@ -9,16 +9,15 @@ class NRFLite {
     public:
     
     // Constructors
-    // You can pass in an Arduino Serial or SoftwareSerial object so 'printDetails' can write to the serial port.
-    // SoftwareSerial support is handy when the library is used with ATtiny's and you want to print messages from methods
-    // inside the library.  If no serial object is passed in, 'printDetails' simply won't do anything.
+    // You can pass in an Arduino Serial or SoftwareSerial object for use throughout the library when debugging.
+	// This approach allows both Serial and SoftwareSerial support so debugging on ATtinys is easy.
     NRFLite() {}
     NRFLite(Stream& serial) : _serial(&serial) {}
     
     enum Bitrates { BITRATE2MBPS, BITRATE1MBPS, BITRATE250KBPS };
     enum SendType { REQUIRE_ACK, NO_ACK };
     
-    // Methods for both receivers and transmitters.
+    // Methods for receivers and transmitters.
     // init      = Turns the radio on and puts it into receiving mode.  Returns 0 if it cannot communicate with the radio.
 	//             Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
     // readData  = Loads a received data packet or ACK packet into the specified data parameter.
@@ -44,7 +43,7 @@ class NRFLite {
     uint8_t hasData(uint8_t usingInterrupts = 0);
     void addAckData(void* data, uint8_t length, uint8_t removeExistingAcks = 0); 
     
-    // Methods for use when using the radio's IRQ pin for interrupt support.
+    // Methods when using the radio's IRQ pin for interrupts.
     // startSend    = Start sending a data packet without waiting for it to complete.
     // whatHappened = Use this inside the interrupt handler to see what caused the interrupt.
     // hasDataISR   = Same as hasData(1) and is just for clarity.  It will greatly speed up the receive bitrate when CE and CSN 

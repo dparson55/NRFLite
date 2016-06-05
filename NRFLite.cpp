@@ -114,7 +114,7 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
 
 void NRFLite::addAckData(void* data, uint8_t length, uint8_t removeExistingAcks)
 {
-    // Up to 3 auto-acknowledgment packets can be queues up in the TX FIFO buffer.  Users might want to ensure
+    // Up to 3 auto-acknowledgment packets can be enqueued in the TX FIFO buffer.  Users might want to ensure
     // the next ACK packet provided has the most up to date data (like a battery voltage level),
     // so this gives them the option to remove any previously added ACKs that have not yet gone out.
     if (removeExistingAcks) {
