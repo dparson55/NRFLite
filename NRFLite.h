@@ -10,7 +10,7 @@ class NRFLite {
     
     // Constructors
     // You can pass in an Arduino Serial or SoftwareSerial object for use throughout the library when debugging.
-	// This approach allows both Serial and SoftwareSerial support so debugging on ATtinys is easy.
+    // This approach allows both Serial and SoftwareSerial support so debugging on ATtinys is easy.
     NRFLite() {}
     NRFLite(Stream& serial) : _serial(&serial) {}
     
@@ -19,7 +19,7 @@ class NRFLite {
     
     // Methods for receivers and transmitters.
     // init      = Turns the radio on and puts it into receiving mode.  Returns 0 if it cannot communicate with the radio.
-	//             Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
+    //             Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
     // readData  = Loads a received data packet or ACK packet into the specified data parameter.
     // powerDown = Power down the radio.  It only draws 900 nA in this state.  The radio will be powered back on when one of the 
     //             'hasData' or 'send' methods is called.
@@ -74,5 +74,3 @@ class NRFLite {
 };
 
 #endif
-
-
