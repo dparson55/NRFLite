@@ -25,6 +25,8 @@ YouTube video
 * CE, CSN, and IRQ are configurable.
 * CE and CSN can use the same pin.
 * IRQ provides interrupt support and is optional.
+* VCC 1.9 - 3.6 volts.
+  * I've seen one of my radios have an issue being powered via an FTDI USB to Serial adapter's 3.3V output.  Adding a 10 uF capacitor between VCC and GND on the radio solved the problem.
 
 ###### ATmega328
 ```
