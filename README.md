@@ -1,7 +1,6 @@
 ## NRFLite
-Arduino nRF24L01+ library with the goal of being easy to operate.  You can send any size of data packet supported by the radio
-(up to 32 bytes), with or without acknowledgment, and send back any size of acknowledgment packet, all without having to manage
-the various radio settings, TX and RX pipes, or FIFO buffers.
+Arduino nRF24L01+ library whose primary goal is to work consistently with all data rates and packet sizes, using shared or separate CE and CSN pins.  You can send any size of data packet supported by the radio (up to 32 bytes), with or without acknowledgment, and send
+back any size of acknowledgment packet, all without having to manage the various radio settings, TX and RX pipes, or FIFO buffers.
 
 ### Features
 * Supports CE and CSN on the same pin.
@@ -11,7 +10,7 @@ the various radio settings, TX and RX pipes, or FIFO buffers.
     
 ### Goals
 * Small set of methods:  not everything the radio supports is exposed but the library is kept easy to use.
-* No dealing with enabling or disabling of features like retries, auto-acknowledgment packets, and dynamic packet sizes.
+* No need to enable or disable features like retries, auto-acknowledgment packets, and dynamic packet sizes.
 * Shared CE and CSN pin operation that behaves the same when separate pins are used.
 * No need for calling programs to add delays or implement timeouts.
 * No long radio addresses for calling programs to manage.
