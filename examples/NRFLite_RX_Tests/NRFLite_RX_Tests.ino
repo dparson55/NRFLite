@@ -1,7 +1,17 @@
 /*
-MOSI -> 11
-MISO -> 12
-SCK -> 13
+
+Radio -> Arduino
+
+CE    -> 9
+CSN   -> 10 (Hardware SPI SS)
+MOSI  -> 11 (Hardware SPI MOSI)
+MISO  -> 12 (Hardware SPI MISO)
+SCK   -> 13 (Hardware SPI SCK)
+IRQ   -> 3  (Hardware INT1)
+
+VCC   -> No more than 3.6 volts
+GND   -> GND
+
 */
 
 #define RADIO_ID 1
@@ -36,35 +46,6 @@ uint8_t _showMessageInInterrupt, _addAckInInterrupt;
 uint32_t _bitsPerSecond, _packetCount, _ackAPacketCount, _ackBPacketCount;
 uint64_t _currentMillis, _lastMillis, _endMillis;
 
-void radioInterrupt() {
-	
-	uint8_t tx_ok, tx_fail, rx_ready;
-	
-	_radio.whatHappened(tx_ok, tx_fail, rx_ready);
-	
-	if (rx_ready) {
-
-		while (_radio.hasDataISR()) {
-			
-			_packetCount++;
-			
-			_radio.readData(&_radioData);
-			if (_showMessageInInterrupt) debugln2("  Received ", _radioData.Counter);
-			
-			if (_addAckInInterrupt) {
-				if (random(3) == 1) {
-					_radio.addAckData(&_radioDataAckB, sizeof(RadioAckPacketB));
-					_ackBPacketCount++;
-				}
-				else {
-					_radio.addAckData(&_radioDataAckA, sizeof(RadioAckPacketA));
-					_ackAPacketCount++;
-				}
-			}
-		}
-	}
-}
-
 void setup() {
 	
 	Serial.begin(SERIAL_SPEED);
@@ -92,6 +73,35 @@ void loop() {
 	debugln("2MBPS bitrate");
 	_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE2MBPS);
 	runDemos();
+}
+
+void radioInterrupt() {
+	
+	uint8_t tx_ok, tx_fail, rx_ready;
+	
+	_radio.whatHappened(tx_ok, tx_fail, rx_ready);
+	
+	if (rx_ready) {
+
+		while (_radio.hasDataISR()) {
+			
+			_packetCount++;
+			
+			_radio.readData(&_radioData);
+			if (_showMessageInInterrupt) debugln2("  Received ", _radioData.Counter);
+			
+			if (_addAckInInterrupt) {
+				if (random(3) == 1) {
+					_radio.addAckData(&_radioDataAckB, sizeof(RadioAckPacketB));
+					_ackBPacketCount++;
+				}
+				else {
+					_radio.addAckData(&_radioDataAckA, sizeof(RadioAckPacketA));
+					_ackAPacketCount++;
+				}
+			}
+		}
+	}
 }
 
 void runDemos() {

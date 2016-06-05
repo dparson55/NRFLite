@@ -1,7 +1,17 @@
 /*
-MOSI -> 11
-MISO -> 12
-SCK -> 13
+
+Radio -> Arduino
+
+CE    -> 9
+CSN   -> 10 (Hardware SPI SS)
+MOSI  -> 11 (Hardware SPI MOSI)
+MISO  -> 12 (Hardware SPI MISO)
+SCK   -> 13 (Hardware SPI SCK)
+IRQ   -> 3  (Hardware INT1)
+
+VCC   -> No more than 3.6 volts
+GND   -> GND
+
 */
 
 #define RADIO_ID 0
@@ -16,7 +26,6 @@ SCK -> 13
 #define SERIAL_SPEED 115200
 #define debug(input)        { Serial.print(input); }
 #define debugln(input)      { Serial.println(input); }
-#define debugln2(key,value) { Serial.print(key); Serial.println(value); }
 
 enum RadioStates { StartSync, RunDemos };
 
@@ -37,6 +46,35 @@ uint32_t _bitsPerSecond, _packetCount, _successPacketCount, _failedPacketCount, 
 uint64_t _currentMillis, _lastMillis, _endMillis;
 float _packetLoss;
 
+void setup() {
+	
+	Serial.begin(SERIAL_SPEED);
+	delay(500); // Needed this to allow serial output to show the first message.
+	
+	if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE250KBPS)) {
+		debugln("Cannot communicate with radio");
+		while (1) {} // Sit here forever.
+	}
+	else {
+		debugln();
+		debugln("250KBPS bitrate");
+		_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE250KBPS);
+		runDemos();
+		
+		debugln();
+		debugln("1MBPS bitrate");
+		_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE1MBPS);
+		runDemos();
+		
+		debugln();
+		debugln("2MBPS bitrate");
+		_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE2MBPS);
+		runDemos();
+	}
+}
+
+void loop() {}
+	
 void radioInterrupt() {
 	
 	uint8_t tx_ok, tx_fail, rx_ready;
@@ -68,35 +106,6 @@ void radioInterrupt() {
 		if (_showMessageInInterrupt) debugln("...Failed");
 	}
 }
-
-void setup() {
-	
-	Serial.begin(SERIAL_SPEED);
-	delay(500); // Needed this to allow serial output to show the first message.
-	
-	if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE250KBPS)) {
-		debugln("Cannot communicate with radio");
-		while (1) {} // Sit here forever.
-	}
-	else {
-		debugln();
-		debugln("250KBPS bitrate");
-		_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE250KBPS);
-		runDemos();
-		
-		debugln();
-		debugln("1MBPS bitrate");
-		_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE1MBPS);
-		runDemos();
-		
-		debugln();
-		debugln("2MBPS bitrate");
-		_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE2MBPS);
-		runDemos();
-	}
-}
-
-void loop() {}
 
 void runDemos() {
 	startSync();
