@@ -2,7 +2,7 @@
 
 Radio -> Arduino
 
-CE    -> 9
+CE    -> 9 or 10 depending on test condition
 CSN   -> 10 (Hardware SPI SS)
 MOSI  -> 11 (Hardware SPI MOSI)
 MISO  -> 12 (Hardware SPI MISO)
@@ -14,19 +14,17 @@ GND   -> GND
 
 */
 
-#define RADIO_ID 1
-#define DESTINATION_RADIO_ID 0
-
-#define PIN_RADIO_CE 9
-#define PIN_RADIO_CSN 10
-
 #include <SPI.h>
 #include <NRFLite.h>
 
+const static uint8_t RADIO_ID             = 0;
+const static uint8_t PIN_RADIO_CE         = 10; // 9 or 10 depending on test condition
+const static uint8_t PIN_RADIO_CSN        = 10;
+
 #define SERIAL_SPEED 115200
-#define debug(input)        { Serial.print(input); }
-#define debugln(input)      { Serial.println(input); }
-#define debugln2(key,value) { Serial.print(key); Serial.println(value); }
+#define debug(input)            { Serial.print(input);   }
+#define debugln(input)          { Serial.println(input); }
+#define debugln2(input1,input2) { Serial.print(input1); Serial.println(input2); }
 
 enum RadioStates { StartSync, RunDemos };
 
