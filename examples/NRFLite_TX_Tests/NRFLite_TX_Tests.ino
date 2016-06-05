@@ -2,7 +2,7 @@
 
 Radio -> Arduino
 
-CE    -> 9
+CE    -> 9 or 10 depending on test condition
 CSN   -> 10 (Hardware SPI SS)
 MOSI  -> 11 (Hardware SPI MOSI)
 MISO  -> 12 (Hardware SPI MISO)
@@ -14,18 +14,17 @@ GND   -> GND
 
 */
 
-#define RADIO_ID 0
-#define DESTINATION_RADIO_ID 1
-
-#define PIN_RADIO_CE 9
-#define PIN_RADIO_CSN 10
-
 #include <SPI.h>
 #include <NRFLite.h>
 
+const static uint8_t RADIO_ID             = 1;
+const static uint8_t DESTINATION_RADIO_ID = 0;
+const static uint8_t PIN_RADIO_CE         = 10; // 9 or 10 depending on test condition
+const static uint8_t PIN_RADIO_CSN        = 10;
+
 #define SERIAL_SPEED 115200
-#define debug(input)        { Serial.print(input); }
-#define debugln(input)      { Serial.println(input); }
+#define debug(input)   { Serial.print(input);   }
+#define debugln(input) { Serial.println(input); }
 
 enum RadioStates { StartSync, RunDemos };
 
@@ -33,7 +32,7 @@ struct RadioPacket     { uint8_t Counter; RadioStates RadioState; uint8_t Data[2
 struct RadioAckPacketA { uint8_t Counter; uint8_t Data[31]; };
 struct RadioAckPacketB { uint8_t Counter; uint8_t Data[30]; };
 
-NRFLite _radio(Serial);
+NRFLite _radio;
 RadioPacket _radioData;
 RadioAckPacketA _radioDataAckA;
 RadioAckPacketB _radioDataAckB;
@@ -325,7 +324,6 @@ void demoInterruptsBitrate() {
 	_showMessageInInterrupt = 0;
 	_successPacketCount = 0;
 	_failedPacketCount = 0;
-	
 	_endMillis = millis() + DEMO_LENGTH_MILLIS;
 	_lastMillis = millis();
 	
@@ -363,7 +361,6 @@ void demoInterruptsBitrateNoAck() {
 	_successPacketCount = 0;
 	_failedPacketCount = 0;
 	uint32_t sendCount = 0;
-	
 	_endMillis = millis() + DEMO_LENGTH_MILLIS;
 	_lastMillis = millis();
 	
@@ -398,11 +395,12 @@ void demoPollingBitrateAckPayload() {
 
 	debugln("Polling bitrate ACK payload");
 	
-	_endMillis = millis() + DEMO_LENGTH_MILLIS;
-	_lastMillis = millis();
-	
 	_ackAPacketCount = 0;
 	_ackBPacketCount = 0;
+	_successPacketCount = 0;
+	_failedPacketCount = 0;
+	_endMillis = millis() + DEMO_LENGTH_MILLIS;
+	_lastMillis = millis();
 	
 	while (millis() < _endMillis) {
 		
@@ -465,7 +463,6 @@ void demoInterruptsBitrateAckPayload() {
 	_failedPacketCount = 0;
 	_ackAPacketCount = 0;
 	_ackBPacketCount = 0;
-
 	_endMillis = millis() + DEMO_LENGTH_MILLIS;
 	_lastMillis = millis();
 	
@@ -560,7 +557,7 @@ void demoPollingBitrateAllAckSizes() {
 	
 	uint8_t ackPacket[32];
 	uint8_t ackPacketSize;
-	uint8_t lastAckPacketSize = 1;
+	uint8_t lastAckPacketSize;
 	
 	while (1) {
 
