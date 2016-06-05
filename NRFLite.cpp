@@ -156,7 +156,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
         }
     }
     
-    // Ensure radio is powered on and in RX mode.  In case 'sleep' was called, this wakes up the radio for the user.
+    // Ensure radio is powered on and in RX mode in case the radio was powered down or in TX mode.
     uint8_t originalConfigReg = readRegister(CONFIG);
     uint8_t newConfigReg = originalConfigReg | _BV(PWR_UP) | _BV(PRIM_RX);
     if (originalConfigReg != newConfigReg) { writeRegister(CONFIG, newConfigReg); }
@@ -255,7 +255,7 @@ void NRFLite::startSend(uint8_t toRadioId, void* data, uint8_t length, SendType 
     else                    { spiTransfer(WRITE_OPERATION, W_TX_PAYLOAD       , data, length); }
     
     // Start transmission.
-    if (digitalRead(_cePin) == LOW) {
+    if (_cePin != _csnPin) {
         digitalWrite(_cePin, HIGH);
         delayMicroseconds(11); // 10 uS = Required CE time to initiate data transmission.
         digitalWrite(_cePin, LOW);
@@ -264,7 +264,6 @@ void NRFLite::startSend(uint8_t toRadioId, void* data, uint8_t length, SendType 
 
 void NRFLite::whatHappened(uint8_t& tx_ok, uint8_t& tx_fail, uint8_t& rx_ready)
 {
-    // This method can be used inside an interrupt handler for the radio's IRQ pin to determine what caused the interrupt.
     uint8_t statusReg = readRegister(STATUS);
     
     tx_ok = statusReg & _BV(TX_DS);
@@ -357,7 +356,7 @@ uint8_t NRFLite::getRxFifoPacketLength()
 void NRFLite::prepForTransmission(uint8_t toRadioId, SendType sendType)
 {
     // TX pipe address sets the destination radio for the data.
-    // RX pipe 0 is special and needs the same address in order to receive auto-acknowledgment packets back
+    // RX pipe 0 is special and needs the same address in order to receive auto-acknowledgment packets
     // from the destination radio.
     writeRegister(TX_ADDR, (uint8_t*)("radio" + toRadioId), 5);
     writeRegister(RX_ADDR_P0, (uint8_t*)("radio" + toRadioId), 5);
