@@ -4,7 +4,7 @@ back any size of acknowledgment packet, all without having to manage the various
 
 YouTube video
 
-[![YouTube Video](https://i.ytimg.com/vi/tWEgvS7Sj-8/default.jpg?v=57547260&sqp=CKzm0boF&rs=AOn4CLCZ6Qp0njy-T4jgkk4si1MT-3UCtQ)](https://youtu.be/tWEgvS7Sj-8)
+[![YouTube Video](http://img.youtube.com/vi/tWEgvS7Sj-8/default.jpg)](https://youtu.be/tWEgvS7Sj-8)
 
 ### Features
 * Supports CE and CSN on the same pin.
