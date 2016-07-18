@@ -169,9 +169,9 @@ void demoAckPayload() {
 	
 	debugln("ACK payloads");
 	
-	_endMillis = millis() + 1000 * 20; // Need 20 seconds to show a good demo.
-	_lastMillis = millis();
-	
+	_endMillis = millis() + DEMO_LENGTH_MILLIS;
+	_lastMillis = millis();	
+
 	while (millis() < _endMillis) {
 
 		_currentMillis = millis();
@@ -182,7 +182,7 @@ void demoAckPayload() {
 			debugln(_radioData.Counter);
 		}
 		
-		if (_currentMillis - _lastMillis > 6000) {
+		if (_currentMillis - _lastMillis > 2000) {
 			
 			_lastMillis = _currentMillis;
 			

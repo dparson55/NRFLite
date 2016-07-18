@@ -203,12 +203,12 @@ void demoAckPayload() {
 
 	debugln("ACK payloads");
 	
-	_endMillis = millis() + 1000 * 20; // Need 20 seconds to show a good demo.
+	_endMillis = millis() + DEMO_LENGTH_MILLIS;
 	_lastMillis = millis();
 	
 	while (millis() < _endMillis) {
 		
-		if (millis() - _lastMillis > 4000) {
+		if (millis() - _lastMillis > 1500) {
 			
 			_lastMillis = millis();
 			
