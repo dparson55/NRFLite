@@ -32,7 +32,7 @@ void loop()
 	_data++;
 	Serial.print("Send ");
 	Serial.print(_data);
-	_radio.startSend(0, &_data, sizeof(_data));
+	_radio.startSend(0, &_data, sizeof(_data)); // start the send of _data to radio id 0
 	delay(1000);
 }
 

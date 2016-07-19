@@ -30,6 +30,6 @@ void loop()
 {
 	_data++;
 	Serial.print("Send "); Serial.println(_data);
-	_radio.send(0, &_data, sizeof(_data));
+	_radio.send(0, &_data, sizeof(_data)); // send _data to radio id 0
 	delay(1000);
 }
