@@ -83,7 +83,8 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
     // Assign this radio's address to RX pipe 1.  When another radio sends us data, this is the address
     // it will use.  We use RX pipe 1 to store our address since the address in RX pipe 0 is reserved
     // for use with auto-acknowledgment packets.
-    writeRegister(RX_ADDR_P1, (uint8_t*)("radio" + radioId), 5);
+	uint8_t address[5] = { 1, 2, 3, 4, radioId };
+    writeRegister(RX_ADDR_P1, &address, 5);
     
     // Enable dynamically sized packets on the 2 RX pipes we use, 0 and 1.
     // RX pipe address 1 is used to for normal packets from radios that send us data.
@@ -358,8 +359,9 @@ void NRFLite::prepForTransmission(uint8_t toRadioId, SendType sendType)
     // TX pipe address sets the destination radio for the data.
     // RX pipe 0 is special and needs the same address in order to receive auto-acknowledgment packets
     // from the destination radio.
-    writeRegister(TX_ADDR, (uint8_t*)("radio" + toRadioId), 5);
-    writeRegister(RX_ADDR_P0, (uint8_t*)("radio" + toRadioId), 5);
+	uint8_t address[5] = { 1, 2, 3, 4, toRadioId };
+	writeRegister(TX_ADDR, &address, 5);
+    writeRegister(RX_ADDR_P0, &address, 5);
     
     // Ensure radio is powered on and ready for TX operation.
     uint8_t originalConfigReg = readRegister(CONFIG);
