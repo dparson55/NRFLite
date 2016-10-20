@@ -2,6 +2,12 @@
 
 Radio -> ATtiny84 Arduino pin
 
+CE    -> Arduino 3         PB3 Physical Pin 10
+CSN   -> Arduino 3         PB3 Physical Pin 10
+MOSI  -> Arduino 5 USI_DO  PA5 Physical Pin 8
+MISO  -> Arduino 6 USI_DI  PA6 Physical Pin 7
+SCK   -> Arduino 4 USI_SCK PA4 Physical Pin 9
+
 CE    -> 3
 CSN   -> 3
 MOSI  -> 5 (USI DO)

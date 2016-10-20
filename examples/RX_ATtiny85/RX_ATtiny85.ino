@@ -2,13 +2,13 @@
 
 Radio -> ATtiny85 Arduino pin
 
-CE    -> 3
-CSN   -> 3
-MOSI  -> 1 (USI DO)
-MISO  -> 0 (USI DI)
-SCK   -> 2 (USI SCK)
+CE    -> Arduino 3         PB3 Physical Pin 2
+CSN   -> Arduino 3         PB3 Physical Pin 2
+MOSI  -> Arduino 1 USI_DO  PB1 Physical Pin 6
+MISO  -> Arduino 0 USI_DI  PB0 Physical Pin 5
+SCK   -> Arduino 2 USI_SCK PB2 Physical Pin 7
 IRQ   -> No connection in this example
-
+      
 VCC   -> No more than 3.6 volts
 GND   -> GND
 
@@ -23,7 +23,7 @@ const static uint8_t PIN_RADIO_CE       = 3;
 const static uint8_t PIN_RADIO_CSN      = 3;
 const static uint8_t PIN_SOFT_SERIAL_TX = 4;
 
-const static uint8_t RADIO_ID = 0;       // Our radio's id.  The transmitter will send to this id.
+const static uint8_t RADIO_ID = 0;        // Our radio's id.  The transmitter will send to this id.
 
 struct RadioPacket { uint8_t Data[32]; }; // Transmitter will send us these types of data packets.
 

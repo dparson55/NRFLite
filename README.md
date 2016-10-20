@@ -40,14 +40,14 @@ as an INPUT, SPI operation stops.*
 
 ###### ATtiny84
 ```
-MOSI -> Arduino 5 USI_DO  PA5
-MISO -> Arduino 6 USI_DI  PA6
-SCK  -> Arduino 4 USI_SCK PA4
+MOSI -> Arduino 5 USI_DO  PA5 Physical Pin 8
+MISO -> Arduino 6 USI_DI  PA6 Physical Pin 7
+SCK  -> Arduino 4 USI_SCK PA4 Physical Pin 9
 ```
 
 ###### ATtiny85
 ```
-MOSI -> Arduino 1 USI_DO  PB1
-MISO -> Arduino 0 USI_DI  PB0
-SCK  -> Arduino 2 USI_SCK PB2
+MOSI -> Arduino 1 USI_DO  PB1 Physical Pin 6
+MISO -> Arduino 0 USI_DI  PB0 Physical Pin 5
+SCK  -> Arduino 2 USI_SCK PB2 Physical Pin 7
 ```
