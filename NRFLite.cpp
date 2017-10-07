@@ -21,96 +21,45 @@
 
 uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate, uint8_t channel)
 {
-    delay(100); // 100 ms = Vcc > 1.9v power on reset time.
-    
+    _useTwoPinSpiTransfer = 0;
     _cePin = cePin;
     _csnPin = csnPin;
-    _enableInterruptFlagsReset = 1;
+    
+    // Default states for the radio control pins.  When CSN is LOW the radio listens to SPI communication,
+    // so we operate most of the time with CSN HIGH.
+    pinMode(_cePin, OUTPUT);
+    pinMode(_csnPin, OUTPUT);
+    digitalWrite(_csnPin, HIGH);
     
     // Setup the microcontroller for SPI communication with the radio.
     #if defined(__AVR_ATtiny84__) || defined(__AVR_ATtiny85__)
-    pinMode(USI_DI, INPUT ); digitalWrite(USI_DI, HIGH);
-    pinMode(USI_DO, OUTPUT); digitalWrite(USI_DO, LOW);
-    pinMode(SCK, OUTPUT); digitalWrite(SCK, LOW);
+        pinMode(USI_DI, INPUT ); digitalWrite(USI_DI, HIGH);
+        pinMode(USI_DO, OUTPUT); digitalWrite(USI_DO, LOW);
+        pinMode(SCK, OUTPUT); digitalWrite(SCK, LOW);
     #else
-    // Arduino SPI makes SS (D10) an output and sets it HIGH.  It must remain an output
-    // for Master SPI operation to work, but in case it was originally LOW, we'll set it back.
-    uint8_t savedSS = digitalRead(SS);
-    SPI.setClockDivider(SPI_CLOCK_DIV2);
-    SPI.begin();
-    if (_csnPin != SS) digitalWrite(SS, savedSS);
+        // Arduino SPI makes SS (D10) an output and sets it HIGH.  It must remain an output
+        // for Master SPI operation to work, but in case it was originally LOW, we'll set it back.
+        uint8_t savedSS = digitalRead(SS);
+        SPI.setClockDivider(SPI_CLOCK_DIV2);
+        SPI.begin();
+        if (_csnPin != SS) digitalWrite(SS, savedSS);
     #endif
     
-    // When CSN is LOW the radio listens to SPI communication, so we operate most of the time with CSN HIGH.
-    pinMode(_cePin, OUTPUT); pinMode(_csnPin, OUTPUT);
-    digitalWrite(_csnPin, HIGH);
-    
-    // Valid channel range is 2400 - 2525 MHz, in 1 MHz increments.
-    if (channel > 125) { channel = 125; }
-    writeRegister(RF_CH, channel);
-    
-    // Transmission speed, retry times, and output power setup.
-    // For 2 Mbps or 1 Mbps operation, a 500 uS retry time is necessary to support the max ACK packet size.
-    // For 250 Kbps operation, a 1500 uS retry time is necessary.
-    // Retry time  = SETUP_RETR upper 4 bits (0 = 250 uS, 1 = 500 us, 2 = 750 us, ... , 15 = 4000 us).
-    // Retry count = SETUP_RETR lower 4 bits (0 to 15).
-    // '_allowedDataCheckIntervalMicros' is used to limit how often the radio can be checked to determine if data
-    // has been received when CE and CSN share the same pin.  If we don't limit how often the radio is checked,
-    // the radio may never be given the chance to receive a packet.  More info about this in the 'hasData' method.
-    // '_allowedDataCheckIntervalMicros' was determined by maximizing the transfer bitrate between two 16 MHz ATmega328's
-    // using 32 byte payloads and sending back 32 byte ACK packets.
+    return prepForRx(radioId, bitrate, channel);
+}
 
-    if (bitrate == BITRATE2MBPS) {
-        writeRegister(RF_SETUP, B00001110);     // 2 Mbps, 0 dBm output power
-        writeRegister(SETUP_RETR, B00011111);   // 0001 =  500 uS between retries, 1111 = 15 retries
-        _allowedDataCheckIntervalMicros = 600;
-        _transmissionRetryWaitMicros = 250;
-    }
-    else if (bitrate == BITRATE1MBPS) {
-        writeRegister(RF_SETUP, B00000110);     // 1 Mbps, 0 dBm output power
-        writeRegister(SETUP_RETR, B00011111);   // 0001 =  500 uS between retries, 1111 = 15 retries
-        _allowedDataCheckIntervalMicros = 1200;
-        _transmissionRetryWaitMicros = 1000;
-    }
-    else {
-        writeRegister(RF_SETUP, B00100110);     // 250 Kbps, 0 dBm output power
-        writeRegister(SETUP_RETR, B01011111);   // 0101 = 1500 uS between retries, 1111 = 15 retries
-        //writeRegister(SETUP_RETR, B01010001); // 0101 = 1500 uS between retries, 0001 = 1 retry (for testing failed transmissions)
-        _allowedDataCheckIntervalMicros = 8000;
-        _transmissionRetryWaitMicros = 1500;
-    }
-    
-    // Assign this radio's address to RX pipe 1.  When another radio sends us data, this is the address
-    // it will use.  We use RX pipe 1 to store our address since the address in RX pipe 0 is reserved
-    // for use with auto-acknowledgment packets.
-    uint8_t address[5] = { 1, 2, 3, 4, radioId };
-    writeRegister(RX_ADDR_P1, &address, 5);
-    
-    // Enable dynamically sized packets on the 2 RX pipes we use, 0 and 1.
-    // RX pipe address 1 is used to for normal packets from radios that send us data.
-    // RX pipe address 0 is used to for auto-acknowledgment packets from radios we transmit to.
-    writeRegister(DYNPD, _BV(DPL_P0) | _BV(DPL_P1));
-    
-    // Enable dynamically sized payloads, ACK payloads, and TX support with or without an ACK request.
-    writeRegister(FEATURE, _BV(EN_DPL) | _BV(EN_ACK_PAY) | _BV(EN_DYN_ACK));
-    
-    // Ensure RX FIFO and TX FIFO buffers are empty.  Each buffer can hold 3 packets.
-    spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0);
-    spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0);
-    
-    // Clear any interrupts.
-    uint8_t statusReg = readRegister(STATUS);
-    writeRegister(STATUS, statusReg | _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
-    
-    // Power on the radio and start listening, waiting for startup to complete.
-    // 1500 uS = Powered Off mode to Standby mode transition time + 130 uS Standby to RX mode.
-    uint8_t newConfigReg = _BV(PWR_UP) | _BV(PRIM_RX) | _BV(EN_CRC);
-    writeRegister(CONFIG, newConfigReg);
-    digitalWrite(_cePin, HIGH);
-    delayMicroseconds(1630);
-    
-    // Return success if the update we made to the CONFIG register was successful.
-    return readRegister(CONFIG) == newConfigReg;
+uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bitrates bitrate, uint8_t channel)
+{
+    _useTwoPinSpiTransfer = 1;
+    _cePin = sckPin;
+    _csnPin = sckPin;
+    _momiPin = momiPin;
+
+    // Default states for the 2 multiplexed pins.
+    pinMode(_momiPin, INPUT);
+    pinMode(_csnPin, OUTPUT); digitalWrite(_csnPin, HIGH);
+
+    return prepForRx(radioId, bitrate, channel);
 }
 
 void NRFLite::addAckData(void* data, uint8_t length, uint8_t removeExistingAcks)
@@ -206,7 +155,7 @@ void NRFLite::readData(void* data)
 
 uint8_t NRFLite::send(uint8_t toRadioId, void* data, uint8_t length, SendType sendType)
 {
-    prepForTransmission(toRadioId, sendType);
+    prepForTx(toRadioId, sendType);
 
     // Clear any previously asserted TX success or max retries flags.
     uint8_t statusReg = readRegister(STATUS);
@@ -224,7 +173,7 @@ uint8_t NRFLite::send(uint8_t toRadioId, void* data, uint8_t length, SendType se
     // when data was loaded into the TX FIFO.  CSN is kept HIGH so the radio does not listen to the SPI bus.
     if (_cePin != _csnPin) {
         digitalWrite(_cePin, HIGH);
-        delayMicroseconds(11); // 10 uS = Required CE time to initiate data transmission.
+        delayMicroseconds(10); // 10 uS = Required CE time to initiate data transmission.
         digitalWrite(_cePin, LOW);
     }
     
@@ -249,7 +198,7 @@ uint8_t NRFLite::send(uint8_t toRadioId, void* data, uint8_t length, SendType se
 
 void NRFLite::startSend(uint8_t toRadioId, void* data, uint8_t length, SendType sendType)
 {
-    prepForTransmission(toRadioId, sendType);
+    prepForTx(toRadioId, sendType);
     
     // Add data to the TX FIFO buffer, with or without an ACK request.
     if (sendType == NO_ACK) { spiTransfer(WRITE_OPERATION, W_TX_PAYLOAD_NO_ACK, data, length); }
@@ -258,7 +207,7 @@ void NRFLite::startSend(uint8_t toRadioId, void* data, uint8_t length, SendType 
     // Start transmission.
     if (_cePin != _csnPin) {
         digitalWrite(_cePin, HIGH);
-        delayMicroseconds(11); // 10 uS = Required CE time to initiate data transmission.
+        delayMicroseconds(10); // 10 uS = Required CE time to initiate data transmission.
         digitalWrite(_cePin, LOW);
     }
 }
@@ -274,7 +223,7 @@ void NRFLite::whatHappened(uint8_t& tx_ok, uint8_t& tx_fail, uint8_t& rx_ready)
     // When we need to see interrupt flags, we disable the logic here which clears them.
     // Programs that have an interrupt handler for the radio's IRQ pin will use 'whatHappened'
     // and if we don't disable this logic, it's not possible for us to check these flags.
-    if (_enableInterruptFlagsReset) {
+    if (_resetInterruptFlags) {
         writeRegister(STATUS, statusReg | _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
     }
 }
@@ -354,7 +303,81 @@ uint8_t NRFLite::getRxFifoPacketLength()
     }
 }
 
-void NRFLite::prepForTransmission(uint8_t toRadioId, SendType sendType)
+uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
+{
+    _resetInterruptFlags = 1;
+
+    delay(100); // 100 ms = Vcc > 1.9v power on reset time.
+
+    // Valid channel range is 2400 - 2525 MHz, in 1 MHz increments.
+    if (channel > 125) { channel = 125; }
+    writeRegister(RF_CH, channel);
+
+    // Transmission speed, retry times, and output power setup.
+    // For 2 Mbps or 1 Mbps operation, a 500 uS retry time is necessary to support the max ACK packet size.
+    // For 250 Kbps operation, a 1500 uS retry time is necessary.
+    // Retry time  = SETUP_RETR upper 4 bits (0 = 250 uS, 1 = 500 us, 2 = 750 us, ... , 15 = 4000 us).
+    // Retry count = SETUP_RETR lower 4 bits (0 to 15).
+    // '_allowedDataCheckIntervalMicros' is used to limit how often the radio can be checked to determine if data
+    // has been received when CE and CSN share the same pin.  If we don't limit how often the radio is checked,
+    // the radio may never be given the chance to receive a packet.  More info about this in the 'hasData' method.
+    // '_allowedDataCheckIntervalMicros' was determined by maximizing the transfer bitrate between two 16 MHz ATmega328's
+    // using 32 byte payloads and sending back 32 byte ACK packets.
+
+    if (bitrate == BITRATE2MBPS) {
+        writeRegister(RF_SETUP, B00001110);     // 2 Mbps, 0 dBm output power
+        writeRegister(SETUP_RETR, B00011111);   // 0001 =  500 uS between retries, 1111 = 15 retries
+        _allowedDataCheckIntervalMicros = 600;
+        _transmissionRetryWaitMicros = 250;
+    }
+    else if (bitrate == BITRATE1MBPS) {
+        writeRegister(RF_SETUP, B00000110);     // 1 Mbps, 0 dBm output power
+        writeRegister(SETUP_RETR, B00011111);   // 0001 =  500 uS between retries, 1111 = 15 retries
+        _allowedDataCheckIntervalMicros = 1200;
+        _transmissionRetryWaitMicros = 1000;
+    }
+    else {
+        writeRegister(RF_SETUP, B00100110);     // 250 Kbps, 0 dBm output power
+        writeRegister(SETUP_RETR, B01011111);   // 0101 = 1500 uS between retries, 1111 = 15 retries
+                                                //writeRegister(SETUP_RETR, B01010001); // 0101 = 1500 uS between retries, 0001 = 1 retry (for testing failed transmissions)
+        _allowedDataCheckIntervalMicros = 8000;
+        _transmissionRetryWaitMicros = 1500;
+    }
+
+    // Assign this radio's address to RX pipe 1.  When another radio sends us data, this is the address
+    // it will use.  We use RX pipe 1 to store our address since the address in RX pipe 0 is reserved
+    // for use with auto-acknowledgment packets.
+    uint8_t address[5] = { 1, 2, 3, 4, radioId };
+    writeRegister(RX_ADDR_P1, &address, 5);
+
+    // Enable dynamically sized packets on the 2 RX pipes we use, 0 and 1.
+    // RX pipe address 1 is used to for normal packets from radios that send us data.
+    // RX pipe address 0 is used to for auto-acknowledgment packets from radios we transmit to.
+    writeRegister(DYNPD, _BV(DPL_P0) | _BV(DPL_P1));
+
+    // Enable dynamically sized payloads, ACK payloads, and TX support with or without an ACK request.
+    writeRegister(FEATURE, _BV(EN_DPL) | _BV(EN_ACK_PAY) | _BV(EN_DYN_ACK));
+
+    // Ensure RX FIFO and TX FIFO buffers are empty.  Each buffer can hold 3 packets.
+    spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0);
+    spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0);
+
+    // Clear any interrupts.
+    uint8_t statusReg = readRegister(STATUS);
+    writeRegister(STATUS, statusReg | _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
+
+    // Power on the radio and start listening, waiting for startup to complete.
+    // 1500 uS = Powered Off mode to Standby mode transition time + 130 uS Standby to RX mode.
+    uint8_t newConfigReg = _BV(PWR_UP) | _BV(PRIM_RX) | _BV(EN_CRC);
+    writeRegister(CONFIG, newConfigReg);
+    digitalWrite(_cePin, HIGH);
+    delayMicroseconds(1630);
+
+    // Return success if the update we made to the CONFIG register was successful.
+    return readRegister(CONFIG) == newConfigReg;
+}
+
+void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
 {
     // TX pipe address sets the destination radio for the data.
     // RX pipe 0 is special and needs the same address in order to receive auto-acknowledgment packets
@@ -393,9 +416,9 @@ void NRFLite::prepForTransmission(uint8_t toRadioId, SendType sendType)
         // We need to see radio interrupt flags here to determine if transmission was successful or not.
         // Programs that utilize the interrupt capability of this library call 'whatHappened'
         // in their radio IRQ pin handler to determine if a transmission succeeded or failed, and in this method we
-        // clear the interrupt flags in the STATUS register of the radio. By setting '_enableInterruptReset' = 0,
+        // clear the interrupt flags in the STATUS register of the radio. By setting '_resetInterruptFlags' = 0,
         // we temporarily remove this functionality so we can react to the radio's interrupt flags here.
-        _enableInterruptFlagsReset = 0;
+        _resetInterruptFlags = 0;
         
         uint8_t statusReg;
         
@@ -404,7 +427,7 @@ void NRFLite::prepForTransmission(uint8_t toRadioId, SendType sendType)
             
             // Try sending a packet.
             digitalWrite(_cePin, HIGH);
-            delayMicroseconds(11);       // 10 uS = Required CE time to initiate data transmission.
+            delayMicroseconds(10);       // 10 uS = Required CE time to initiate data transmission.
             digitalWrite(_cePin, LOW);
             
             delayMicroseconds(_transmissionRetryWaitMicros);
@@ -422,7 +445,7 @@ void NRFLite::prepForTransmission(uint8_t toRadioId, SendType sendType)
             fifoReg = readRegister(FIFO_STATUS);
         }
         
-        _enableInterruptFlagsReset = 1;
+        _resetInterruptFlags = 1;
     }
 }
 
@@ -453,15 +476,31 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void* d
     uint8_t* intData = reinterpret_cast<uint8_t*>(data);
     
     digitalWrite(_csnPin, LOW); // Signal radio it should begin listening to the SPI bus.
-    
+
     #if defined(__AVR_ATtiny84__) || defined(__AVR_ATtiny85__)
     
-    // ATtiny transfer with USI.
-    
-    usiTransfer(regName);
-    for (uint8_t i = 0; i < length; ++i) {
-        uint8_t newData = usiTransfer(intData[i]);
-        if (transferType == READ_OPERATION) { intData[i] = newData; }
+    if (_useTwoPinSpiTransfer) {
+
+        // ATtiny transfer with multiplexed MOSI/MISO and CE/CSN/SCK pins.
+
+        noInterrupts();        // Timing is critical so interrupts are disabled during the bit bang transfer.
+        delayMicroseconds(50); // Allow capacitor on CSN pin to discharge.
+        twoPinTransfer(regName);
+        for (uint8_t i = 0; i < length; ++i) {
+            uint8_t newData = twoPinTransfer(intData[i]);
+            if (transferType == READ_OPERATION) { intData[i] = newData; }
+        }
+        interrupts();
+    }
+    else {
+
+        // ATtiny transfer with USI.
+
+        usiTransfer(regName);
+        for (uint8_t i = 0; i < length; ++i) {
+            uint8_t newData = usiTransfer(intData[i]);
+            if (transferType == READ_OPERATION) { intData[i] = newData; }
+        }
     }
     
     #else
@@ -493,6 +532,35 @@ uint8_t NRFLite::usiTransfer(uint8_t data)
     
     return USIDR;
     
+    #endif
+}
+
+uint8_t NRFLite::twoPinTransfer(uint8_t data)
+{
+    #if defined(__AVR_ATtiny84__) || defined(__AVR_ATtiny85__)
+
+    uint8_t byteFromRadio, bits = 8;
+
+    do {
+        byteFromRadio <<= 1;                       // Shift the byte we are building to the left 1 step.
+        if (PINB & _BV(_momiPin)) byteFromRadio++; // Read MOMI pin.  If HIGH, set bit position 0 of our byte to 1.
+
+        DDRB |= _BV(_momiPin);                     // Change MOMI to be an OUTPUT pin.
+        if (data & 0x80) PORTB |= _BV(_momiPin);   // If bit position 7 of the byte we are sending is 1, set MOMI HIGH.
+        PINB |= _BV(_csnPin);                      // Set SCK HIGH.  This transfers the bit to the radio.
+                                                   // CSN will remain LOW while the capacitor begins charging.
+        DDRB &= ~_BV(_momiPin);                    // Change MOMI back to being an INPUT pin.
+
+        PINB |= _BV(_csnPin);    // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
+                                 // Note too that SCK will be LOW longer than it is ever HIGH, so CSN
+                                 // will remain LOW throughout the transfer.
+        PORTB &= ~_BV(_momiPin); // Ensure MOMI, currently an INPUT, does not have its pullup resistor enabled.
+
+        data <<= 1;              // Shift the byte we are sending to the left 1 step.
+    } while (--bits);
+
+    return byteFromRadio;
+
     #endif
 }
 

@@ -18,13 +18,17 @@ class NRFLite {
     enum SendType { REQUIRE_ACK, NO_ACK };
     
     // Methods for receivers and transmitters.
-    // init      = Turns the radio on and puts it into receiving mode.  Returns 0 if it cannot communicate with the radio.
-    //             Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
-    // readData  = Loads a received data packet or ACK packet into the specified data parameter.
-    // powerDown = Power down the radio.  It only draws 900 nA in this state.  The radio will be powered back on when one of the 
-    //             'hasData' or 'send' methods is called.
-    // printDetails = For debugging, it prints most radio registers using the serial object provided in the constructor.
-    uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100); 
+    // init       = Turns the radio on and puts it into receiving mode.  Returns 0 if it cannot communicate with the radio.
+    //              Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
+    // initTwoPin = Same as init with support for multiplexed MOSI/MISO and CE/CSN/SCK pins.  A 0.1uF capacitor, 
+    //              220ohm resistor, and 3.3K to 6.8K resistor are needed.  Details available on:
+    //              http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html
+    // readData   = Loads a received data packet or ACK packet into the specified data parameter.
+    // powerDown  = Power down the radio.  It only draws 900 nA in this state.  Power on the radio by calling one of the 
+    //              'hasData' or 'send' methods.
+    // printDetails = For debugging, it prints most radio registers if a serial object is provided in the constructor.
+    uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
+    uint8_t initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
     void readData(void* data);
     void powerDown();
     void printDetails();
@@ -57,19 +61,23 @@ class NRFLite {
     enum SpiTransferType { READ_OPERATION, WRITE_OPERATION };
 
     Stream* _serial;
-    uint8_t _cePin, _csnPin, _enableInterruptFlagsReset;
+    uint8_t _cePin, _csnPin, _momiPin;
+    uint8_t _resetInterruptFlags, _useTwoPinSpiTransfer;
     uint16_t _transmissionRetryWaitMicros, _allowedDataCheckIntervalMicros;
     uint64_t _microsSinceLastDataCheck;
     
     uint8_t getPipeOfFirstRxFifoPacket();
     uint8_t getRxFifoPacketLength();
-    void prepForTransmission(uint8_t toRadioId, SendType sendType);
+    uint8_t prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel);
+    void prepForTx(uint8_t toRadioId, SendType sendType);
     uint8_t readRegister(uint8_t regName);
     void readRegister(uint8_t regName, void* data, uint8_t length);
     void writeRegister(uint8_t regName, uint8_t data);
     void writeRegister(uint8_t regName, void* data, uint8_t length);
     void spiTransfer(SpiTransferType transferType, uint8_t regName, void* data, uint8_t length);
     uint8_t usiTransfer(uint8_t data);    
+    uint8_t twoPinTransfer(uint8_t data);
+
     void printRegister(char* name, uint8_t regName);
 };
 
