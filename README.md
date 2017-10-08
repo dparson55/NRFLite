@@ -79,8 +79,9 @@ void loop()
 ![nRF24L01 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/nRF24L01_pinout_small.jpg)
 
 ###### ATmega328
-* Arduino Pin 10 is the hardware *Slave Select* pin and must stay as an OUTPUT for SPI operation.
+* Arduino Pin 10 is the *hardware SPI slave select* pin and must stay as an OUTPUT.
 ```
+// Hardware SPI Operation
 Radio SCK  -> Arduino 13 SCK
 Radio MISO -> Arduino 12 MISO
 Radio MOSI -> Arduino 11 MOSI
@@ -92,6 +93,7 @@ Radio IRQ  -> Any Arduino pin (optional)
 
 ###### ATtiny84
 ```
+// Hardware USI Operation
 Radio MISO -> Physical Pin 7 PA6 Arduino 6
 Radio MOSI -> Physical Pin 8 PA5 Arduino 5
 Radio SCK  -> Physical Pin 9 PA4 Arduino 4
@@ -103,6 +105,7 @@ Radio IRQ  -> Any Arduino pin (optional)
 
 ###### ATtiny85
 ```
+// Hardware USI Operation
 Radio SCK  -> Physical Pin 7 PB2 Arduino 2
 Radio MOSI -> Physical Pin 6 PB1 Arduino 1
 Radio MISO -> Physical Pin 5 PB0 Arduino 0
@@ -111,3 +114,22 @@ Radio CSN  -> Any Arduino pin (can be same as CE)
 Radio IRQ  -> Any Arduino pin (optional)
 ```
 ![ATtiny85 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny85_pinout_small.png)
+```
+Radio VCC -----------------------> VCC   (no more than 3.6 volts on Radio's VCC pin)
+
+      +--------------------------> GND
+	  |
+Radio GND --+--||--+                                 (0.1uF capacitor)
+                   |
+Radio CE ----------+
+                   |
+Radio CSN ---------+--\/\/\--+                       (220ohm resistor)
+                             |
+Radio SCK -------------------+--> Any Arduino pin
+
+Radio MOSI ---------+-----------> Any Arduino pin
+                    |
+Radio MISO --\/\/\--+                                (3.3K to 6.8K resistor...2 220ohm resistors in series works)
+
+Radio IRQ                      -> Any Arduino pin (optional)
+```
