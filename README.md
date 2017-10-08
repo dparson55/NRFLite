@@ -80,13 +80,12 @@ void loop()
 
 ###### ATmega328
 ```
-Radio MOSI -> Arduino 11 MOSI
-Radio MISO -> Arduino 12 MISO
 Radio SCK  -> Arduino 13 SCK
+Radio MISO -> Arduino 12 MISO
+Radio MOSI -> Arduino 11 MOSI
 ```
-*Arduino 10 is the hardware Slave Select pin and must stay as an OUTPUT for SPI operation.  You don't need to use pin 10
-with the radio's CSN pin but you must keep it an OUTPUT.  This goes for all hardware SPI use on the ATmega328, if you set it
-as an INPUT, SPI operation stops.*
+*Arduino 10 is the hardware Slave Select pin and must stay as an OUTPUT for SPI operation.*
+![ATmega328 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATmega328_pinout_small.jpg)
 
 ###### ATtiny84
 ```
