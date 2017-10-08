@@ -5,7 +5,7 @@ Easily send dynamically-sized data packets, with or without dynamically-sized ac
 
 YouTube video
 
-[![YouTube Video](http://img.youtube.com/vi/tWEgvS7Sj-8/default.jpg)](https://youtu.be/tWEgvS7Sj-8)
+[![YouTube Video](http://img.youtube.com/vi/tWEgvS7Sj-8/default.jpg)](https://youtu.be/tWEgvS7Sj-8?t=193)
 
 ### Features
 * No need to enable or disable features like retries, auto-acknowledgment packets, and dynamic packet sizes; those all just work out of the box.
