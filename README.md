@@ -9,9 +9,8 @@
 ## NRFLite
 Easily send dynamically-sized data packets, with or without dynamically-sized acknowledgement packets, with less code than other libraries.
 
-#### TX Code
-
 ```c++
+// TX example
 #include <SPI.h>
 #include <NRFLite.h>
 
@@ -30,10 +29,8 @@ void loop()
     delay(1000);
 }
 ```
-
-#### RX Code
-
 ```c++
+// RX example
 #include <SPI.h>
 #include <NRFLite.h>
 
@@ -90,16 +87,16 @@ as an INPUT, SPI operation stops.*
 
 ###### ATtiny84
 ```
-Radio MOSI -> Physical Pin 8 PA5 Arduino 5
 Radio MISO -> Physical Pin 7 PA6 Arduino 6
+Radio MOSI -> Physical Pin 8 PA5 Arduino 5
 Radio SCK  -> Physical Pin 9 PA4 Arduino 4
 ```
 ![ATtiny84 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny84_pinout_small.png)
 
 ###### ATtiny85
 ```
+Radio SCK  -> Physical Pin 7 PB2 Arduino 2
 Radio MOSI -> Physical Pin 6 PB1 Arduino 1
 Radio MISO -> Physical Pin 5 PB0 Arduino 0
-Radio SCK  -> Physical Pin 7 PB2 Arduino 2
 ```
 ![ATtiny85 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny85_pinout_small.png)
