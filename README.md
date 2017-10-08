@@ -1,11 +1,63 @@
 ## NRFLite
 Easily send dynamically-sized data packets, with or without dynamically-sized acknowledgement packets, with less code than other libraries.
 
-**_2-pin control support is nearly ready for release!_**  Using details on <http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html> I have working code for an ATtiny85 which multiplexes the MOSI/MISO and CE/CSN/SCK pins.  I need to finish adding ATtiny84 and standard Arduino support, finish the examples, and create a tutorial video.
+**_2-pin control support is nearly ready for release!_**  Using details on <http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html> I have working code for an ATtiny85 which multiplexes the MOSI/MISO and CE/CSN/SCK pins.
+- [x] POC for ATtiny85.
+- [x] Test main features:  bitrates, dynamic packets, ack packets, interrupts
+- [ ] Add ATtiny84 support.
+- [ ] Add standard Arduino 328p support.
+- [ ] Create examples.
+- [ ] Create tutorial video.
 
-YouTube video
+#### TX Code
 
-[![YouTube Video](http://img.youtube.com/vi/tWEgvS7Sj-8/default.jpg)](https://youtu.be/tWEgvS7Sj-8?t=193)
+```c++
+#include <SPI.h>
+#include <NRFLite.h>
+
+NRFLite _radio;
+uint8_t _data;
+
+void setup()
+{
+    _radio.init(0, 9, 10); // Set radio Id = 0 along with the CE and CSN pins
+}
+
+void loop()
+{
+    _data++;
+    _radio.send(1, &_data, sizeof(_data)); // Send to the radio with Id = 1
+    delay(1000);
+}
+```
+
+#### RX Code
+
+```c++
+#include <SPI.h>
+#include <NRFLite.h>
+
+NRFLite _radio;
+uint8_t _data;
+
+void setup()
+{
+    Serial.begin(115200);
+    _radio.init(1, 9, 10); // Set radio Id = 1
+}
+
+void loop()
+{
+    while (_radio.hasData()) {
+        _radio.readData(&_data);
+        Serial.println(_data);
+    }
+}
+```
+
+### YouTube
+
+[![YouTube Video](http://img.youtube.com/vi/tWEgvS7Sj-8/default.jpg)](https://youtu.be/tWEgvS7Sj-8)
 
 ### Features
 * No need to enable or disable features like retries, auto-acknowledgment packets, and dynamic packet sizes; those all just work out of the box.
