@@ -115,6 +115,7 @@ Radio IRQ  -> Any Arduino pin (optional)
 ```
 ![ATtiny85 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny85_pinout_small.png)
 ```
+// 2-Pin Operation
 Radio VCC -----------------------> VCC   (no more than 3.6 volts on Radio's VCC pin)
 
       +--------------------------> GND
