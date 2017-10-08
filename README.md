@@ -10,7 +10,7 @@
 Easily send dynamically-sized data packets, with or without dynamically-sized acknowledgement packets, with less code than other libraries.
 
 ```c++
-// TX example
+// Basic TX example
 
 #include <SPI.h>
 #include <NRFLite.h>
@@ -31,7 +31,7 @@ void loop()
 }
 ```
 ```c++
-// RX example
+// Basic RX example
 
 #include <SPI.h>
 #include <NRFLite.h>
@@ -61,7 +61,7 @@ void loop()
 
 ### Features
 * 4-pin operation that behaves the same as when separate pins are used.
-* Supports operation with or without interrupts using the radio's IRQ pin.
+* Operation with or without interrupts using the radio's IRQ pin.
 * Supports ATtiny84/85 when used with the MIT High-Low Tech Arduino library http://highlowtech.org/?p=1695.
   * When using an ATtiny with an older Arduino toolchain like 1.0.5, if you get a R_AVR_13_PCREL compilation error when your sketch is >4KB, a fix is available on https://github.com/TCWORLD/ATTinyCore/tree/master/PCREL%20Patch%20for%20GCC
     
@@ -83,6 +83,9 @@ void loop()
 Radio SCK  -> Arduino 13 SCK
 Radio MISO -> Arduino 12 MISO
 Radio MOSI -> Arduino 11 MOSI
+Radio CE   -> Any Arduino pin
+Radio CSN  -> Any Arduino pin (can be same as CE)
+Radio IRQ  -> Any Arduino pin (optional)
 ```
 *Arduino 10 is the hardware Slave Select pin and must stay as an OUTPUT for SPI operation.*
 ![ATmega328 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATmega328_pinout_small.jpg)
@@ -92,6 +95,9 @@ Radio MOSI -> Arduino 11 MOSI
 Radio MISO -> Physical Pin 7 PA6 Arduino 6
 Radio MOSI -> Physical Pin 8 PA5 Arduino 5
 Radio SCK  -> Physical Pin 9 PA4 Arduino 4
+Radio CE   -> Any Arduino pin
+Radio CSN  -> Any Arduino pin (can be same as CE)
+Radio IRQ  -> Any Arduino pin (optional)
 ```
 ![ATtiny84 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny84_pinout_small.png)
 
@@ -100,5 +106,7 @@ Radio SCK  -> Physical Pin 9 PA4 Arduino 4
 Radio SCK  -> Physical Pin 7 PB2 Arduino 2
 Radio MOSI -> Physical Pin 6 PB1 Arduino 1
 Radio MISO -> Physical Pin 5 PB0 Arduino 0
+Radio CE   -> Any Arduino pin
+Radio CSN  -> Any Arduino pin (can be same as CE)
 ```
 ![ATtiny85 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny85_pinout_small.png)
