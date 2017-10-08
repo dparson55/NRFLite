@@ -6,11 +6,11 @@
 
 class NRFLite {
     
-    public:
+  public:
     
     // Constructors
     // You can pass in an Arduino Serial or SoftwareSerial object for use throughout the library when debugging.
-    // This approach allows both Serial and SoftwareSerial support so debugging on ATtinys is easy.
+    // This approach allows both Serial and SoftwareSerial support so debugging on ATtinys is made easier.
     NRFLite() {}
     NRFLite(Stream& serial) : _serial(&serial) {}
     
@@ -20,9 +20,10 @@ class NRFLite {
     // Methods for receivers and transmitters.
     // init       = Turns the radio on and puts it into receiving mode.  Returns 0 if it cannot communicate with the radio.
     //              Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
-    // initTwoPin = Same as init with support for multiplexed MOSI/MISO and CE/CSN/SCK pins.  A 0.1uF capacitor, 
-    //              220ohm resistor, and 3.3K to 6.8K resistor are needed.  Details available on:
+    // initTwoPin = Same as init with support for multiplexed MOSI/MISO and CE/CSN/SCK pins.  Details available on
     //              http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html
+	//              Note the capacitor and resistor values from the blog's schematic are not used, instead use
+	//              a 0.1uF capacitor, 220ohm resistor, and 3.3K to 6.8K resistor.
     // readData   = Loads a received data packet or ACK packet into the specified data parameter.
     // powerDown  = Power down the radio.  It only draws 900 nA in this state.  Power on the radio by calling one of the 
     //              'hasData' or 'send' methods.
@@ -34,7 +35,11 @@ class NRFLite {
     void printDetails();
 
     // Methods for transmitters.
-    // send       = Sends a data packet and waits for success or failure.  If NO_ACK is specified, no acknowledgment is required.
+    // send = Sends a data packet and waits for success or failure.  The default REQUIRE_ACK sendType causes the radio
+	//        to attempt sending the packet up to 16 times.  If no acknowledgement is received a 0 will be returned.
+	//        Optionally the NO_ACK sendType can be specified to only transmit the packet a single time.  It does not
+	//        matter if the packet is dropped or received by another radio, in both situations no acknowledgement
+	//        will be sent back.
     // hasAckData = Checks to see if an ACK data packet was received and returns its length.
     uint8_t send(uint8_t toRadioId, void* data, uint8_t length, SendType sendType = REQUIRE_ACK);
     uint8_t hasAckData();
@@ -56,29 +61,29 @@ class NRFLite {
     void whatHappened(uint8_t& tx_ok, uint8_t& tx_fail, uint8_t& rx_ready); 
     uint8_t hasDataISR(); 
     
-    private:
+  private:
     
-    enum SpiTransferType { READ_OPERATION, WRITE_OPERATION };
+	enum SpiTransferType { READ_OPERATION, WRITE_OPERATION };
 
-    Stream* _serial;
-    uint8_t _cePin, _csnPin, _momiPin;
-    uint8_t _resetInterruptFlags, _useTwoPinSpiTransfer;
-    uint16_t _transmissionRetryWaitMicros, _allowedDataCheckIntervalMicros;
-    uint64_t _microsSinceLastDataCheck;
+	Stream* _serial;
+	uint8_t _cePin, _csnPin, _momiPin;
+	uint8_t _resetInterruptFlags, _useTwoPinSpiTransfer;
+	uint16_t _transmissionRetryWaitMicros, _allowedDataCheckIntervalMicros;
+	uint64_t _microsSinceLastDataCheck;
     
-    uint8_t getPipeOfFirstRxFifoPacket();
-    uint8_t getRxFifoPacketLength();
-    uint8_t prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel);
-    void prepForTx(uint8_t toRadioId, SendType sendType);
-    uint8_t readRegister(uint8_t regName);
-    void readRegister(uint8_t regName, void* data, uint8_t length);
-    void writeRegister(uint8_t regName, uint8_t data);
-    void writeRegister(uint8_t regName, void* data, uint8_t length);
-    void spiTransfer(SpiTransferType transferType, uint8_t regName, void* data, uint8_t length);
-    uint8_t usiTransfer(uint8_t data);    
-    uint8_t twoPinTransfer(uint8_t data);
+	uint8_t getPipeOfFirstRxFifoPacket();
+	uint8_t getRxFifoPacketLength();
+	uint8_t prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel);
+	void prepForTx(uint8_t toRadioId, SendType sendType);
+	uint8_t readRegister(uint8_t regName);
+	void readRegister(uint8_t regName, void* data, uint8_t length);
+	void writeRegister(uint8_t regName, uint8_t data);
+	void writeRegister(uint8_t regName, void* data, uint8_t length);
+	void spiTransfer(SpiTransferType transferType, uint8_t regName, void* data, uint8_t length);
+	uint8_t usiTransfer(uint8_t data);    
+	uint8_t twoPinTransfer(uint8_t data);
 
-    void printRegister(char* name, uint8_t regName);
+	void printRegister(char* name, uint8_t regName);
 };
 
 #endif
