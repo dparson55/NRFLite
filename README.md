@@ -1,4 +1,4 @@
-**_2-pin support is nearly ready for release!_**  Using details on <http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html> I have working code for an ATtiny85 which multiplexes the MOSI/MISO and CE/CSN/SCK pins.
+**_2-pin support is in progress!_**  Using details on <http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html> NRFLite has working code for an ATtiny85 which multiplexes the MOSI/MISO and CE/CSN/SCK pins.
 - [x] POC for ATtiny85.
 - [x] Test main features:  bitrates, dynamic packets, ack packets, and interrupts.
 - [ ] Add ATtiny84 support.
@@ -11,6 +11,7 @@ Easily send dynamically-sized data packets, with or without dynamically-sized ac
 
 ```c++
 // TX example
+
 #include <SPI.h>
 #include <NRFLite.h>
 
@@ -31,6 +32,7 @@ void loop()
 ```
 ```c++
 // RX example
+
 #include <SPI.h>
 #include <NRFLite.h>
 
@@ -45,7 +47,8 @@ void setup()
 
 void loop()
 {
-    while (_radio.hasData()) {
+    while (_radio.hasData())
+    {
         _radio.readData(&_data);
         Serial.println(_data);
     }
