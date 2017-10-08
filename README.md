@@ -79,6 +79,7 @@ void loop()
 ![nRF24L01 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/nRF24L01_pinout_small.jpg)
 
 ###### ATmega328
+* Arduino Pin 10 is the hardware *Slave Select* pin and must stay as an OUTPUT for SPI operation.
 ```
 Radio SCK  -> Arduino 13 SCK
 Radio MISO -> Arduino 12 MISO
@@ -87,7 +88,6 @@ Radio CE   -> Any Arduino pin
 Radio CSN  -> Any Arduino pin (can be same as CE)
 Radio IRQ  -> Any Arduino pin (optional)
 ```
-*Arduino 10 is the hardware Slave Select pin and must stay as an OUTPUT for SPI operation.*
 ![ATmega328 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATmega328_pinout_small.jpg)
 
 ###### ATtiny84
