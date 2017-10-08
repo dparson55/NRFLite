@@ -108,5 +108,6 @@ Radio MOSI -> Physical Pin 6 PB1 Arduino 1
 Radio MISO -> Physical Pin 5 PB0 Arduino 0
 Radio CE   -> Any Arduino pin
 Radio CSN  -> Any Arduino pin (can be same as CE)
+Radio IRQ  -> Any Arduino pin (optional)
 ```
 ![ATtiny85 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny85_pinout_small.png)
