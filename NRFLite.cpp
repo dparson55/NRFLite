@@ -82,9 +82,9 @@ uint8_t NRFLite::hasAckData()
 {
     // If we have a pipe 0 packet sitting at the top of the RX FIFO buffer, we have auto-acknowledgment data.
     // We receive ACK data from other radios using the pipe 0 address.
-    if (getPipeOfFirstRxFifoPacket() == 0)
+    if (getPipeOfFirstRxPacket() == 0)
     {
-        return getRxFifoPacketLength(); // Return the length of the data packet in the RX FIFO buffer.
+        return getRxPacketLength(); // Return the length of the data packet in the RX FIFO buffer.
     }
     else
     {
@@ -129,9 +129,9 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
 
     // If we have a pipe 1 packet sitting at the top of the RX FIFO buffer, we have data.
     // We listen for data from other radios using the pipe 1 address.
-    if (getPipeOfFirstRxFifoPacket() == 1)
+    if (getPipeOfFirstRxPacket() == 1)
     {
-        return getRxFifoPacketLength(); // Return the length of the data packet in the RX FIFO buffer.
+        return getRxPacketLength(); // Return the length of the data packet in the RX FIFO buffer.
     }
     else
     {
@@ -225,13 +225,13 @@ void NRFLite::startSend(uint8_t toRadioId, void* data, uint8_t length, SendType 
     }
 }
 
-void NRFLite::whatHappened(uint8_t& tx_ok, uint8_t& tx_fail, uint8_t& rx_ready)
+void NRFLite::whatHappened(uint8_t& txOk, uint8_t& txFail, uint8_t& rxReady)
 {
     uint8_t statusReg = readRegister(STATUS);
     
-    tx_ok = statusReg & _BV(TX_DS);
-    tx_fail = statusReg & _BV(MAX_RT);
-    rx_ready = statusReg & _BV(RX_DR);
+    txOk = statusReg & _BV(TX_DS);
+    txFail = statusReg & _BV(MAX_RT);
+    rxReady = statusReg & _BV(RX_DR);
     
     // When we need to see interrupt flags, we disable the logic here which clears them.
     // Programs that have an interrupt handler for the radio's IRQ pin will use 'whatHappened'
@@ -291,7 +291,7 @@ void NRFLite::printDetails()
 // Private methods //
 /////////////////////
 
-uint8_t NRFLite::getPipeOfFirstRxFifoPacket()
+uint8_t NRFLite::getPipeOfFirstRxPacket()
 {
     // The pipe number is bits 3, 2, and 1.  So B1110 masks them and we shift right by 1 to get the pipe number.
     // Any value > 5 is not a pipe number.
@@ -301,7 +301,7 @@ uint8_t NRFLite::getPipeOfFirstRxFifoPacket()
     return (readRegister(STATUS) & B1110) >> 1;
 }
 
-uint8_t NRFLite::getRxFifoPacketLength()
+uint8_t NRFLite::getRxPacketLength()
 {
     // Read the length of the first data packet sitting in the RX FIFO buffer.
     uint8_t dataLength;

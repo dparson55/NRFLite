@@ -22,8 +22,8 @@ class NRFLite {
     //              Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
     // initTwoPin = Same as init with support for multiplexed MOSI/MISO and CE/CSN/SCK pins.  Details available on
     //              http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html
-	//              Note the capacitor and resistor values from the blog's schematic are not used, instead use
-	//              a 0.1uF capacitor, 220ohm resistor, and 3.3K to 6.8K resistor.
+	//              Note the capacitor and resistor values from the blog's schematic are not used, instead use a
+	//              0.1uF capacitor, 220ohm resistor, and 3.3K to 6.8K resistor (2 220ohm resistors in series works).
     // readData   = Loads a received data packet or ACK packet into the specified data parameter.
     // powerDown  = Power down the radio.  It only draws 900 nA in this state.  Power on the radio by calling one of the 
     //              'hasData' or 'send' methods.
@@ -58,7 +58,7 @@ class NRFLite {
     // hasDataISR   = Same as hasData(1) and is just for clarity.  It will greatly speed up the receive bitrate when CE and CSN 
     //                share the same pins.
     void startSend(uint8_t toRadioId, void* data, uint8_t length, SendType sendType = REQUIRE_ACK); 
-    void whatHappened(uint8_t& tx_ok, uint8_t& tx_fail, uint8_t& rx_ready); 
+    void whatHappened(uint8_t& txOk, uint8_t& txFail, uint8_t& rxReady);
     uint8_t hasDataISR(); 
     
   private:
@@ -71,8 +71,8 @@ class NRFLite {
 	uint16_t _transmissionRetryWaitMicros, _allowedDataCheckIntervalMicros;
 	uint64_t _microsSinceLastDataCheck;
     
-	uint8_t getPipeOfFirstRxFifoPacket();
-	uint8_t getRxFifoPacketLength();
+	uint8_t getPipeOfFirstRxPacket();
+	uint8_t getRxPacketLength();
 	uint8_t prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel);
 	void prepForTx(uint8_t toRadioId, SendType sendType);
 	uint8_t readRegister(uint8_t regName);
