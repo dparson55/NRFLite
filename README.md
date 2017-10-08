@@ -118,8 +118,8 @@ Radio IRQ  -> Any Arduino pin (optional)
 // 2-Pin Operation
 Radio VCC -----------------------> VCC   (no more than 3.6 volts on Radio's VCC pin)
 
-      +--------------------------> GND
-	  |
+            +--------------------> GND
+	    |
 Radio GND --+--||--+                                 (0.1uF capacitor)
                    |
 Radio CE ----------+
@@ -132,5 +132,5 @@ Radio MOSI ---------+-----------> Any Arduino pin
                     |
 Radio MISO --\/\/\--+                                (3.3K to 6.8K resistor...2 220ohm resistors in series works)
 
-Radio IRQ                      -> Any Arduino pin (optional)
+Radio IRQ ----------------------> Any Arduino pin (optional)
 ```
