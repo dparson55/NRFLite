@@ -1,9 +1,11 @@
-**_2-pin support is in progress!_**  Using details on <http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html> NRFLite has working code for an ATtiny85 which multiplexes the MOSI/MISO and CE/CSN/SCK pins.
-- [x] POC for ATtiny85.
+**_Oct 9: 2-pin support is in progress!_**  Using details on <http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html> NRFLite now has logic for an ATtiny85 @ 8MHz which multiplexes the MOSI/MISO and CE/CSN/SCK pins.  I got this working without the aid of an oscilloscope but haven't had any luck running the ATtiny @ 1 MHz, so finally have a reason to purchase one.  It should be here in a week or so. 
+- [x] POC for ATtiny85 @ 8MHz.
 - [x] Test main features:  bitrates, dynamic packets, ack packets, and interrupts.
 - [x] Add ATtiny84 support.
-- [ ] Add standard Arduino support.
+- [x] Add standard Arduino support.
+- [ ] Perform testing of the ATtiny85 @ 1MHz, ATtiny84 @ 1MHz and 8MHz, and Arduino Uno @ 16MHz.
 - [ ] Create examples.
+- [ ] Perform release (will be version 2.0.0).  Arduino development environments < 1.5 will no longer be supported.
 - [ ] Create tutorial video.
 
 ## NRFLite
