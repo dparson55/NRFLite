@@ -20,11 +20,11 @@ class NRFLite {
     // Methods for receivers and transmitters.
     // init       = Turns the radio on and puts it into receiving mode.  Returns 0 if it cannot communicate with the radio.
     //              Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
-    // initTwoPin = Same as init with support for multiplexed MOSI/MISO and CE/CSN/SCK pins.  Details available on
+    // initTwoPin = Same as init but with multiplexed MOSI/MISO and CE/CSN/SCK pins.  Details available on
     //              http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html
 	//              Note the capacitor and resistor values from the blog's schematic are not used, instead use a
-	//              0.1uF capacitor, 220ohm resistor, and 3.3K to 6.8K resistor (2 220ohm resistors in series works).
-    // readData   = Loads a received data packet or ACK packet into the specified data parameter.
+	//              0.1uF capacitor, 220ohm resistor, and 3.3K to 6.8K resistor.
+    // readData   = Loads a received data packet or acknowledgment packet into the specified data parameter.
     // powerDown  = Power down the radio.  It only draws 900 nA in this state.  Power on the radio by calling one of the 
     //              'hasData' or 'send' methods.
     // printDetails = For debugging, it prints most radio registers if a serial object is provided in the constructor.
@@ -37,7 +37,7 @@ class NRFLite {
     // Methods for transmitters.
     // send = Sends a data packet and waits for success or failure.  The default REQUIRE_ACK sendType causes the radio
 	//        to attempt sending the packet up to 16 times.  If no acknowledgement is received a 0 will be returned.
-	//        Optionally the NO_ACK sendType can be specified to only transmit the packet a single time.  It does not
+	//        Optionally the NO_ACK sendType can be specified to only transmit the packet 1 time.  It does not
 	//        matter if the packet is dropped or received by another radio, in both situations no acknowledgement
 	//        will be sent back.
     // hasAckData = Checks to see if an ACK data packet was received and returns its length.
@@ -46,17 +46,18 @@ class NRFLite {
 
     // Methods for receivers.
     // hasData    = Checks to see if a data packet has been received and returns its length.
-    // addAckData = Queues an acknowledgment packet for sending back to a transmitter.  Whenever the transmitter sends the 
+    // addAckData = Enqueues an acknowledgment packet for sending back to a transmitter.  Whenever the transmitter sends the 
     //              next data packet, it will get this ACK packet back in the response.  The radio will store up to 3 ACK packets
     //              but you can clear this buffer if you like using the 'removeExistingAcks' parameter.
     uint8_t hasData(uint8_t usingInterrupts = 0);
     void addAckData(void *data, uint8_t length, uint8_t removeExistingAcks = 0); 
     
     // Methods when using the radio's IRQ pin for interrupts.
+    // Note that if interrupts are used, do not use the send and hasData functions, the functions below must be used.
     // startSend    = Start sending a data packet without waiting for it to complete.
     // whatHappened = Use this inside the interrupt handler to see what caused the interrupt.
-    // hasDataISR   = Same as hasData(1) and is just for clarity.  It will greatly speed up the receive bitrate when CE and CSN 
-    //                share the same pins.
+    // hasDataISR   = Same as hasData(1) and is just for clarity.  It will greatly speed up the receive bitrate when
+    //                CE and CSN share the same pin.
     void startSend(uint8_t toRadioId, void *data, uint8_t length, SendType sendType = REQUIRE_ACK); 
     void whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady);
     uint8_t hasDataISR(); 
@@ -66,13 +67,14 @@ class NRFLite {
 	enum SpiTransferType { READ_OPERATION, WRITE_OPERATION };
 
 	Stream *_serial;
-	uint8_t _cePin, _csnPin, _momiPin;
+    volatile uint8_t *_momi_PORT;
+    volatile uint8_t *_momi_DDR;
+    volatile uint8_t *_momi_PIN;
+    volatile uint8_t *_sck_PORT;
+	uint8_t _cePin, _csnPin, _momi_MASK, _sck_MASK;
 	uint8_t _resetInterruptFlags, _useTwoPinSpiTransfer;
 	uint16_t _transmissionRetryWaitMicros, _allowedDataCheckIntervalMicros;
-	uint64_t _microsSinceLastDataCheck;
-
-    uint8_t _csnBitMask;
-    volatile uint8_t *_receivePortRegister;
+	uint32_t _microsSinceLastDataCheck;
     
 	uint8_t getPipeOfFirstRxPacket();
 	uint8_t getRxPacketLength();

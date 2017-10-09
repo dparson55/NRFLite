@@ -3,16 +3,16 @@
 #define debug(input)   { if (_serial) _serial->print(input);   }
 #define debugln(input) { if (_serial) _serial->println(input); }
 
-#if defined( __AVR_ATtiny84__ )
+#if defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
     const static uint8_t USI_DI = PA6;
     const static uint8_t USI_DO = PA5;
     const static uint8_t SCK    = PA4;
-#elif defined( __AVR_ATtiny85__ )
+#elif defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
     const static uint8_t USI_DI = PB0;
     const static uint8_t USI_DO = PB1;
     const static uint8_t SCK    = PB2;
 #else
-    #include <SPI.h> // Use the normal Arduino hardware SPI library if we are not on ATtiny.
+    #include <SPI.h> // Use the normal Arduino hardware SPI library if not an ATtiny.
 #endif
 
 ////////////////////
@@ -32,7 +32,7 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
     digitalWrite(_csnPin, HIGH);
     
     // Setup the microcontroller for SPI communication with the radio.
-    #if defined(__AVR_ATtiny84__) || defined(__AVR_ATtiny85__)
+    #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
         pinMode(USI_DI, INPUT ); digitalWrite(USI_DI, HIGH);
         pinMode(USI_DO, OUTPUT); digitalWrite(USI_DO, LOW);
         pinMode(SCK, OUTPUT); digitalWrite(SCK, LOW);
@@ -53,11 +53,26 @@ uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bi
     _useTwoPinSpiTransfer = 1;
     _cePin = sckPin;
     _csnPin = sckPin;
-    _momiPin = momiPin;
 
     // Default states for the 2 multiplexed pins.
-    pinMode(_momiPin, INPUT);
-    pinMode(_csnPin, OUTPUT); digitalWrite(_csnPin, HIGH);
+    pinMode(momiPin, INPUT);
+    pinMode(sckPin, OUTPUT); digitalWrite(sckPin, HIGH);
+
+    // These port and mask functions are in Arduino.h, e.g. arduino-1.8.1\hardware\arduino\avr\cores\arduino\Arduino.h
+    // We'll be doing direct port manipulation since timing is critical for the multiplexed SPI bit-banging.
+    _momi_PORT = portOutputRegister(digitalPinToPort(momiPin)); // returns PORT
+    _momi_DDR = portModeRegister(digitalPinToPort(momiPin));    // returns DDR
+    _momi_PIN = portInputRegister(digitalPinToPort(momiPin));   // returns PIN
+    _momi_MASK = digitalPinToBitMask(momiPin);
+    _sck_PORT = portOutputRegister(digitalPinToPort(sckPin));
+    _sck_MASK = digitalPinToBitMask(sckPin);
+
+    //printRegister("_momi_PORT", *(&_momi_PORT));
+    //printRegister("_momi_DDR", *(&_momi_DDR));
+    //printRegister("_momi_PIN", *(&_momi_PIN));
+    //printRegister("_momi_MASK", _momi_MASK);
+    //printRegister("_sck_PORT", *(&_sck_PORT));
+    //printRegister("_sck_MASK", _sck_MASK);
 
     return prepForRx(radioId, bitrate, channel);
 }
@@ -180,7 +195,7 @@ uint8_t NRFLite::send(uint8_t toRadioId, void *data, uint8_t length, SendType se
     // Start transmission.
     // If we have separate pins for CE and CSN, CE will be LOW and we must pulse it to start transmission.
     // If we use the same pin for CE and CSN, CE will already be HIGH and transmission will have started
-    // when data was loaded into the TX FIFO.  CSN is kept HIGH so the radio does not listen to the SPI bus.
+    // when data was loaded into the TX FIFO.
     if (_cePin != _csnPin)
     {
         digitalWrite(_cePin, HIGH);
@@ -329,6 +344,9 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     // Valid channel range is 2400 - 2525 MHz, in 1 MHz increments.
     if (channel > 125) { channel = 125; }
     writeRegister(RF_CH, channel);
+
+    //printRegister("RF_CH", readRegister(RF_CH));
+    //return 0;
 
     // Transmission speed, retry times, and output power setup.
     // For 2 Mbps or 1 Mbps operation, a 500 uS retry time is necessary to support the max ACK packet size.
@@ -492,50 +510,42 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
     
     digitalWrite(_csnPin, LOW); // Signal radio it should begin listening to the SPI bus.
 
-    #if defined(__AVR_ATtiny84__) || defined(__AVR_ATtiny85__)
-    
-        if (_useTwoPinSpiTransfer) {
-
-            // ATtiny transfer with multiplexed MOSI/MISO and CE/CSN/SCK pins.
-
-            noInterrupts();        // Timing is critical so interrupts are disabled during the bit bang transfer.
-            delayMicroseconds(50); // Allow capacitor on CSN pin to discharge.
-            twoPinTransfer(regName);
-            for (uint8_t i = 0; i < length; ++i) {
-                uint8_t newData = twoPinTransfer(intData[i]);
-                if (transferType == READ_OPERATION) { intData[i] = newData; }
-            }
-            interrupts();
+    if (_useTwoPinSpiTransfer)
+    {
+        noInterrupts();        // Timing is critical so interrupts are disabled during the bit-bang transfer.
+        delayMicroseconds(50); // Allow capacitor on CSN pin to discharge.
+        twoPinTransfer(regName);
+        for (uint8_t i = 0; i < length; ++i) {
+            uint8_t newData = twoPinTransfer(intData[i]);
+            if (transferType == READ_OPERATION) { intData[i] = newData; }
         }
-        else {
-
+        interrupts();
+    }
+    else
+    {
+        #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
             // ATtiny transfer with USI.
-
             usiTransfer(regName);
             for (uint8_t i = 0; i < length; ++i) {
                 uint8_t newData = usiTransfer(intData[i]);
                 if (transferType == READ_OPERATION) { intData[i] = newData; }
             }
-        }
-    
-    #else
-    
-        // ATmega transfer with the Arduino SPI library.
-    
-        SPI.transfer(regName);
-        for (uint8_t i = 0; i < length; ++i) {
-            uint8_t newData = SPI.transfer(intData[i]);
-            if (transferType == READ_OPERATION) { intData[i] = newData; }
-        }
-    
-    #endif
-    
+        #else
+            // ATmega transfer with the Arduino SPI library.
+            SPI.transfer(regName);
+            for (uint8_t i = 0; i < length; ++i) {
+                uint8_t newData = SPI.transfer(intData[i]);
+                if (transferType == READ_OPERATION) { intData[i] = newData; }
+            }
+        #endif
+    }
+
     digitalWrite(_csnPin, HIGH); // Stop radio from listening to the SPI bus.
 }
 
 uint8_t NRFLite::usiTransfer(uint8_t data)
 {
-    #if defined(__AVR_ATtiny84__) || defined(__AVR_ATtiny85__)
+    #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
     
         USIDR = data;
         USISR = _BV(USIOIF);
@@ -552,33 +562,51 @@ uint8_t NRFLite::usiTransfer(uint8_t data)
 
 uint8_t NRFLite::twoPinTransfer(uint8_t data)
 {
+    // Example for ATtiny84 sckPin = 9 and momiPin = 7.
+
+    // _momi_PORT = PORTA
+    // _momi_DDR  = DDRA
+    // _momi_PIN  = PINA
+    // _momi_MASK = 1000 0000 (PA7 port pin)
+    // _sck_PORT  = PORTB
+    // _sck_MASK  = 0000 0010 (PB1 port pin)
+
+    // Reminder for myself:  toggling SCK by writing 1 to its PIN register did not work when using the pointer reference.
+    // Couldn't figure out the issue so controlled the pin using _sck_PORT instead.
+    // Worked:        PINB != _sck_MASK
+    // Did not work:  *_sck_PIN != _sck_MASK
+
+    //printRegister("data_in", data);
+
     uint8_t byteFromRadio, bits = 8;
 
     do {
-        byteFromRadio <<= 1;                       // Shift the byte we are building to the left 1 step.
-        if (PINB & _BV(_momiPin)) byteFromRadio++; // Read MOMI pin.  If HIGH, set bit position 0 of our byte to 1.
-        DDRB |= _BV(_momiPin);                     // Change MOMI to be an OUTPUT pin.
-        if (data & 0x80) PORTB |= _BV(_momiPin);   // If bit position 7 of the byte we are sending is 1, set MOMI HIGH.
-        PINB |= _BV(_csnPin);                      // Set SCK HIGH.  This transfers the bit to the radio.
-                                                   // CSN will remain LOW while the capacitor begins charging.
-        DDRB &= ~_BV(_momiPin);                    // Change MOMI back to being an INPUT pin.
-        PINB |= _BV(_csnPin);    // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
-        PORTB &= ~_BV(_momiPin); // Ensure MOMI, currently an INPUT, does not have its pullup resistor enabled.
-        data <<= 1;              // Shift the byte we are sending to the left 1 step.
+        byteFromRadio <<= 1;                          // Shift the byte we are building to the left 1 step.
+        if (*_momi_PIN & _momi_MASK) byteFromRadio++; // Read MOMI pin.  If HIGH, set bit position 0 of our byte to 1.
+        *_momi_DDR |= _momi_MASK;                     // Change MOMI to be an OUTPUT pin.
+        if (data & 0x80) *_momi_PORT |= _momi_MASK;   // If bit position 7 of the byte we are sending is 1, set MOMI HIGH.
+        *_sck_PORT |= _sck_MASK;                      // Set SCK HIGH.  This transfers the bit to the radio.
+                                                      // CSN will remain LOW while the capacitor begins charging.
+        *_momi_DDR &= ~_momi_MASK;                    // Change MOMI back to being an INPUT pin.
+        *_sck_PORT &= ~_sck_MASK;   // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
+        *_momi_PORT &= ~_momi_MASK; // Ensure MOMI, currently an INPUT, does not have its pullup resistor enabled.
+        data <<= 1;                 // Shift the byte we are sending to the left 1 step.
     } while (--bits);
+
+    //printRegister("                 data_out", byteFromRadio);
 
     return byteFromRadio;
 }
 
 void NRFLite::printRegister(char *name, uint8_t reg)
 {
-    debug(name);
-    debug(" = ");
-    
+    String msg = name;
+    msg += " ";
+
     for (int i = 7; i >= 0; i--)
     {
-        debug(bitRead(reg, i));
+        msg += bitRead(reg, i);
     }
-    
-    debugln();
+
+    debugln(msg);
 }
