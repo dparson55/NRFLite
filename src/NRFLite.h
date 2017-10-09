@@ -12,7 +12,7 @@ class NRFLite {
     // You can pass in an Arduino Serial or SoftwareSerial object for use throughout the library when debugging.
     // This approach allows both Serial and SoftwareSerial support so debugging on ATtinys is made easier.
     NRFLite() {}
-    NRFLite(Stream& serial) : _serial(&serial) {}
+    NRFLite(Stream &serial) : _serial(&serial) {}
     
     enum Bitrates { BITRATE2MBPS, BITRATE1MBPS, BITRATE250KBPS };
     enum SendType { REQUIRE_ACK, NO_ACK };
@@ -30,7 +30,7 @@ class NRFLite {
     // printDetails = For debugging, it prints most radio registers if a serial object is provided in the constructor.
     uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
     uint8_t initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
-    void readData(void* data);
+    void readData(void *data);
     void powerDown();
     void printDetails();
 
@@ -41,7 +41,7 @@ class NRFLite {
 	//        matter if the packet is dropped or received by another radio, in both situations no acknowledgement
 	//        will be sent back.
     // hasAckData = Checks to see if an ACK data packet was received and returns its length.
-    uint8_t send(uint8_t toRadioId, void* data, uint8_t length, SendType sendType = REQUIRE_ACK);
+    uint8_t send(uint8_t toRadioId, void *data, uint8_t length, SendType sendType = REQUIRE_ACK);
     uint8_t hasAckData();
 
     // Methods for receivers.
@@ -50,26 +50,29 @@ class NRFLite {
     //              next data packet, it will get this ACK packet back in the response.  The radio will store up to 3 ACK packets
     //              but you can clear this buffer if you like using the 'removeExistingAcks' parameter.
     uint8_t hasData(uint8_t usingInterrupts = 0);
-    void addAckData(void* data, uint8_t length, uint8_t removeExistingAcks = 0); 
+    void addAckData(void *data, uint8_t length, uint8_t removeExistingAcks = 0); 
     
     // Methods when using the radio's IRQ pin for interrupts.
     // startSend    = Start sending a data packet without waiting for it to complete.
     // whatHappened = Use this inside the interrupt handler to see what caused the interrupt.
     // hasDataISR   = Same as hasData(1) and is just for clarity.  It will greatly speed up the receive bitrate when CE and CSN 
     //                share the same pins.
-    void startSend(uint8_t toRadioId, void* data, uint8_t length, SendType sendType = REQUIRE_ACK); 
-    void whatHappened(uint8_t& txOk, uint8_t& txFail, uint8_t& rxReady);
+    void startSend(uint8_t toRadioId, void *data, uint8_t length, SendType sendType = REQUIRE_ACK); 
+    void whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady);
     uint8_t hasDataISR(); 
     
   private:
     
 	enum SpiTransferType { READ_OPERATION, WRITE_OPERATION };
 
-	Stream* _serial;
+	Stream *_serial;
 	uint8_t _cePin, _csnPin, _momiPin;
 	uint8_t _resetInterruptFlags, _useTwoPinSpiTransfer;
 	uint16_t _transmissionRetryWaitMicros, _allowedDataCheckIntervalMicros;
 	uint64_t _microsSinceLastDataCheck;
+
+    uint8_t _csnBitMask;
+    volatile uint8_t *_receivePortRegister;
     
 	uint8_t getPipeOfFirstRxPacket();
 	uint8_t getRxPacketLength();
@@ -83,7 +86,7 @@ class NRFLite {
 	uint8_t usiTransfer(uint8_t data);    
 	uint8_t twoPinTransfer(uint8_t data);
 
-	void printRegister(char* name, uint8_t regName);
+	void printRegister(char *name, uint8_t regName);
 };
 
 #endif

@@ -62,7 +62,7 @@ uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bi
     return prepForRx(radioId, bitrate, channel);
 }
 
-void NRFLite::addAckData(void* data, uint8_t length, uint8_t removeExistingAcks)
+void NRFLite::addAckData(void *data, uint8_t length, uint8_t removeExistingAcks)
 {
     // Up to 3 auto-acknowledgment packets can be enqueued in the TX FIFO buffer.  Users might want to ensure
     // the next ACK packet provided has the most up to date data (like a battery voltage level),
@@ -147,7 +147,7 @@ uint8_t NRFLite::hasDataISR()
     return hasData(1); // usingInterrupts = 1
 }
 
-void NRFLite::readData(void* data)
+void NRFLite::readData(void *data)
 {
     // Determine length of data in the RX FIFO buffer and read it.
     uint8_t dataLength;
@@ -162,7 +162,7 @@ void NRFLite::readData(void* data)
     }
 }
 
-uint8_t NRFLite::send(uint8_t toRadioId, void* data, uint8_t length, SendType sendType)
+uint8_t NRFLite::send(uint8_t toRadioId, void *data, uint8_t length, SendType sendType)
 {
     prepForTx(toRadioId, sendType);
 
@@ -208,7 +208,7 @@ uint8_t NRFLite::send(uint8_t toRadioId, void* data, uint8_t length, SendType se
     }
 }
 
-void NRFLite::startSend(uint8_t toRadioId, void* data, uint8_t length, SendType sendType)
+void NRFLite::startSend(uint8_t toRadioId, void *data, uint8_t length, SendType sendType)
 {
     prepForTx(toRadioId, sendType);
     
@@ -225,7 +225,7 @@ void NRFLite::startSend(uint8_t toRadioId, void* data, uint8_t length, SendType 
     }
 }
 
-void NRFLite::whatHappened(uint8_t& txOk, uint8_t& txFail, uint8_t& rxReady)
+void NRFLite::whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady)
 {
     uint8_t statusReg = readRegister(STATUS);
     
@@ -471,7 +471,7 @@ uint8_t NRFLite::readRegister(uint8_t regName)
     return data;
 }
 
-void NRFLite::readRegister(uint8_t regName, void* data, uint8_t length)
+void NRFLite::readRegister(uint8_t regName, void *data, uint8_t length)
 {
     spiTransfer(READ_OPERATION, (R_REGISTER | (REGISTER_MASK & regName)), data, length);
 }
@@ -481,12 +481,12 @@ void NRFLite::writeRegister(uint8_t regName, uint8_t data)
     writeRegister(regName, &data, 1);
 }
 
-void NRFLite::writeRegister(uint8_t regName, void* data, uint8_t length)
+void NRFLite::writeRegister(uint8_t regName, void *data, uint8_t length)
 {
     spiTransfer(WRITE_OPERATION, (W_REGISTER | (REGISTER_MASK & regName)), data, length);
 }
 
-void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void* data, uint8_t length)
+void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *data, uint8_t length)
 {
     uint8_t* intData = reinterpret_cast<uint8_t*>(data);
     
@@ -570,7 +570,7 @@ uint8_t NRFLite::twoPinTransfer(uint8_t data)
     return byteFromRadio;
 }
 
-void NRFLite::printRegister(char* name, uint8_t reg)
+void NRFLite::printRegister(char *name, uint8_t reg)
 {
     debug(name);
     debug(" = ");
