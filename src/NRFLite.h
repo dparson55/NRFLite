@@ -9,8 +9,8 @@ class NRFLite {
   public:
     
     // Constructors
-    // You can pass in an Arduino Serial or SoftwareSerial object for use throughout the library when debugging.
-    // This approach allows both Serial and SoftwareSerial support so debugging on ATtinys is made easier.
+    // Optionally pass in an Arduino Serial or SoftwareSerial object for use throughout the library when debugging.
+    // Use the debug and debugln DEFINES in NRFLite.cpp to use the serial object.
     NRFLite() {}
     NRFLite(Stream &serial) : _serial(&serial) {}
     
@@ -48,12 +48,12 @@ class NRFLite {
     // hasData    = Checks to see if a data packet has been received and returns its length.
     // addAckData = Enqueues an acknowledgment packet for sending back to a transmitter.  Whenever the transmitter sends the 
     //              next data packet, it will get this ACK packet back in the response.  The radio will store up to 3 ACK packets
-    //              but you can clear this buffer if you like using the 'removeExistingAcks' parameter.
+    //              and will not enqueue more if full, so you can clear any stale packets using the 'removeExistingAcks' parameter.
     uint8_t hasData(uint8_t usingInterrupts = 0);
     void addAckData(void *data, uint8_t length, uint8_t removeExistingAcks = 0); 
     
     // Methods when using the radio's IRQ pin for interrupts.
-    // Note that if interrupts are used, do not use the send and hasData functions, the functions below must be used.
+    // Note that if interrupts are used, do not use the send and hasData functions.  Instead the functions below must be used.
     // startSend    = Start sending a data packet without waiting for it to complete.
     // whatHappened = Use this inside the interrupt handler to see what caused the interrupt.
     // hasDataISR   = Same as hasData(1) and is just for clarity.  It will greatly speed up the receive bitrate when

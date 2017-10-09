@@ -25,7 +25,7 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
     _cePin = cePin;
     _csnPin = csnPin;
     
-    // Default states for the radio control pins.  When CSN is LOW the radio listens to SPI communication,
+    // Default states for the radio pins.  When CSN is LOW the radio listens to SPI communication,
     // so we operate most of the time with CSN HIGH.
     pinMode(_cePin, OUTPUT);
     pinMode(_csnPin, OUTPUT);
@@ -79,9 +79,6 @@ uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bi
 
 void NRFLite::addAckData(void *data, uint8_t length, uint8_t removeExistingAcks)
 {
-    // Up to 3 auto-acknowledgment packets can be enqueued in the TX FIFO buffer.  Users might want to ensure
-    // the next ACK packet provided has the most up to date data (like a battery voltage level),
-    // so this gives them the option to remove any previously added ACKs that have not yet gone out.
     if (removeExistingAcks)
     {
         spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0); // Clear the TX FIFO buffer.
@@ -285,21 +282,18 @@ void NRFLite::printDetails()
     
     uint8_t data[5];
     
-    debug("TX_ADDR = ");
+    String msg = "TX_ADDR ";
     readRegister(TX_ADDR, &data, 5);
-    for (uint8_t i=0; i<5; i++) debug(data[i]);
-    debugln();
+    for (uint8_t i = 0; i < 5; i++) msg += data[i];
     
-    debug("RX_ADDR_P0 = ");
+    msg += "\nRX_ADDR_P0 ";
     readRegister(RX_ADDR_P0, &data, 5);
-    for (uint8_t i=0; i<5; i++) debug(data[i]);
-    debugln();
-    
-    debug("RX_ADDR_P1 = ");
+    for (uint8_t i = 0; i < 5; i++) msg += data[i];
+
+    msg += "\nRX_ADDR_P1 ";
     readRegister(RX_ADDR_P1, &data, 5);
-    for (uint8_t i=0; i<5; i++) debug(data[i]);
-    debugln();
-    debugln();
+    for (uint8_t i = 0; i < 5; i++) msg += data[i];
+    debugln(msg);
 }
 
 /////////////////////
@@ -309,7 +303,6 @@ void NRFLite::printDetails()
 uint8_t NRFLite::getPipeOfFirstRxPacket()
 {
     // The pipe number is bits 3, 2, and 1.  So B1110 masks them and we shift right by 1 to get the pipe number.
-    // Any value > 5 is not a pipe number.
     // 000-101 = Data Pipe Number
     //     110 = Not Used
     //     111 = RX FIFO Empty
