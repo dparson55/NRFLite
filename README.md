@@ -1,7 +1,7 @@
 **_2-pin support is in progress!_**  Using details on <http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html> NRFLite has working code for an ATtiny85 which multiplexes the MOSI/MISO and CE/CSN/SCK pins.
 - [x] POC for ATtiny85.
 - [x] Test main features:  bitrates, dynamic packets, ack packets, and interrupts.
-- [ ] Add ATtiny84 support.
+- [x] Add ATtiny84 support.
 - [ ] Add standard Arduino support.
 - [ ] Create examples.
 - [ ] Create tutorial video.
@@ -60,12 +60,9 @@ void loop()
 [![Tutorial 1](http://img.youtube.com/vi/tWEgvS7Sj-8/default.jpg)](https://youtu.be/tWEgvS7Sj-8)
 
 ### Features
-* 4-pin operation that behaves the same as when separate pins are used.
+* 4-pin and soon even 2-pin operation that behaves the same as when separate pins are used.
 * Operation with or without interrupts using the radio's IRQ pin.
 * Supports ATtiny84/85 when used with the MIT High-Low Tech Arduino library http://highlowtech.org/?p=1695.
-  * When using an ATtiny with an older Arduino toolchain like 1.0.5, if you get a R_AVR_13_PCREL compilation error when your sketch is >4KB, a fix is available on https://github.com/TCWORLD/ATTinyCore/tree/master/PCREL%20Patch%20for%20GCC
-    
-### Goals
 * Small set of methods:  not everything the radio supports is exposed but the library is kept easy to use.
 * No need to enable or disable features like retries, auto-acknowledgment packets, and dynamic packet sizes; those simply work out of the box.
 * No need for calling programs to add delays or implement timeouts.
@@ -116,7 +113,7 @@ Radio IRQ  -> Any Arduino pin (optional)
 ![ATtiny85 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny85_pinout_small.png)
 ```
 // 2-Pin Operation
-Radio VCC -----------------------> VCC   (no more than 3.6 volts on Radio's VCC pin)
+Radio VCC -----------------------> VCC               (no more than 3.6 volts on Radio's VCC pin)
 
             +--------------------> GND
 	    |
@@ -130,7 +127,7 @@ Radio SCK -------------------+--> Any Arduino pin
 
 Radio MOSI ---------+-----------> Any Arduino pin
                     |
-Radio MISO --\/\/\--+                                (3.3K to 6.8K resistor...2 220ohm resistors in series works)
+Radio MISO --\/\/\--+                                (3.3K to 6.8K resistor)
 
-Radio IRQ ----------------------> Any Arduino pin (optional)
+Radio IRQ ----------------------> Any Arduino pin    (optional)
 ```
