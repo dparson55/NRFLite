@@ -69,7 +69,7 @@ void loop()
 * 4-pin operation using shared CE and CSN pins.
 * Operation with or without interrupts using the radio's IRQ pin.
 * ATtiny84/85 support when used with the MIT High-Low Tech Arduino library http://highlowtech.org/?p=1695.
-* Very easy to use:  not everything the radio supports is implemented but the library has a very small set of methods.
+* Very easy to use:  not everything the radio supports is implemented but the library has a small number of methods.
 * No need to enable features like retries, auto-acknowledgment packets, and dynamic packet sizes; they simply work.
 * No need to add delays or implement timeouts.
 * No long radio addresses to manage.
