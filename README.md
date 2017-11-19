@@ -1,4 +1,4 @@
-**_Nov 18: With the help of a Rigol 1054, 2-pin mode is now working!  It is flawless when using the default 2MBPS radio data rate but 1MBPS and 250KBPS rates are experience a few dropped packets in certain situations.  I think it is good enough for release though so am starting work on examples next.
+**_Nov 18: With the help of a Rigol 1054, 2-pin mode is now working!_**  It is flawless when using the default 2MBPS radio data rate but 1MBPS and 250KBPS rates experience a few dropped packets in certain situations.  I think it is good enough for release so am starting work on the examples.
 **_Oct 9: 2-pin support is in progress!_**  Using details on <http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html> NRFLite now has logic for an ATtiny85 @ 8MHz which multiplexes the MOSI/MISO and CE/CSN/SCK pins.  I got this working without the aid of an oscilloscope but haven't had any luck running the ATtiny @ 1 MHz, so finally have a reason to purchase one.  It should be here in a week or so. 
 - [x] POC for ATtiny85 @ 8MHz.
 - [x] Test main features:  bitrates, dynamic packets, ack packets, and interrupts.
@@ -71,15 +71,15 @@ void loop()
 * No need for calling programs to add delays or implement timeouts.
 * No long radio addresses for calling programs to manage.
 
-### Connections
-###### nRF24L01+
+### nRF24L01+ Pin Names
 
 ![nRF24L01 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/nRF24L01_pinout_small.jpg)
 
-###### 2-Pin Operation
+### 2-Pin Hookup Guide
 
 ![2-Pin](https://github.com/dparson55/NRFLite/raw/master/extras/Two_pin_schematic.png)
 
+### 4-6 Pin Hookup Guide
 ###### ATmega328
 * Arduino Pin 10 is the *hardware SPI slave select* pin and must stay as an OUTPUT.
 ```
