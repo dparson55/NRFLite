@@ -91,9 +91,9 @@ void loop()
 Radio MISO -> Arduino 12 MISO
 Radio MOSI -> Arduino 11 MOSI
 Radio SCK  -> Arduino 13 SCK
-Radio CE   -> Any Arduino pin (pin 10 is recommended)
-Radio CSN  -> Any Arduino pin (can be same as CE)
-Radio IRQ  -> Any Arduino pin (optional)
+Radio CE   -> Any GPIO Pin (can be same as CSN)
+Radio CSN  -> Any GPIO Pin (pin 10 recommended)
+Radio IRQ  -> Any GPIO Pin (optional)
 ```
 ![ATmega328 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATmega328_pinout_small.jpg)
 
@@ -102,9 +102,9 @@ Radio IRQ  -> Any Arduino pin (optional)
 Radio MISO -> Physical Pin 7, Arduino 6
 Radio MOSI -> Physical Pin 8, Arduino 5
 Radio SCK  -> Physical Pin 9, Arduino 4
-Radio CE   -> Any Arduino pin
-Radio CSN  -> Any Arduino pin (can be same as CE)
-Radio IRQ  -> Any Arduino pin (optional)
+Radio CE   -> Any GPIO Pin (can be same as CSN)
+Radio CSN  -> Any GPIO Pin
+Radio IRQ  -> Any GPIO Pin (optional)
 ```
 ![ATtiny84 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny84_pinout_small.png)
 
@@ -113,8 +113,8 @@ Radio IRQ  -> Any Arduino pin (optional)
 Radio MISO -> Physical Pin 5, Arduino 0
 Radio MOSI -> Physical Pin 6, Arduino 1
 Radio SCK  -> Physical Pin 7, Arduino 2
-Radio CE   -> Any Arduino pin
-Radio CSN  -> Any Arduino pin (can be same as CE)
-Radio IRQ  -> Any Arduino pin (optional)
+Radio CE   -> Any GPIO Pin (can be same as CSN)
+Radio CSN  -> Any GPIO Pin
+Radio IRQ  -> Any GPIO Pin (optional)
 ```
 ![ATtiny85 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny85_pinout_small.png)
