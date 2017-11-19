@@ -3,6 +3,10 @@
 #define debug(input)   { if (_serial) _serial->print(input);   }
 #define debugln(input) { if (_serial) _serial->println(input); }
 
+// Delay used to discharge the radio's CSN pin when operating in 2Pin mode.  It is not fast but
+// worked with 1MHz, 8MHz, and 16MHz Atmel's @ 3.3 and 5V while using a 1uF capacitor with 1K resistor.
+const static uint8_t CSN_DISCHARGE_MILLIS = 5;
+
 #if defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
     const static uint8_t USI_DI = PA6;
     const static uint8_t USI_DO = PA5;
@@ -59,10 +63,10 @@ uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bi
     pinMode(sckPin, OUTPUT); digitalWrite(sckPin, HIGH);
 
     // These port and mask functions are in Arduino.h, e.g. arduino-1.8.1\hardware\arduino\avr\cores\arduino\Arduino.h
-    // We'll be doing direct port manipulation since timing is critical for the multiplexed SPI bit-banging.
-    _momi_PORT = portOutputRegister(digitalPinToPort(momiPin)); // returns PORT
-    _momi_DDR = portModeRegister(digitalPinToPort(momiPin));    // returns DDR
-    _momi_PIN = portInputRegister(digitalPinToPort(momiPin));   // returns PIN
+    // Direct port manipulation is used since timing is critical for the multiplexed SPI bit-banging.
+    _momi_PORT = portOutputRegister(digitalPinToPort(momiPin));
+    _momi_DDR = portModeRegister(digitalPinToPort(momiPin));
+    _momi_PIN = portInputRegister(digitalPinToPort(momiPin));
     _momi_MASK = digitalPinToBitMask(momiPin);
     _sck_PORT = portOutputRegister(digitalPinToPort(sckPin));
     _sck_MASK = digitalPinToBitMask(sckPin);
@@ -113,7 +117,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
     // is not continually polling hasData.  So 'usingInterrupts' = 1 bypasses the logic.
     if (_cePin == _csnPin && !usingInterrupts)
     {
-        if (micros() - _microsSinceLastDataCheck < _allowedDataCheckIntervalMicros)
+        if (micros() - _microsSinceLastDataCheck < _maxHasDataIntervalMicros)
         {
             return 0; // Prevent the calling program from forcing us to bring CE low, making the radio stop receiving.
         }
@@ -338,9 +342,6 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     if (channel > 125) { channel = 125; }
     writeRegister(RF_CH, channel);
 
-    //printRegister("RF_CH", readRegister(RF_CH));
-    //return 0;
-
     // Transmission speed, retry times, and output power setup.
     // For 2 Mbps or 1 Mbps operation, a 500 uS retry time is necessary to support the max ACK packet size.
     // For 250 Kbps operation, a 1500 uS retry time is necessary.
@@ -354,21 +355,21 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     {
         writeRegister(RF_SETUP, B00001110);     // 2 Mbps, 0 dBm output power
         writeRegister(SETUP_RETR, B00011111);   // 0001 =  500 uS between retries, 1111 = 15 retries
-        _allowedDataCheckIntervalMicros = 600;
+        _maxHasDataIntervalMicros = 600;
         _transmissionRetryWaitMicros = 250;
     }
     else if (bitrate == BITRATE1MBPS)
     {
         writeRegister(RF_SETUP, B00000110);     // 1 Mbps, 0 dBm output power
         writeRegister(SETUP_RETR, B00011111);   // 0001 =  500 uS between retries, 1111 = 15 retries
-        _allowedDataCheckIntervalMicros = 1200;
+        _maxHasDataIntervalMicros = 1200;
         _transmissionRetryWaitMicros = 1000;
     }
     else
     {
         writeRegister(RF_SETUP, B00100110);     // 250 Kbps, 0 dBm output power
         writeRegister(SETUP_RETR, B01011111);   // 0101 = 1500 uS between retries, 1111 = 15 retries
-        _allowedDataCheckIntervalMicros = 8000;
+        _maxHasDataIntervalMicros = 30000;      // Really slow to account for 1MHz uC's using 2Pin mode
         _transmissionRetryWaitMicros = 1500;
     }
 
@@ -500,22 +501,27 @@ void NRFLite::writeRegister(uint8_t regName, void *data, uint8_t length)
 void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *data, uint8_t length)
 {
     uint8_t* intData = reinterpret_cast<uint8_t*>(data);
-    
-    digitalWrite(_csnPin, LOW); // Signal radio it should begin listening to the SPI bus.
 
     if (_useTwoPinSpiTransfer)
     {
-        noInterrupts();        // Timing is critical so interrupts are disabled during the bit-bang transfer.
-        delayMicroseconds(50); // Allow capacitor on CSN pin to discharge.
+        digitalWrite(_csnPin, LOW);  // Signal radio it should begin listening to the SPI bus.
+        delay(CSN_DISCHARGE_MILLIS); // Allow capacitor on CSN pin to discharge.
+        noInterrupts();              // Timing is critical so interrupts are disabled during the bit-bang transfer.
         twoPinTransfer(regName);
+
         for (uint8_t i = 0; i < length; ++i) {
             uint8_t newData = twoPinTransfer(intData[i]);
             if (transferType == READ_OPERATION) { intData[i] = newData; }
         }
+        
+        digitalWrite(_csnPin, HIGH); // Stop radio from listening to the SPI bus.
         interrupts();
+        delay(CSN_DISCHARGE_MILLIS); // Allow capacitor on CSN pin to recharge.
     }
     else
     {
+        digitalWrite(_csnPin, LOW); // Signal radio it should begin listening to the SPI bus.
+
         #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
             // ATtiny transfer with USI.
             usiTransfer(regName);
@@ -531,9 +537,9 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
                 if (transferType == READ_OPERATION) { intData[i] = newData; }
             }
         #endif
-    }
 
-    digitalWrite(_csnPin, HIGH); // Stop radio from listening to the SPI bus.
+        digitalWrite(_csnPin, HIGH); // Stop radio from listening to the SPI bus.
+    }
 }
 
 uint8_t NRFLite::usiTransfer(uint8_t data)
@@ -555,21 +561,10 @@ uint8_t NRFLite::usiTransfer(uint8_t data)
 
 uint8_t NRFLite::twoPinTransfer(uint8_t data)
 {
-    // Example for ATtiny84 sckPin = 9 and momiPin = 7.
-
-    // _momi_PORT = PORTA
-    // _momi_DDR  = DDRA
-    // _momi_PIN  = PINA
-    // _momi_MASK = 1000 0000 (PA7 port pin)
-    // _sck_PORT  = PORTB
-    // _sck_MASK  = 0000 0010 (PB1 port pin)
-
-    // Reminder for myself:  toggling SCK by writing 1 to its PIN register did not work when using the pointer reference.
+    // Note to self:  toggling SCK by writing 1 to its PIN register did not work when using a pointer reference.
     // Couldn't figure out the issue so controlled the pin using _sck_PORT instead.
     // Worked:        PINB != _sck_MASK
     // Did not work:  *_sck_PIN != _sck_MASK
-
-    //printRegister("data_in", data);
 
     uint8_t byteFromRadio, bits = 8;
 
@@ -577,7 +572,10 @@ uint8_t NRFLite::twoPinTransfer(uint8_t data)
         byteFromRadio <<= 1;                          // Shift the byte we are building to the left 1 step.
         if (*_momi_PIN & _momi_MASK) byteFromRadio++; // Read MOMI pin.  If HIGH, set bit position 0 of our byte to 1.
         *_momi_DDR |= _momi_MASK;                     // Change MOMI to be an OUTPUT pin.
-        if (data & 0x80) *_momi_PORT |= _momi_MASK;   // If bit position 7 of the byte we are sending is 1, set MOMI HIGH.
+
+        if (data & 0x80) { *_momi_PORT |=  _momi_MASK; } // If bit position 7 of the byte we are sending is 1, set MOMI HIGH.
+        else             { *_momi_PORT &= ~_momi_MASK; }
+        
         *_sck_PORT |= _sck_MASK;                      // Set SCK HIGH.  This transfers the bit to the radio.
                                                       // CSN will remain LOW while the capacitor begins charging.
         *_momi_DDR &= ~_momi_MASK;                    // Change MOMI back to being an INPUT pin.
@@ -585,8 +583,6 @@ uint8_t NRFLite::twoPinTransfer(uint8_t data)
         *_momi_PORT &= ~_momi_MASK; // Ensure MOMI, currently an INPUT, does not have its pullup resistor enabled.
         data <<= 1;                 // Shift the byte we are sending to the left 1 step.
     } while (--bits);
-
-    //printRegister("                 data_out", byteFromRadio);
 
     return byteFromRadio;
 }

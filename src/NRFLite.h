@@ -22,8 +22,8 @@ class NRFLite {
     //              Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
     // initTwoPin = Same as init but with multiplexed MOSI/MISO and CE/CSN/SCK pins.  Details available on
     //              http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html
-    //              Note the capacitor and resistor values from the blog's schematic are not used, instead use a
-    //              0.1uF capacitor, 220ohm resistor, and 3.3K to 6.8K resistor.
+    //              Note the capacitor and resistor values from the blog's schematic are not used, instead use a 1uF capacitor, 
+    //              1K resistor between CE/CSN and SCK, and 3K resistor between MOSI and MISO (three 1K in series works too).
     // readData   = Loads a received data packet or acknowledgment packet into the specified data parameter.
     // powerDown  = Power down the radio.  It only draws 900 nA in this state.  Power on the radio by calling one of the 
     //              'hasData' or 'send' methods.
@@ -73,7 +73,7 @@ class NRFLite {
     volatile uint8_t *_sck_PORT;
     uint8_t _cePin, _csnPin, _momi_MASK, _sck_MASK;
     uint8_t _resetInterruptFlags, _useTwoPinSpiTransfer;
-    uint16_t _transmissionRetryWaitMicros, _allowedDataCheckIntervalMicros;
+    uint16_t _transmissionRetryWaitMicros, _maxHasDataIntervalMicros;
     uint32_t _microsSinceLastDataCheck;
     
     uint8_t getPipeOfFirstRxPacket();
