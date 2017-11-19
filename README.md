@@ -1,9 +1,10 @@
+**_Nov 18: With the help of a Rigol 1054, 2-pin mode is now working!  It is flawless when using the default 2MBPS radio data rate but 1MBPS and 250KBPS rates are experience a few dropped packets in certain situations.  I think it is good enough for release though so am starting work on examples next.
 **_Oct 9: 2-pin support is in progress!_**  Using details on <http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html> NRFLite now has logic for an ATtiny85 @ 8MHz which multiplexes the MOSI/MISO and CE/CSN/SCK pins.  I got this working without the aid of an oscilloscope but haven't had any luck running the ATtiny @ 1 MHz, so finally have a reason to purchase one.  It should be here in a week or so. 
 - [x] POC for ATtiny85 @ 8MHz.
 - [x] Test main features:  bitrates, dynamic packets, ack packets, and interrupts.
 - [x] Add ATtiny84 support.
 - [x] Add standard Arduino support.
-- [ ] Perform testing of the ATtiny85 @ 1MHz, ATtiny84 @ 1MHz and 8MHz, and Arduino Uno @ 16MHz.
+- [x] Perform testing of the ATtiny85 @ 1MHz, ATtiny84 @ 1MHz and 8MHz, and Arduino Uno @ 16MHz.
 - [ ] Create examples.
 - [ ] Perform release (will be version 2.0.0).  Arduino development environments < 1.5 will no longer be supported.
 - [ ] Create tutorial video.
@@ -72,10 +73,12 @@ void loop()
 
 ### Connections
 ###### nRF24L01+
-* IRQ provides interrupt support and is optional.
-* CE and CSN can use the same pin on the microcontroller.
 
 ![nRF24L01 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/nRF24L01_pinout_small.jpg)
+
+###### 2-Pin Operation
+
+![2-Pin](https://github.com/dparson55/NRFLite/raw/master/extras/Two_pin_schematic.png)
 
 ###### ATmega328
 * Arduino Pin 10 is the *hardware SPI slave select* pin and must stay as an OUTPUT.
@@ -113,23 +116,3 @@ Radio CSN  -> Any Arduino pin (can be same as CE)
 Radio IRQ  -> Any Arduino pin (optional)
 ```
 ![ATtiny85 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny85_pinout_small.png)
-```
-// 2-Pin Operation
-Radio VCC -----------------------> VCC               (no more than 3.6 volts on Radio's VCC pin)
-
-            +--------------------> GND
-	    |
-Radio GND --+--||--+                                 (0.1uF capacitor)
-                   |
-Radio CE ----------+
-                   |
-Radio CSN ---------+--\/\/\--+                       (220ohm resistor)
-                             |
-Radio SCK -------------------+--> Any Arduino pin
-
-Radio MOSI ---------+-----------> Any Arduino pin
-                    |
-Radio MISO --\/\/\--+                                (3.3K to 6.8K resistor)
-
-Radio IRQ ----------------------> Any Arduino pin    (optional)
-```
