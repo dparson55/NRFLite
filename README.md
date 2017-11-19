@@ -1,5 +1,6 @@
-**_Nov 18: 2-pin mode is now working!_**  After learning to use an oscilloscope and doing lots of troubleshooting, operation with the 2MBPS data rate is working perfectly.  1MBPS and 250KBPS data rates experience a few dropped packets in certain situations but I think they are good enough for release.  I started work on the examples and should have everything ready by the end of the month.
+**_Nov 18: 2-pin support with a 2MBPS data rate is now working!_**  After learning to use an oscilloscope and doing lots of troubleshooting, operation with a 2MBPS data rate is working perfectly on ATtiny's and ATmega's at various clock speeds.  Unfortunately the 1MBPS and especially the 250KBPS data rates are putting up a fight.
 - [x] Implement ATtiny85 @ 1MHz, ATtiny84 @ 1MHz and 8MHz, and Arduino Uno @ 16MHz.
+- [ ] Troubleshoot dropped packets at 1MBPS and 250KBPS data rates.
 - [ ] Create examples.
 - [ ] Perform release (will be version 2.0.0).  Arduino development environments < 1.5 will no longer be supported.
 - [ ] Create tutorial video.
@@ -85,7 +86,7 @@ void loop()
 ![2-Pin](https://github.com/dparson55/NRFLite/raw/master/extras/Two_pin_schematic.png)
 
 ### ATmega328 SPI Hookup Guide
-* Arduino Pin 10 is the *hardware SPI slave select* pin and must stay as an *OUTPUT*.
+* Arduino Pin 10 is the *SPI slave select* pin and must stay as an *OUTPUT*.
 ```
 Radio MISO -> Arduino 12 MISO
 Radio MOSI -> Arduino 11 MOSI
