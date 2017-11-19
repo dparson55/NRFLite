@@ -23,7 +23,7 @@ class NRFLite {
     // initTwoPin = Same as init but with multiplexed MOSI/MISO and CE/CSN/SCK pins.  Details available on
     //              http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html
     //              Note the capacitor and resistor values from the blog's schematic are not used, instead use a 1uF capacitor, 
-    //              1K resistor between CE/CSN and SCK, and 3K resistor between MOSI and MISO (three 1K in series works too).
+    //              1K resistor between CE/CSN and SCK, and 3K resistor between MOSI and MISO (three 1K in series work too).
     // readData   = Loads a received data packet or acknowledgment packet into the specified data parameter.
     // powerDown  = Power down the radio.  It only draws 900 nA in this state.  Power on the radio by calling one of the 
     //              'hasData' or 'send' methods.
