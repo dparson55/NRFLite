@@ -4,7 +4,7 @@
 #define debugln(input) { if (_serial) _serial->println(input); }
 
 // Delay used to discharge the radio's CSN pin when operating in 2Pin mode.  It is not fast but
-// worked with 1MHz, 8MHz, and 16MHz Atmel's @ 3.3 and 5V while using a 1uF capacitor with 1K resistor.
+// works with 1MHz, 8MHz, and 16MHz uC's @ 3.3 and 5V while using a 1uF capacitor and 1K resistor.
 const static uint8_t CSN_DISCHARGE_MILLIS = 5;
 
 #if defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
@@ -16,7 +16,7 @@ const static uint8_t CSN_DISCHARGE_MILLIS = 5;
     const static uint8_t USI_DO = PB1;
     const static uint8_t SCK    = PB2;
 #else
-    #include <SPI.h> // Use the normal Arduino hardware SPI library if not an ATtiny.
+    #include <SPI.h> // Use the normal Arduino hardware SPI library.
 #endif
 
 ////////////////////
@@ -369,7 +369,7 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     {
         writeRegister(RF_SETUP, B00100110);     // 250 Kbps, 0 dBm output power
         writeRegister(SETUP_RETR, B01011111);   // 0101 = 1500 uS between retries, 1111 = 15 retries
-        _maxHasDataIntervalMicros = 30000;      // Really slow to account for 1MHz uC's using 2Pin mode
+        _maxHasDataIntervalMicros = 8000;
         _transmissionRetryWaitMicros = 1500;
     }
 

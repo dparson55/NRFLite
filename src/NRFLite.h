@@ -36,10 +36,8 @@ class NRFLite {
 
     // Methods for transmitters.
     // send = Sends a data packet and waits for success or failure.  The default REQUIRE_ACK sendType causes the radio
-    //        to attempt sending the packet up to 16 times.  If no acknowledgement is received a 0 will be returned.
-    //        Optionally the NO_ACK sendType can be specified to only transmit the packet 1 time.  It does not
-    //        matter if the packet is dropped or received by another radio, in both situations no acknowledgement
-    //        will be sent back.
+    //        to attempt sending the packet up to 16 times.  If successful a 1 is returned.  Optionally the NO_ACK sendType
+    //        can be used to transmit the packet a single time without any acknowledgement.
     // hasAckData = Checks to see if an ACK data packet was received and returns its length.
     uint8_t send(uint8_t toRadioId, void *data, uint8_t length, SendType sendType = REQUIRE_ACK);
     uint8_t hasAckData();
