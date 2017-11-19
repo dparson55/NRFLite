@@ -1,4 +1,4 @@
-**_Nov 18: 2-pin mode is now working!_**  After learning to use an oscilloscope and doing lots of troubleshooting, operation with the 2MBPS data rate is working perfectly.  1MBPS and 250KBPS data rates experience a few dropped packets in certain situations but I think they are good enough for release.  I started work on the examples and should have everything released by the end of the month.
+**_Nov 18: 2-pin mode is now working!_**  After learning to use an oscilloscope and doing lots of troubleshooting, operation with the 2MBPS data rate is working perfectly.  1MBPS and 250KBPS data rates experience a few dropped packets in certain situations but I think they are good enough for release.  I started work on the examples and should have everything ready by the end of the month.
 - [x] Implement ATtiny85 @ 1MHz, ATtiny84 @ 1MHz and 8MHz, and Arduino Uno @ 16MHz.
 - [ ] Create examples.
 - [ ] Perform release (will be version 2.0.0).  Arduino development environments < 1.5 will no longer be supported.
@@ -14,7 +14,7 @@
 Easily send and receive data wirelessly with less code than other libraries.
 
 ```c++
-// Basic TX example
+// TX example
 
 #include <SPI.h>
 #include <NRFLite.h>
@@ -35,7 +35,7 @@ void loop()
 }
 ```
 ```c++
-// Basic RX example
+// RX example
 
 #include <SPI.h>
 #include <NRFLite.h>
@@ -80,7 +80,7 @@ void loop()
 ### 2-Pin Hookup Guide
 * Not surprising but this mode is much slower than the other hookup options which take advantage of the SPI and USI peripherals of the microcontroller.
 * Keep in mind that the library temporarily disables interrupts whenever it must communicate with the radio.
-* The resistor and capacitor values should only be adjusted if you know what you are doing.  After lots of experimentation and measurement, they were selected for their common values and ability to work with various microcontroller frequencies, operating voltages, radio data rates, and radio packet sizes.  Timing within the library depends upon these specific component values.
+* The resistor and capacitor values should only be adjusted if you have an oscilloscope and are comfortable changing the library.  After lots of experimentation and measurement, the values were selected for their ability to work with various microcontroller frequencies, operating voltages, radio data rates, and radio packet sizes.  Timing within the library depends upon these specific values.
 
 ![2-Pin](https://github.com/dparson55/NRFLite/raw/master/extras/Two_pin_schematic.png)
 
@@ -90,7 +90,7 @@ void loop()
 Radio MISO -> Arduino 12 MISO
 Radio MOSI -> Arduino 11 MOSI
 Radio SCK  -> Arduino 13 SCK
-Radio CE   -> Any Arduino pin
+Radio CE   -> Any Arduino pin (pin 10 is recommended)
 Radio CSN  -> Any Arduino pin (can be same as CE)
 Radio IRQ  -> Any Arduino pin (optional)
 ```
