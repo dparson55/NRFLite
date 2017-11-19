@@ -4,7 +4,7 @@
 - [ ] Perform release (will be version 2.0.0).  Arduino development environments < 1.5 will no longer be supported.
 - [ ] Create tutorial video.
 
-**_Oct 9: 2-pin support is in progress!_**  Using details on <http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html> NRFLite now has logic for an ATtiny85 @ 8MHz which multiplexes the MOSI/MISO and CE/CSN/SCK pins.  I got this working without the aid of an oscilloscope but haven't had any luck running the ATtiny @ 1 MHz, so finally have a reason to purchase one.  It should be here in a week or so. 
+**_Oct 9: 2-pin support is in progress!_**  Using details on <http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html> NRFLite now has logic for an ATtiny85 @ 8MHz which multiplexes the MOSI/MISO and CE/CSN/SCK pins.  I got this working without the aid of an oscilloscope but haven't had any luck running the ATtiny @ 1 MHz, so finally have a reason to purchase one.  It should be here in a week or two. 
 - [x] POC for ATtiny85 @ 8MHz.
 - [x] Test main features:  bitrates, dynamic packets, ack packets, and interrupts.
 - [x] Add ATtiny84 support.
@@ -64,7 +64,7 @@ void loop()
 [![Tutorial 1](http://img.youtube.com/vi/tWEgvS7Sj-8/default.jpg)](https://youtu.be/tWEgvS7Sj-8)
 
 ### Features
-* 2-pin operation as detailed on http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html.
+* 2-pin operation thanks to http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html.
 * 4-pin operation using shared CE and CSN pins.
 * Operation with or without interrupts using the radio's IRQ pin.
 * ATtiny84/85 support when used with the MIT High-Low Tech Arduino library http://highlowtech.org/?p=1695.
@@ -78,10 +78,12 @@ void loop()
 ![nRF24L01 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/nRF24L01_pinout_small.jpg)
 
 ### 2-Pin Hookup Guide
+* Not surprising but this mode is much slower than the other hookup options which take advantage of the SPI or USI peripherals of the microcontroller.
+* Keep in mind that the library temporarily disables interrupts whenever it communicates with the radio.
 
 ![2-Pin](https://github.com/dparson55/NRFLite/raw/master/extras/Two_pin_schematic.png)
 
-### ATmega328 Hardware SPI Hookup Guide
+### ATmega328 SPI Hookup Guide
 * Arduino Pin 10 is the *hardware SPI slave select* pin and must stay as an OUTPUT.
 ```
 Radio MISO -> Arduino 12 MISO
@@ -93,7 +95,7 @@ Radio IRQ  -> Any Arduino pin (optional)
 ```
 ![ATmega328 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATmega328_pinout_small.jpg)
 
-### ATtiny84 Hardware USI Hookup Guide
+### ATtiny84 USI Hookup Guide
 ```
 Radio MISO -> Physical Pin 7, Arduino 6
 Radio MOSI -> Physical Pin 8, Arduino 5
@@ -104,7 +106,7 @@ Radio IRQ  -> Any Arduino pin (optional)
 ```
 ![ATtiny84 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny84_pinout_small.png)
 
-### ATtiny85 Hardware USI Hookup Guide
+### ATtiny85 USI Hookup Guide
 ```
 Radio MISO -> Physical Pin 5, Arduino 0
 Radio MOSI -> Physical Pin 6, Arduino 1
