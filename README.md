@@ -1,5 +1,5 @@
-**_Nov 18: With the help of a Rigol 1054, 2-pin mode is now working!_**  It is flawless when using the default 2MBPS radio data rate but 1MBPS and 250KBPS rates experience a few dropped packets in certain situations.  I think it is good enough for release so am starting work on the examples.
-- [x] Perform testing of the ATtiny85 @ 1MHz, ATtiny84 @ 1MHz and 8MHz, and Arduino Uno @ 16MHz.
+**_Nov 18: 2-pin mode is now working!_**  After learning to use an oscilloscope and doing lots of troubleshooting, operation with the 2MBPS data rate is working perfectly.  1MBPS and 250KBPS data rates experience a few dropped packets in certain situations but I think they are good enough for release.  I have started work on the examples and should have everything released by the end of the month.
+- [x] Implement ATtiny85 @ 1MHz, ATtiny84 @ 1MHz and 8MHz, and Arduino Uno @ 16MHz.
 - [ ] Create examples.
 - [ ] Perform release (will be version 2.0.0).  Arduino development environments < 1.5 will no longer be supported.
 - [ ] Create tutorial video.
@@ -67,25 +67,25 @@ void loop()
 * 2-pin operation as detailed on http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html.
 * 4-pin operation using shared CE and CSN pins.
 * Operation with or without interrupts using the radio's IRQ pin.
-* Supports ATtiny84/85 when used with the MIT High-Low Tech Arduino library http://highlowtech.org/?p=1695.
+* ATtiny84/85 support when used with the MIT High-Low Tech Arduino library http://highlowtech.org/?p=1695.
 * Very easy to use:  not everything the radio supports is implemented but the library has a very small set of methods.
-* No need to enable features like retries, auto-acknowledgment packets, and dynamic packet sizes; those simply work out of the box.
-* No need for adding delays or implementing timeouts.
+* No need to enable features like retries, auto-acknowledgment packets, and dynamic packet sizes; they simply work.
+* No need to add delays or implement timeouts.
 * No long radio addresses to manage.
 
 ### nRF24L01+ Pin Reference
 
 ![nRF24L01 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/nRF24L01_pinout_small.jpg)
 
-### 2-Pin Schematic
+### 2-Pin Hookup Guide
 
 ![2-Pin](https://github.com/dparson55/NRFLite/raw/master/extras/Two_pin_schematic.png)
 
-### ATmega328 Hardware SPI Pin Reference
+### ATmega328 Hardware SPI Hookup Guide
 * Arduino Pin 10 is the *hardware SPI slave select* pin and must stay as an OUTPUT.
 ```
-Radio MOSI -> Arduino 11 MOSI
 Radio MISO -> Arduino 12 MISO
+Radio MOSI -> Arduino 11 MOSI
 Radio SCK  -> Arduino 13 SCK
 Radio CE   -> Any Arduino pin
 Radio CSN  -> Any Arduino pin (can be same as CE)
@@ -93,22 +93,22 @@ Radio IRQ  -> Any Arduino pin (optional)
 ```
 ![ATmega328 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATmega328_pinout_small.jpg)
 
-###### ATtiny84 Hardware USI Pin Reference
+### ATtiny84 Hardware USI Hookup Guide
 ```
-Radio MISO -> Physical Pin 7 PA6 Arduino 6
-Radio MOSI -> Physical Pin 8 PA5 Arduino 5
-Radio SCK  -> Physical Pin 9 PA4 Arduino 4
+Radio MISO -> Physical Pin 7, Arduino 6
+Radio MOSI -> Physical Pin 8, Arduino 5
+Radio SCK  -> Physical Pin 9, Arduino 4
 Radio CE   -> Any Arduino pin
 Radio CSN  -> Any Arduino pin (can be same as CE)
 Radio IRQ  -> Any Arduino pin (optional)
 ```
 ![ATtiny84 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny84_pinout_small.png)
 
-###### ATtiny85 Hardware USI Pin Reference
+### ATtiny85 Hardware USI Hookup Guide
 ```
-Radio MISO -> Physical Pin 5 PB0 Arduino 0
-Radio MOSI -> Physical Pin 6 PB1 Arduino 1
-Radio SCK  -> Physical Pin 7 PB2 Arduino 2
+Radio MISO -> Physical Pin 5, Arduino 0
+Radio MOSI -> Physical Pin 6, Arduino 1
+Radio SCK  -> Physical Pin 7, Arduino 2
 Radio CE   -> Any Arduino pin
 Radio CSN  -> Any Arduino pin (can be same as CE)
 Radio IRQ  -> Any Arduino pin (optional)
