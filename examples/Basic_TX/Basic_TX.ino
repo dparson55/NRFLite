@@ -32,7 +32,7 @@ void setup()
 void loop()
 {
 	_data++;
-	Serial.print("Sending '"); Serial.print(_data); Serial.println("' ... ");
+	Serial.print("Sending '"); Serial.print(_data); Serial.print("' ... ");
 	if(_radio.send(0, &_data, sizeof(_data))) { // send _data to radio id 0
 		Serial.println("Data sent successfully");
 	} else {
