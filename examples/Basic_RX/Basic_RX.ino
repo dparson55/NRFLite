@@ -23,7 +23,10 @@ uint8_t _data;
 void setup()
 {
 	Serial.begin(115200);
-	_radio.init(0, 9, 10); // radio id, CE pin, CSN pin
+	if(_radio.init(0, 9, 10)) // radio id, CE pin, CSN pin
+		Serial.println("Radio init - success");
+	else
+		Serial.println("Radio init - failure");
 }
 
 void loop()
