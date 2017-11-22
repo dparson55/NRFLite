@@ -8,7 +8,13 @@
 const static uint8_t CSN_DISCHARGE_MILLIS = 5;
 
 #if defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+    const static uint8_t USI_DI = 6; // PA6
+    const static uint8_t USI_DO = 5; // PA5
+    const static uint8_t SCK    = 4; // PA4
 #elif defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
+    const static uint8_t USI_DI = 0; // PB0
+    const static uint8_t USI_DO = 1; // PB1
+    const static uint8_t SCK    = 2; // PB2
 #else
     #include <SPI.h> // Use the normal Arduino hardware SPI library.
 #endif
