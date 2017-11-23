@@ -23,13 +23,20 @@ uint8_t _data;
 void setup()
 {
 	Serial.begin(115200);
-	_radio.init(1, 9, 10); // radio id, CE pin, CSN pin
+	if(_radio.init(1, 9, 10)) // radio id, CE pin, CSN pin
+		Serial.println("Radio init - success");
+	else
+		Serial.println("Radio init - failure");
 }
 
 void loop()
 {
 	_data++;
-	Serial.print("Send "); Serial.println(_data);
-	_radio.send(0, &_data, sizeof(_data)); // send _data to radio id 0
+	Serial.print("Sending '"); Serial.print(_data); Serial.print("' ... ");
+	if(_radio.send(0, &_data, sizeof(_data))) { // send _data to radio id 0
+		Serial.println("Data sent successfully");
+	} else {
+		Serial.println("Error sending data");
+	}
 	delay(1000);
 }
