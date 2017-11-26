@@ -1,15 +1,12 @@
-**_Nov 18: 2-pin support with a 2MBPS data rate is now working!_**  After learning to use an oscilloscope and doing lots of troubleshooting, operation with a 2MBPS data rate is working perfectly on ATtiny's and ATmega's at various clock speeds.  Unfortunately the 1MBPS and especially the 250KBPS data rates are putting up a fight.
-- [x] Implement ATtiny85 @ 1MHz, ATtiny84 @ 1MHz and 8MHz, and Arduino Uno @ 16MHz.
-- [ ] Troubleshoot dropped packets at 1MBPS and 250KBPS data rates.
-- [ ] Create examples.
-- [ ] Perform release (will be version 2.0.0).  Arduino development environments < 1.5 will no longer be supported.
-- [ ] Create tutorial video.
-
-**_Oct 9: 2-pin support is in progress!_**  Using details on <http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html> NRFLite now has logic for an ATtiny85 @ 8MHz which multiplexes the MOSI/MISO and CE/CSN/SCK pins.  I got this working without the aid of an oscilloscope but haven't had any luck running the ATtiny @ 1 MHz, so finally have a reason to purchase one.  It should be here in a week or two. 
+**_Nov 25: 2-pin support now fully working!_**
 - [x] POC for ATtiny85 @ 8MHz.
 - [x] Test main features:  bitrates, dynamic packets, ack packets, and interrupts.
 - [x] Add ATtiny84 support.
 - [x] Add standard Arduino support.
+- [x] Optimize for 1MHz, 8MHz, and 16MHz microcontroller support.
+- [ ] Create examples.
+- [ ] Perform release (will be version 2.0.0).  Arduino development environments < 1.5 will no longer be supported.
+- [ ] Create tutorial video.
 
 ## NRFLite
 Easily send and receive data wirelessly with less code than other libraries.
