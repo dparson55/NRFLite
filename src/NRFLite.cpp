@@ -3,10 +3,6 @@
 #define debug(input)   { if (_serial) _serial->print(input);   }
 #define debugln(input) { if (_serial) _serial->println(input); }
 
-// Delay used to discharge the radio's CSN pin when operating in 2Pin mode.  It is not fast but
-// works with 1MHz, 8MHz, and 16MHz uC's @ 3.3 and 5V while using a 1uF capacitor and 1K resistor.
-const static uint8_t CSN_DISCHARGE_MILLIS = 5;
-
 #if defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
     const static uint8_t USI_DI = 6; // PA6
     const static uint8_t USI_DO = 5; // PA5
@@ -130,7 +126,10 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
     // Ensure radio is powered on and in RX mode in case the radio was powered down or in TX mode.
     uint8_t originalConfigReg = readRegister(CONFIG);
     uint8_t newConfigReg = originalConfigReg | _BV(PWR_UP) | _BV(PRIM_RX);
-    if (originalConfigReg != newConfigReg) { writeRegister(CONFIG, newConfigReg); }
+    if (originalConfigReg != newConfigReg) 
+    { 
+        writeRegister(CONFIG, newConfigReg); 
+    }
     
     // Ensure we're listening for packets by setting CE HIGH.  If we share the same pin for CE and CSN,
     // it will already be HIGH since we always keep CSN HIGH to prevent the radio from listening to the SPI bus.
@@ -140,8 +139,10 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
     }
     
     // If the radio was initially powered off, wait for it to turn on.
-    // 1500 uS = Powered Off mode to Standby mode transition time + 130 uS Standby to RX mode.
-    if ((originalConfigReg & _BV(PWR_UP)) == 0) { delayMicroseconds(1630); }
+    if ((originalConfigReg & _BV(PWR_UP)) == 0)
+    { 
+        delayMicroseconds(POWERDOWN_TO_RXTX_MODE_MICROS);
+    }
 
     // If we have a pipe 1 packet sitting at the top of the RX FIFO buffer, we have data.
     // We listen for data from other radios using the pipe 1 address.
@@ -200,7 +201,7 @@ uint8_t NRFLite::send(uint8_t toRadioId, void *data, uint8_t length, SendType se
     if (_cePin != _csnPin)
     {
         digitalWrite(_cePin, HIGH);
-        delayMicroseconds(10); // 10 uS = Required CE time to initiate data transmission.
+        delayMicroseconds(CE_TRANSMISSION_MICROS);
         digitalWrite(_cePin, LOW);
     }
     
@@ -236,7 +237,7 @@ void NRFLite::startSend(uint8_t toRadioId, void *data, uint8_t length, SendType 
     if (_cePin != _csnPin)
     {
         digitalWrite(_cePin, HIGH);
-        delayMicroseconds(10); // 10 uS = Required CE time to initiate data transmission.
+        delayMicroseconds(CE_TRANSMISSION_MICROS); // Required CE time to initiate data transmission.
         digitalWrite(_cePin, LOW);
     }
 }
@@ -336,7 +337,7 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
 {
     _resetInterruptFlags = 1;
 
-    delay(100); // 100 ms = Vcc > 1.9v power on reset time.
+    delay(OFF_TO_POWERDOWN_MILLIS);
 
     // Valid channel range is 2400 - 2525 MHz, in 1 MHz increments.
     if (channel > 125) { channel = 125; }
@@ -395,12 +396,11 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     uint8_t statusReg = readRegister(STATUS);
     writeRegister(STATUS, statusReg | _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
 
-    // Power on the radio and start listening, waiting for startup to complete.
-    // 1500 uS = Powered Off mode to Standby mode transition time + 130 uS Standby to RX mode.
+    // Power on the radio and start listening, delaying to allow startup to complete.
     uint8_t newConfigReg = _BV(PWR_UP) | _BV(PRIM_RX) | _BV(EN_CRC);
     writeRegister(CONFIG, newConfigReg);
     digitalWrite(_cePin, HIGH);
-    delayMicroseconds(1630);
+    delayMicroseconds(POWERDOWN_TO_RXTX_MODE_MICROS);
 
     // Return success if the update we made to the CONFIG register was successful.
     return readRegister(CONFIG) == newConfigReg;
@@ -408,13 +408,17 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
 
 void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
 {
-    // TX pipe address sets the destination radio for the data.
-    // RX pipe 0 is special and needs the same address in order to receive auto-acknowledgment packets
-    // from the destination radio.
-    uint8_t address[5] = { 1, 2, 3, 4, toRadioId };
-    writeRegister(TX_ADDR, &address, 5);
-    writeRegister(RX_ADDR_P0, &address, 5);
-    
+    if (toRadioId != _lastToRadioId)
+    {
+        // TX pipe address sets the destination radio for the data.
+        // RX pipe 0 is special and needs the same address in order to receive auto-acknowledgment packets
+        // from the destination radio.
+       _lastToRadioId = toRadioId;
+        uint8_t address[5] = { 1, 2, 3, 4, toRadioId };
+        writeRegister(TX_ADDR, &address, 5);
+        writeRegister(RX_ADDR_P0, &address, 5);
+    }
+
     // Ensure radio is powered on and ready for TX operation.
     uint8_t originalConfigReg = readRegister(CONFIG);
     uint8_t newConfigReg = originalConfigReg & ~_BV(PRIM_RX) | _BV(PWR_UP);
@@ -429,9 +433,7 @@ void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
         }
         
         writeRegister(CONFIG, newConfigReg);
-        
-        // 1500 uS = Powered Off mode to Standby-I mode transition time + 130 uS Standby to TX.
-        delayMicroseconds(1630);
+        delayMicroseconds(POWERDOWN_TO_RXTX_MODE_MICROS);
     }
     
     // If RX FIFO buffer is full and we require an ACK, clear it so we can receive the ACK response.
@@ -453,7 +455,7 @@ void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
         {
             // Try sending a packet.
             digitalWrite(_cePin, HIGH);
-            delayMicroseconds(10);       // 10 uS = Required CE time to initiate data transmission.
+            delayMicroseconds(CE_TRANSMISSION_MICROS);
             digitalWrite(_cePin, LOW);
             
             delayMicroseconds(_transmissionRetryWaitMicros);
@@ -504,19 +506,17 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
 
     if (_useTwoPinSpiTransfer)
     {
-        digitalWrite(_csnPin, LOW);  // Signal radio it should begin listening to the SPI bus.
-        delay(CSN_DISCHARGE_MILLIS); // Allow capacitor on CSN pin to discharge.
-        noInterrupts();              // Timing is critical so interrupts are disabled during the bit-bang transfer.
+        digitalWrite(_csnPin, LOW);              // Signal radio it should begin listening to the SPI bus.
+        delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to discharge.
+        noInterrupts();                          // Timing is critical so interrupts are disabled during the bit-bang transfer.
         twoPinTransfer(regName);
-
         for (uint8_t i = 0; i < length; ++i) {
             uint8_t newData = twoPinTransfer(intData[i]);
             if (transferType == READ_OPERATION) { intData[i] = newData; }
         }
-        
-        digitalWrite(_csnPin, HIGH); // Stop radio from listening to the SPI bus.
         interrupts();
-        delay(CSN_DISCHARGE_MILLIS); // Allow capacitor on CSN pin to recharge.
+        digitalWrite(_csnPin, HIGH);             // Stop radio from listening to the SPI bus.
+        delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to recharge.
     }
     else
     {
@@ -562,27 +562,28 @@ uint8_t NRFLite::usiTransfer(uint8_t data)
 uint8_t NRFLite::twoPinTransfer(uint8_t data)
 {
     // Note to self:  toggling SCK by writing 1 to its PIN register did not work when using a pointer reference.
-    // Couldn't figure out the issue so controlled the pin using _sck_PORT instead.
-    // Worked:        PINB != _sck_MASK
+    // Worked:        PINB      != _sck_MASK
     // Did not work:  *_sck_PIN != _sck_MASK
+    // Couldn't figure out the issue so the pin is controlled using *_sck_PORT instead.
 
-    uint8_t byteFromRadio, bits = 8;
+    uint8_t byteFromRadio;
+    uint8_t bits = 8;
 
-    do {
-        byteFromRadio <<= 1;                          // Shift the byte we are building to the left 1 step.
-        if (*_momi_PIN & _momi_MASK) byteFromRadio++; // Read MOMI pin.  If HIGH, set bit position 0 of our byte to 1.
-        *_momi_DDR |= _momi_MASK;                     // Change MOMI to be an OUTPUT pin.
-
-        if (data & 0x80) { *_momi_PORT |=  _momi_MASK; } // If bit position 7 of the byte we are sending is 1, set MOMI HIGH.
+    do
+    {
+        byteFromRadio <<= 1;                              // Shift the byte we are building to the left.
+        if (*_momi_PIN & _momi_MASK) { byteFromRadio++; } // Read bit from radio on MOMI pin.  If HIGH, set bit position 0 of our byte to 1.
+        *_momi_DDR |= _momi_MASK;                         // Change MOMI to be an OUTPUT pin.
+        
+        if (data & 0x80) { *_momi_PORT |=  _momi_MASK; }  // Set MOMI HIGH or LOW based on bit position 7 of the byte we are sending.
         else             { *_momi_PORT &= ~_momi_MASK; }
         
-        *_sck_PORT |= _sck_MASK;                      // Set SCK HIGH.  This transfers the bit to the radio.
-                                                      // CSN will remain LOW while the capacitor begins charging.
-        *_momi_DDR &= ~_momi_MASK;                    // Change MOMI back to being an INPUT pin.
-        *_sck_PORT &= ~_sck_MASK;   // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
-        *_momi_PORT &= ~_momi_MASK; // Ensure MOMI, currently an INPUT, does not have its pullup resistor enabled.
-        data <<= 1;                 // Shift the byte we are sending to the left 1 step.
-    } while (--bits);
+        *_sck_PORT |= _sck_MASK;   // Set SCK HIGH to transfer the bit to the radio.  CSN will remain LOW while the capacitor begins charging.
+        *_sck_PORT &= ~_sck_MASK;  // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
+        *_momi_DDR &= ~_momi_MASK; // Change MOMI back to being an INPUT pin.
+        data <<= 1;                // Shift the byte we are sending to the left.
+    }
+    while (--bits);
 
     return byteFromRadio;
 }
