@@ -22,7 +22,7 @@ class NRFLite {
     //              Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
     // initTwoPin = Same as init but with multiplexed MOSI/MISO and CE/CSN/SCK pins.  Details available on
     //              http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html
-    //              Note the capacitor and resistor values from the blog's schematic are not used, instead use a 1uF capacitor, 
+    //              Note the capacitor and resistor values from the blog's schematic are not used, instead use a 0.1uF capacitor, 
     //              1K resistor between CE/CSN and SCK, and 3K resistor between MOSI and MISO (three 1K in series work too).
     // readData   = Loads a received data packet or acknowledgment packet into the specified data parameter.
     // powerDown  = Power down the radio.  It only draws 900 nA in this state.  Power on the radio by calling one of the 
@@ -61,7 +61,17 @@ class NRFLite {
     uint8_t hasDataISR(); 
     
   private:
-    
+
+    // Delay used to discharge the radio's CSN pin when operating in 2Pin mode.
+    // Works with 1MHz, 8MHz, and 16MHz microcontrollers.
+    // Determined by measuring time to discharge CSN using 1MHz ATtiny using 0.1uF capacitor and 1K resistor.
+    // Note to self:  1uF + 1K resistor works too, need 5 millisecond delay though.
+    const static uint16_t CSN_DISCHARGE_MICROS = 500;
+
+    const static uint8_t OFF_TO_POWERDOWN_MILLIS = 100; // Vcc > 1.9V power on reset time.
+    const static uint16_t POWERDOWN_TO_RXTX_MODE_MICROS = 4630; // 4500 to Standby + 130 to RX or TX mode.
+    const static uint8_t CE_TRANSMISSION_MICROS = 10; // Time to initiate data transmission.
+
     enum SpiTransferType { READ_OPERATION, WRITE_OPERATION };
 
     Stream *_serial;
@@ -71,6 +81,7 @@ class NRFLite {
     volatile uint8_t *_sck_PORT;
     uint8_t _cePin, _csnPin, _momi_MASK, _sck_MASK;
     uint8_t _resetInterruptFlags, _useTwoPinSpiTransfer;
+    int16_t _lastToRadioId = -1;
     uint16_t _transmissionRetryWaitMicros, _maxHasDataIntervalMicros;
     uint32_t _microsSinceLastDataCheck;
     
