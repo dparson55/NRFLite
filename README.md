@@ -3,7 +3,7 @@
 - [x] Test main features:  bitrates, dynamic packets, ack packets, and interrupts.
 - [x] Add ATtiny84 support.
 - [x] Add standard Arduino support.
-- [x] Optimize for 1MHz, 8MHz, and 16MHz microcontroller support.
+- [x] Optimize for 1MHz, 8MHz, and 16MHz microcontroller frequencies.
 - [ ] Create examples.
 - [ ] Perform release (will be version 2.0.0).  Arduino development environments < 1.5 will no longer be supported.
 - [ ] Create tutorial video.
@@ -63,11 +63,11 @@ void loop()
 
 ### Features
 * 2-pin operation thanks to http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html.
-* 4-pin operation using shared CE and CSN pins.
+* 4-pin operation using shared CE and CSN pins while continuing to use the high-speed SPI and USI peripherals of the supported microcontrollers.
 * Operation with or without interrupts using the radio's IRQ pin.
 * ATtiny84/85 support when used with the MIT High-Low Tech Arduino library http://highlowtech.org/?p=1695.
 * Very easy to use:  not everything the radio supports is implemented but the library has a small number of methods.
-* No need to enable features like retries, auto-acknowledgment packets, and dynamic packet sizes; they simply work.
+* No need to enable features like retries, auto-acknowledgment packets, and dynamic packet sizes.
 * No need to add delays or implement timeouts.
 * No long radio addresses to manage.
 
@@ -76,9 +76,9 @@ void loop()
 ![nRF24L01 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/nRF24L01_pinout_small.jpg)
 
 ### 2-Pin Hookup Guide
-* This mode is much slower than the other hookup options which take advantage of the SPI and USI peripherals of the microcontroller.
+* This mode is much slower than the other hookup options which take advantage of the SPI and USI peripherals of the supported microcontrollers.
 * Interrupts are temporarily disabled whenever the library talks to the radio in this mode.
-* The resistor and capacitor values should only be adjusted if you have an oscilloscope and are comfortable changing the library.  After lots of experimentation and measurement, the values were selected for their ability to work with various microcontroller frequencies, operating voltages, radio data rates, and radio packet sizes.  Timing within the library depends upon these specific values.
+* The resistor and capacitor values should only be adjusted if you have an oscilloscope and are comfortable changing the library.  After lots of experimentation and measurement, the values were selected for their ability to work with various microcontroller frequencies.
 
 ![2-Pin](https://github.com/dparson55/NRFLite/raw/master/extras/Two_pin_schematic.png)
 
