@@ -26,7 +26,7 @@ const static uint8_t PIN_RADIO_CSN        = 10;
 
 struct RadioPacket1
 {
-	uint8_t FromRadioId; // We'll include our radio's Id so the receiver knows who sent the packet.
+	uint8_t FromRadioId; // We'll include our radio's id so the receiver can display who sent the packet.
 	uint8_t Counter;	 
 };   
 
@@ -60,9 +60,10 @@ void loop()
 	// Pick a number from 10,000 - 60,000.
 	uint16_t randomNumber = random(10000, 60001); 
 	
-	// Send either RadioPacket1 or RadioPacket2.
 	if (randomNumber > 30000 )
     {
+        // Setup and send RadioPacket1.
+        
 		_radioData1.Counter++;
 		
 		Serial.print("Sending ");
@@ -79,13 +80,15 @@ void loop()
 	}
     else
     {
-        // Create a message and assign it to the packet we'll be sending.
-        // Strings need to be converted to a char array.
-		// Convert the string to a char array, writing the array to _radioData2.Message.
-		// Note the string cannot be longer than 31 characters since that is the size of _radioData2.Message.
+        // Setup and send RadioPacket2.
+        
+        // Create a message and assign it to the packet.
+        // Strings need to be converted to a char array and note it cannot be longer
+        // than 31 characters since that is the size of _radioData2.Message.
 		String msg = "Hello " + String(randomNumber);
 		msg.toCharArray(_radioData2.Message, msg.length() + 1);
-		Serial.print("Sending '");
+		
+        Serial.print("Sending '");
 		Serial.print(msg);
         Serial.print("'";
 		

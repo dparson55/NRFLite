@@ -59,6 +59,7 @@ void radioInterrupt()
 	
 	if (txOk) 
     {
+        // Check to see if an Ack data packet was provided.
 		if (_radio.hasAckData())
         {
 			uint8_t ackData;

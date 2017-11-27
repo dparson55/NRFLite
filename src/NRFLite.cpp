@@ -237,7 +237,7 @@ void NRFLite::startSend(uint8_t toRadioId, void *data, uint8_t length, SendType 
     if (_cePin != _csnPin)
     {
         digitalWrite(_cePin, HIGH);
-        delayMicroseconds(CE_TRANSMISSION_MICROS); // Required CE time to initiate data transmission.
+        delayMicroseconds(CE_TRANSMISSION_MICROS);
         digitalWrite(_cePin, LOW);
     }
 }
@@ -354,24 +354,24 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
 
     if (bitrate == BITRATE2MBPS)
     {
-        writeRegister(RF_SETUP, B00001110);     // 2 Mbps, 0 dBm output power
-        writeRegister(SETUP_RETR, B00011111);   // 0001 =  500 uS between retries, 1111 = 15 retries
-        _maxHasDataIntervalMicros = 600;
-        _transmissionRetryWaitMicros = 250;
-    }
-    else if (bitrate == BITRATE1MBPS)
-    {
-        writeRegister(RF_SETUP, B00000110);     // 1 Mbps, 0 dBm output power
-        writeRegister(SETUP_RETR, B00011111);   // 0001 =  500 uS between retries, 1111 = 15 retries
-        _maxHasDataIntervalMicros = 1200;
-        _transmissionRetryWaitMicros = 1000;
-    }
-    else
-    {
-        writeRegister(RF_SETUP, B00100110);     // 250 Kbps, 0 dBm output power
-        writeRegister(SETUP_RETR, B01011111);   // 0101 = 1500 uS between retries, 1111 = 15 retries
-        _maxHasDataIntervalMicros = 8000;
-        _transmissionRetryWaitMicros = 1500;
+        writeRegister(RF_SETUP, B00001110);   // 2 Mbps, 0 dBm output power
+        writeRegister(SETUP_RETR, B00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
+        _maxHasDataIntervalMicros = 600;      
+        _transmissionRetryWaitMicros = 250;   
+    }                                         
+    else if (bitrate == BITRATE1MBPS)         
+    {                                         
+        writeRegister(RF_SETUP, B00000110);   // 1 Mbps, 0 dBm output power
+        writeRegister(SETUP_RETR, B00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
+        _maxHasDataIntervalMicros = 1200;     
+        _transmissionRetryWaitMicros = 1000;  
+    }                                         
+    else                                      
+    {                                         
+        writeRegister(RF_SETUP, B00100110);   // 250 Kbps, 0 dBm output power
+        writeRegister(SETUP_RETR, B01011111); // 0101 = 1500 uS between retries, 1111 = 15 retries
+        _maxHasDataIntervalMicros = 8000;     
+        _transmissionRetryWaitMicros = 1500;  
     }
 
     // Assign this radio's address to RX pipe 1.  When another radio sends us data, this is the address
@@ -411,8 +411,7 @@ void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
     if (toRadioId != _lastToRadioId)
     {
         // TX pipe address sets the destination radio for the data.
-        // RX pipe 0 is special and needs the same address in order to receive auto-acknowledgment packets
-        // from the destination radio.
+        // RX pipe 0 is special and needs the same address in order to receive ACK packets from the destination radio.
        _lastToRadioId = toRadioId;
         uint8_t address[5] = { 1, 2, 3, 4, toRadioId };
         writeRegister(TX_ADDR, &address, 5);
@@ -561,10 +560,10 @@ uint8_t NRFLite::usiTransfer(uint8_t data)
 
 uint8_t NRFLite::twoPinTransfer(uint8_t data)
 {
-    // Note to self:  toggling SCK by writing 1 to its PIN register did not work when using a pointer reference.
+    // Toggling SCK by writing 1 to its PIN register did not work when using a pointer reference.
     // Worked:        PINB      != _sck_MASK
     // Did not work:  *_sck_PIN != _sck_MASK
-    // Couldn't figure out the issue so the pin is controlled using *_sck_PORT instead.
+    // Couldn't figure out the issue so the pin is controlled using *_sck_PORT instead.  This ended up being handy though.
 
     uint8_t byteFromRadio;
     uint8_t bits = 8;
@@ -579,7 +578,7 @@ uint8_t NRFLite::twoPinTransfer(uint8_t data)
         else             { *_momi_PORT &= ~_momi_MASK; }
         
         *_sck_PORT |= _sck_MASK;   // Set SCK HIGH to transfer the bit to the radio.  CSN will remain LOW while the capacitor begins charging.
-        *_sck_PORT &= ~_sck_MASK;  // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
+        *_sck_PORT &= ~_sck_MASK;  // Set SCK LOW.  CSN will have remained LOW due to the capacitor.  SCK must be high for 40ns, no worries.
         *_momi_DDR &= ~_momi_MASK; // Change MOMI back to being an INPUT pin.
         data <<= 1;                // Shift the byte we are sending to the left.
     }

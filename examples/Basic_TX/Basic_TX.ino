@@ -1,6 +1,7 @@
 /*
 
 Demonstrates simple RX and TX operation.
+Please read the notes in NRFLite.h for a description of each library feature.
 
 Radio -> Arduino
 

@@ -25,7 +25,7 @@ class NRFLite {
     //              Note the capacitor and resistor values from the blog's schematic are not used, instead use a 0.1uF capacitor, 
     //              1K resistor between CE/CSN and SCK, and 3K resistor between MOSI and MISO (three 1K in series work too).
     // readData   = Loads a received data packet or acknowledgment packet into the specified data parameter.
-    // powerDown  = Power down the radio.  It only draws 900 nA in this state.  Power on the radio by calling one of the 
+    // powerDown  = Power down the radio.  It only draws 900 nA in this state.  Turn the radio back on by calling one of the 
     //              'hasData' or 'send' methods.
     // printDetails = For debugging, it prints most radio registers if a serial object is provided in the constructor.
     uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
@@ -65,7 +65,7 @@ class NRFLite {
     // Delay used to discharge the radio's CSN pin when operating in 2Pin mode.
     // Works with 1MHz, 8MHz, and 16MHz microcontrollers.
     // Determined by measuring time to discharge CSN using 1MHz ATtiny using 0.1uF capacitor and 1K resistor.
-    // Note to self:  1uF + 1K resistor works too, need 5 millisecond delay though.
+    //   1uF + 1K resistor works too, need 5 millisecond delay though.
     const static uint16_t CSN_DISCHARGE_MICROS = 500;
 
     const static uint8_t OFF_TO_POWERDOWN_MILLIS = 100; // Vcc > 1.9V power on reset time.

@@ -1,15 +1,11 @@
 /*
 
-Radio -> Arduino
+This is used for internal testing of the library.
 
-CE    -> 9 or 10 depending on test condition
-CSN   -> 10 (Hardware SPI SS)
-MOSI  -> 11 (Hardware SPI MOSI)
-MISO  -> 12 (Hardware SPI MISO)
-SCK   -> 13 (Hardware SPI SCK)
-IRQ   -> 3  (Hardware INT1)
-VCC   -> No more than 3.6 volts
-GND   -> GND
+Goal is to test all bitrates, all packet sizes, all ACK packet sizes, with and without
+interrupts, while measuring bitrates.
+
+Manual adjustments for shared CE/CSN operation, and 2-pin operatio.
 
 */
 
