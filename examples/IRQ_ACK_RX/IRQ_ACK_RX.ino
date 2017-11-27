@@ -18,9 +18,6 @@ GND   -> GND
 #include <SPI.h>
 #include <NRFLite.h>
 
-NRFLite _radio;
-uint8_t _data;
-
 const static uint8_t RADIO_ID      = 0;  // Our radio's id.  Can be any 8-bit number (0-255).
 const static uint8_t PIN_RADIO_CE  = 9;
 const static uint8_t PIN_RADIO_CSN = 10;
