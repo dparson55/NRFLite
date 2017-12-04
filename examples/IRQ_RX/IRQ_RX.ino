@@ -18,8 +18,8 @@ GND   -> GND
 #include <SPI.h>
 #include <NRFLite.h>
 
-const static uint8_t RADIO_ID      = 0;  // Our radio's id.  Can be any 8-bit number (0-255).
-const static uint8_t PIN_RADIO_CE  = 9;
+const static uint8_t RADIO_ID = 0;
+const static uint8_t PIN_RADIO_CE = 9;
 const static uint8_t PIN_RADIO_CSN = 10;
 const static uint8_t PIN_RADIO_IRQ = 3;
 
@@ -30,7 +30,7 @@ void setup()
 {
 	Serial.begin(115200);
 
-	if (!_radio.init(RADIO_ID, RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
+	if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
     {
 		Serial.println("Cannot communicate with radio");
 		while (1) {} // Wait here forever.

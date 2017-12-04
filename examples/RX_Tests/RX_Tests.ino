@@ -2,17 +2,19 @@
 
 This is used for internal testing of the library.
 
-Goal is to test all bitrates, all packet sizes, all ACK packet sizes, while measuring bitrates.
+Goal is to test all bitrates, all packet sizes, all ACK packet sizes, with and without
+interrupts, while measuring bitrates.
 
+Manually adjusted for shared CE/CSN operation, and 2-pin operation.
 
 */
 
 #include <SPI.h>
 #include <NRFLite.h>
 
-const static uint8_t RADIO_ID             = 0;
-const static uint8_t PIN_RADIO_CE         = 9; // 9 or 10 depending on test condition
-const static uint8_t PIN_RADIO_CSN        = 10;
+const static uint8_t RADIO_ID = 0;
+const static uint8_t PIN_RADIO_CE = 9; // 9 or 10 depending on test condition
+const static uint8_t PIN_RADIO_CSN = 10;
 
 #define SERIAL_SPEED 115200
 #define debug(input)            { Serial.print(input);   }
