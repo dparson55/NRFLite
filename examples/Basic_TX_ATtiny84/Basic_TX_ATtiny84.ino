@@ -35,10 +35,10 @@ RadioPacket _radioData;
 
 void setup()
 {
-	if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
+    if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
     {
-		while (1) {} // Cannot communicate with radio.
-	}
+        while (1) {} // Cannot communicate with radio.
+    }
     
     _radioData.FromRadioId = RADIO_ID;
 }
