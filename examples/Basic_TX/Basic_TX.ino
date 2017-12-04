@@ -66,4 +66,11 @@ void loop()
     }
 
     delay(1000);
+    
+    /*
+    By default, 'send' transmits data and waits for an acknowledgement.
+    You can also send without requesting an acknowledgement as shown below.
+    _radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData), NRFLite::NO_ACK)
+    _radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData), NRFLite::REQUIRE_ACK) // THE DEFAULT
+    */
 }
