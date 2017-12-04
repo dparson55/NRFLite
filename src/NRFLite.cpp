@@ -548,7 +548,7 @@ uint8_t NRFLite::usiTransfer(uint8_t data)
         USIDR = data;
         USISR = _BV(USIOIF);
     
-        while((USISR & _BV(USIOIF)) == 0)
+        while ((USISR & _BV(USIOIF)) == 0)
         {
             USICR = _BV(USIWM0) | _BV(USICS1) | _BV(USICLK) | _BV(USITC);
         }
