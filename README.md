@@ -1,4 +1,4 @@
-**_Nov 25: 2-pin support now fully working!_**
+**_Dec 3: 2-pin support release is complete and includes plenty of examples!_**
 - [x] POC for ATtiny85 @ 8MHz.
 - [x] Test main features:  bitrates, dynamic packets, ack packets, and interrupts.
 - [x] Add ATtiny84 support.
