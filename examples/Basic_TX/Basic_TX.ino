@@ -1,7 +1,7 @@
 /*
 
 Demonstrates simple RX and TX operation.
-Please read the notes in NRFLite.h for a description of each library feature.
+Please read the notes in NRFLite.h for a description of all library features.
 
 Radio -> Arduino
 
@@ -19,39 +19,51 @@ GND   -> GND
 #include <SPI.h>
 #include <NRFLite.h>
 
-const static uint8_t RADIO_ID             = 1; // Our radio's id.
+const static uint8_t RADIO_ID = 1;             // Our radio's id.
 const static uint8_t DESTINATION_RADIO_ID = 0; // Id of the radio we will transmit to.
-const static uint8_t PIN_RADIO_CE         = 9;
-const static uint8_t PIN_RADIO_CSN        = 10;
+const static uint8_t PIN_RADIO_CE = 9;
+const static uint8_t PIN_RADIO_CSN = 10;
+
+struct RadioPacket // Any packet up to 32 bytes can be sent.
+{
+    uint8_t FromRadioId;
+    uint32_t OnTimeMillis;
+    uint32_t FailedTxCount;
+};
 
 NRFLite _radio;
-uint8_t _data;
+RadioPacket _radioData;
 
 void setup()
 {
 	Serial.begin(115200);
         
-    if (!_radio.init(RADIO_ID, RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
+    if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
     {
 		Serial.println("Cannot communicate with radio");
 		while (1) {} // Wait here forever.
 	}
+    
+    _radioData.FromRadioId = RADIO_ID;
 }
 
 void loop()
 {
-	_data++;
-	Serial.print("Sending ");
-    Serial.print(_data);
-    
-	if (_radio.send(DESTINATION_RADIO_ID, &_data, sizeof(_data))) // Note how & must be placed in front of the variable name.
-    { 
-		Serial.println("...Success");
-	}
+    _radioData.OnTimeMillis = millis();
+
+    Serial.print("Sending ");
+    Serial.print(_radioData.OnTimeMillis);
+    Serial.print(" ms");
+
+    if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData))) // Note how '&' must be placed in front of the variable name.
+    {
+        Serial.println("...Success");
+    }
     else
     {
-		Serial.println("...Failed");
-	}
-    
-	delay(1000);
+        Serial.println("...Failed");
+        _radioData.FailedTxCount++;
+    }
+
+    delay(1000);
 }

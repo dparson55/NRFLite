@@ -1,0 +1,56 @@
+/*
+
+Demonstrates transmitting data with an ATtiny84.  ATtiny's have a Universal Serial Interface 
+peripheral (USI) that can be used for SPI communication, and NRFLite utilizes this capability.
+
+Radio -> ATtiny84
+
+CE    -> Physical Pin 10, Arduino 3
+CSN   -> Physical Pin 10, Arduino 3
+MOSI  -> Physical Pin 8 , Arduino 5 (Hardware USI_DO)
+MISO  -> Physical Pin 7 , Arduino 6 (Hardware USI_DI)
+SCK   -> Physical Pin 9 , Arduino 4 (Hardware USI_SCK)
+IRQ   -> No connection
+VCC   -> No more than 3.6 volts
+GND   -> GND
+
+*/
+
+#include <NRFLite.h>
+
+const static uint8_t RADIO_ID = 3;             // Our radio's id.
+const static uint8_t DESTINATION_RADIO_ID = 0; // Id of the radio we will transmit to.
+const static uint8_t PIN_RADIO_CE = 3;
+const static uint8_t PIN_RADIO_CSN = 3;
+
+struct RadioPacket // Any packet up to 32 bytes can be sent.
+{
+    uint8_t FromRadioId;
+    uint32_t OnTimeMillis;
+    uint32_t FailedTxCount;
+};
+
+NRFLite _radio;
+RadioPacket _radioData;
+
+void setup()
+{
+	if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
+    {
+		while (1) {} // Wait here forever.
+	}
+    
+    _radioData.FromRadioId = RADIO_ID;
+}
+
+void loop()
+{
+    _radioData.OnTimeMillis = millis();
+
+    if (!_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData))) // Note how '&' must be placed in front of the variable name.
+    {
+        _radioData.FailedTxCount++;
+    }
+
+    delay(1000);
+}
