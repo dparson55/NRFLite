@@ -4,8 +4,8 @@
 - [x] Add ATtiny84 support.
 - [x] Add standard Arduino support.
 - [x] Optimize for 1MHz, 8MHz, and 16MHz microcontroller frequencies.
-- [ ] Create examples.
-- [ ] Perform release (will be version 2.0.0).  Arduino development environments < 1.5 will no longer be supported.
+- [x] Create examples.
+- [x] Perform release (will be version 2.0.0 since Arduino development environments < 1.5 will no longer be supported.
 - [ ] Create tutorial video.
 
 ## NRFLite
