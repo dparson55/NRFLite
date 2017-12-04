@@ -62,10 +62,9 @@ class NRFLite {
     
   private:
 
-    // Delay used to discharge the radio's CSN pin when operating in 2Pin mode.
+    // Delay used to discharge the radio's CSN pin when operating in 2-pin mode.
     // Works with 1MHz, 8MHz, and 16MHz microcontrollers.
-    // Determined by measuring time to discharge CSN using 1MHz ATtiny using 0.1uF capacitor and 1K resistor.
-    //   1uF + 1K resistor works too, need 5 millisecond delay though.
+    // Determined by measuring time to discharge CSN on a 1MHz ATtiny using 0.1uF capacitor and 1K resistor.
     const static uint16_t CSN_DISCHARGE_MICROS = 500;
 
     const static uint8_t OFF_TO_POWERDOWN_MILLIS = 100; // Vcc > 1.9V power on reset time.
