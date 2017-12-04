@@ -5,12 +5,10 @@
 - [x] Add standard Arduino support.
 - [x] Optimize for 1MHz, 8MHz, and 16MHz microcontroller frequencies.
 - [x] Create examples.
-- [x] Perform release (will be version 2.0.0 since Arduino development environments < 1.5 will no longer be supported.
+- [x] Perform release (will be version 2.0.0 since Arduino development environments < 1.5 will no longer be supported).
 - [ ] Create tutorial video.
 
 ## NRFLite
-Easily send and receive data wirelessly with less code than other libraries.
-
 ```c++
 // TX example
 
@@ -76,9 +74,10 @@ void loop()
 ![nRF24L01 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/nRF24L01_pinout_small.jpg)
 
 ### 2-Pin Hookup Guide
+* Microcontroller frequencies from 1MHz to 20MHz are supported.
 * This mode is much slower than the other hookup options which take advantage of the SPI and USI peripherals of the supported microcontrollers.
 * Interrupts are temporarily disabled whenever the library talks to the radio in this mode.
-* The resistor and capacitor values should only be adjusted if you have an oscilloscope and are comfortable changing the library.  After lots of experimentation and measurement, the values were selected for their ability to work with various microcontroller frequencies.
+* The resistor and capacitor values should only be adjusted if you have an oscilloscope and are comfortable changing the library.
 
 ![2-Pin](https://github.com/dparson55/NRFLite/raw/master/extras/Two_pin_schematic.png)
 
