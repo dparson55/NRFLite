@@ -3,8 +3,7 @@
 Demonstrates sending data packets of different length.  The receiver will check to see what size of
 packet was received and act accordingly.
 
-Radio -> Arduino
-
+Radio    Arduino
 CE    -> 9
 CSN   -> 10 (Hardware SPI SS)
 MOSI  -> 11 (Hardware SPI MOSI)
@@ -61,7 +60,7 @@ void loop()
 
     if (randomNumber > 30000)
     {
-        // Setup and send RadioPacket1.
+        // Send RadioPacket1.
 
         _radioData1.Counter++;
 
@@ -79,10 +78,10 @@ void loop()
     }
     else
     {
-        // Setup and send RadioPacket2.
+        // Send RadioPacket2.
 
         // Create a message and assign it to the packet.
-        // Strings need to be converted to a char array and note it cannot be longer
+        // Strings need to be converted to a char array and note they cannot be longer
         // than 31 characters since that is the size of _radioData2.Message.
         String msg = "Hello " + String(randomNumber);
         msg.toCharArray(_radioData2.Message, msg.length() + 1);

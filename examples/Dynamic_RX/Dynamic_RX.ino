@@ -3,8 +3,7 @@
 Demonstrates sending data packets of different length.  The receiver will check to see what size of
 packet was received and act accordingly.
 
-Radio -> Arduino
-
+Radio    Arduino
 CE    -> 9
 CSN   -> 10 (Hardware SPI SS)
 MOSI  -> 11 (Hardware SPI MOSI)

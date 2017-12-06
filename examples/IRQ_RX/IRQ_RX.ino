@@ -2,8 +2,7 @@
 
 Demonstrates the usage of interrupts.
 
-Radio -> Arduino
-
+Radio    Arduino
 CE    -> 9
 CSN   -> 10 (Hardware SPI SS)
 MOSI  -> 11 (Hardware SPI MOSI)

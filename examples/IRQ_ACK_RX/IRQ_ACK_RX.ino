@@ -2,8 +2,7 @@
 
 Demonstrates the usage of interrupts while sending and receiving acknowledgement data.
 
-Radio -> Arduino
-
+Radio    Arduino
 CE    -> 9
 CSN   -> 10 (Hardware SPI SS)
 MOSI  -> 11 (Hardware SPI MOSI)
@@ -43,6 +42,10 @@ void loop() {}
 
 void radioInterrupt()
 {
+    // Ask the radio what caused the interrupt.
+    // txOk = the radio successfully transmitted data.
+    // txFail = the radio failed to transmit data.
+    // rxReady = the radio has received data.
     uint8_t txOk, txFail, rxReady;
     _radio.whatHappened(txOk, txFail, rxReady);
     

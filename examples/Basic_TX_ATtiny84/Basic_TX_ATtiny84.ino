@@ -3,8 +3,7 @@
 Demonstrates transmitting data with an ATtiny84.  ATtiny's have a Universal Serial Interface 
 peripheral (USI) that can be used for SPI communication, and NRFLite utilizes this capability.
 
-Radio -> ATtiny84
-
+Radio    ATtiny84
 CE    -> Physical Pin 10, Arduino 3
 CSN   -> Physical Pin 10, Arduino 3
 MOSI  -> Physical Pin 8 , Arduino 5 (Hardware USI_DO)

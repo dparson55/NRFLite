@@ -3,14 +3,13 @@
 Demonstrates simple RX and TX operation.
 Please read the notes in NRFLite.h for a description of all library features.
 
-Radio -> Arduino
-
+Radio    Arduino
 CE    -> 9
 CSN   -> 10 (Hardware SPI SS)
 MOSI  -> 11 (Hardware SPI MOSI)
 MISO  -> 12 (Hardware SPI MISO)
 SCK   -> 13 (Hardware SPI SCK)
-IRQ   -> No connection in this example
+IRQ   -> No connection
 VCC   -> No more than 3.6 volts
 GND   -> GND
 
@@ -69,7 +68,7 @@ void loop()
     
     /*
     By default, 'send' transmits data and waits for an acknowledgement.
-    You can also send without requesting an acknowledgement as shown below.
+    You can also send without requesting an acknowledgement.
     _radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData), NRFLite::NO_ACK)
     _radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData), NRFLite::REQUIRE_ACK) // THE DEFAULT
     */

@@ -60,7 +60,7 @@ void setup()
 {
     pinMode(PIN_LED, OUTPUT);
 
-    if (!_radio.initTwoPin(RADIO_ID, PIN_RADIO_MOMI, PIN_RADIO_SCK, NRFLite::BITRATE250KBPS))
+    if (!_radio.initTwoPin(RADIO_ID, PIN_RADIO_MOMI, PIN_RADIO_SCK, NRFLite::BITRATE250KBPS)) // Note the use of 250KBPS rather than the default 2MBPS bitrate.
     {
         while (1); // Cannot communicate with radio.
     }
