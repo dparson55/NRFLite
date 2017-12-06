@@ -28,13 +28,13 @@ uint8_t _data;
 
 void setup()
 {
-	Serial.begin(115200);
+    Serial.begin(115200);
 
-	if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
+    if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
     {
-		Serial.println("Cannot communicate with radio");
-		while (1) {} // Wait here forever.
-	}
+        Serial.println("Cannot communicate with radio");
+        while (1) {} // Wait here forever.
+    }
     
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
 }
@@ -43,25 +43,25 @@ void loop() {}
 
 void radioInterrupt()
 {
-	uint8_t txOk, txFail, rxReady;
+    uint8_t txOk, txFail, rxReady;
     _radio.whatHappened(txOk, txFail, rxReady);
-	
-	if (rxReady)
+    
+    if (rxReady)
     {
         // Use 'hasDataISR' rather than 'hasData' when using interrupts.
-		while (_radio.hasDataISR())
+        while (_radio.hasDataISR())
         {
-			_radio.readData(&_data);
-			uint8_t ackData = _data + 100;
-			
-			Serial.print("Received ");
-			Serial.print(_data);
-			Serial.print("...Added Ack ");
-			Serial.println(ackData);
-			
+            _radio.readData(&_data);
+            uint8_t ackData = _data + 100;
+            
+            Serial.print("Received ");
+            Serial.print(_data);
+            Serial.print("...Added Ack ");
+            Serial.println(ackData);
+            
             // Add the Ack data packet to the radio.  The next time we receive data,
             // this Ack packet will be sent back.
-			_radio.addAckData(&ackData, sizeof(ackData));
-		}
-	}
+            _radio.addAckData(&ackData, sizeof(ackData));
+        }
+    }
 }

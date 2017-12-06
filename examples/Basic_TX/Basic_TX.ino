@@ -36,13 +36,13 @@ RadioPacket _radioData;
 
 void setup()
 {
-	Serial.begin(115200);
+    Serial.begin(115200);
         
     if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
     {
-		Serial.println("Cannot communicate with radio");
-		while (1) {} // Wait here forever.
-	}
+        Serial.println("Cannot communicate with radio");
+        while (1) {} // Wait here forever.
+    }
     
     _radioData.FromRadioId = RADIO_ID;
 }

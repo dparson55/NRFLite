@@ -29,48 +29,48 @@ uint8_t _data;
 
 void setup()
 {
-	Serial.begin(115200);
+    Serial.begin(115200);
 
-	if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
+    if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
     {
-		Serial.println("Cannot communicate with radio");
-		while (1) {} // Wait here forever.
-	}
+        Serial.println("Cannot communicate with radio");
+        while (1) {} // Wait here forever.
+    }
     
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
 }
 
 void loop()
 {
-	_data++;
-	Serial.print("Sending ");
-	Serial.print(_data);
+    _data++;
+    Serial.print("Sending ");
+    Serial.print(_data);
     
     // Use 'startSend' rather than 'send' when using interrupts.
-	_radio.startSend(DESTINATION_RADIO_ID, &_data, sizeof(_data));
+    _radio.startSend(DESTINATION_RADIO_ID, &_data, sizeof(_data));
     
-	delay(1000);
+    delay(1000);
 }
 
 void radioInterrupt()
 {
-	uint8_t txOk, txFail, rxReady;
+    uint8_t txOk, txFail, rxReady;
     _radio.whatHappened(txOk, txFail, rxReady);
-	
-	if (txOk) 
+    
+    if (txOk) 
     {
         // Check to see if an Ack data packet was provided.
-		if (_radio.hasAckData())
+        if (_radio.hasAckData())
         {
-			uint8_t ackData;
-			_radio.readData(&ackData);
-			Serial.print("...Received Ack ");
-			Serial.println(ackData);
-		}
-	}
-	
-	if (txFail) 
+            uint8_t ackData;
+            _radio.readData(&ackData);
+            Serial.print("...Received Ack ");
+            Serial.println(ackData);
+        }
+    }
+    
+    if (txFail) 
     {
-		Serial.println("...Failed");
-	}
+        Serial.println("...Failed");
+    }
 }
