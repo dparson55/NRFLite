@@ -587,7 +587,7 @@ uint8_t NRFLite::twoPinTransfer(uint8_t data)
     return byteFromRadio;
 }
 
-void NRFLite::printRegister(char *name, uint8_t reg)
+void NRFLite::printRegister(char name[], uint8_t reg)
 {
     String msg = name;
     msg += " ";
