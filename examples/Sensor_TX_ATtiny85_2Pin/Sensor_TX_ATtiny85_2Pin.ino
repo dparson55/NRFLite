@@ -1,21 +1,24 @@
 /*
 
 Demonstrates TX operation with an ATtiny85 using 2 pins for the radio.
-The ATtiny85 and radio power up, take voltage and temperature readings, send the data, and then power down.
+The ATtiny85 and radio power up, take various sensor readings, send the data, and then power down.
 An LED on Arduino Pin 0 is enabled whenever the ATtiny85 and radio are powered on.
 
 Radio circuit
 * Follow the 2-Pin Hookup Guide on https://github.com/dparson55/NRFLite
 
+Light dependent resistor circuit
+* VCC > LDR > 1K resistor > GND
+
 Thermistor circuit
 * VCC > 10K resistor > thermistor > GND
 
 Connections
-* Physical Pin 2, Arduino 3 > Connect in between 10K resistor and thermistor
-* Physical Pin 3, Arduino 4 > MOMI of 2-pin circuit
-* Physical Pin 5, Arduino 0 > LED > 1K resistor > GND
-* Physical Pin 6, Arduino 1 > SCK of 2-pin circuit
-* Physical Pin 7, Arduino 2 > No connection
+* Physical Pin 2, Arduino A3 > Connect between 10K resistor and thermistor
+* Physical Pin 3, Arduino 4  > MOMI of 2-pin circuit
+* Physical Pin 5, Arduino 0  > LED > 1K resistor > GND
+* Physical Pin 6, Arduino 1  > SCK of 2-pin circuit
+* Physical Pin 7, Arduino A1 > Connect between LDR and resistor
 
 */
 
@@ -23,10 +26,11 @@ Connections
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 
-const static uint8_t PIN_THERM = 3;
 const static uint8_t PIN_RADIO_MOMI = 4;
-const static uint8_t PIN_LED = 0;
 const static uint8_t PIN_RADIO_SCK = 1;
+const static uint8_t PIN_LDR = A1;
+const static uint8_t PIN_THERM = A3;
+const static uint8_t PIN_LED = 0;
 
 const static uint8_t RADIO_ID = 1;
 const static uint8_t DESTINATION_RADIO_ID = 0;
@@ -41,6 +45,7 @@ const static uint16_t THERM_SERIES_RESISTOR = 10000;    // Value of resistor in 
 struct RadioPacket
 {
     uint8_t FromRadioId;
+    uint16_t Brightness;
     float Temperature;
     float Voltage;
     uint32_t FailedTxCount;
@@ -67,6 +72,7 @@ void loop()
 {
     digitalWrite(PIN_LED, HIGH); // Indicate powered-on state.
 
+    _radioData.Brightness = analogRead(PIN_LDR);
     _radioData.Temperature = getTemp();
     _radioData.Voltage = getVcc();
 

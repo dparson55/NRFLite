@@ -1,8 +1,8 @@
 /*
 
 Demonstrates RX operation with an Arduino using 2 pins for the radio.
-This is the receiver for the 'LowPower_TX_ATtiny85_2Pin' example where an ATtiny85
-sends voltage and temperature data.
+This is the receiver for the 'Sensor_TX_ATtiny85_2Pin' example where an ATtiny85
+sends some various sensor data.
 
 Radio circuit
 * Follow the 2-Pin Hookup Guide on https://github.com/dparson55/NRFLite
@@ -23,6 +23,7 @@ const static uint8_t RADIO_ID = 0;
 struct RadioPacket
 {
     uint8_t FromRadioId;
+    uint16_t Brightness;
     float Temperature;
     float Voltage;
     uint32_t FailedTxCount;
@@ -51,6 +52,8 @@ void loop()
         String msg = "Radio ";
         msg += _radioData.FromRadioId;
         msg += ", ";
+        msg += _radioData.Brightness;
+        msg += " brightness, ";
         msg += _radioData.Temperature;
         msg += " F, ";
         msg += _radioData.Voltage;
