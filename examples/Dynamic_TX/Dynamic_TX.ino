@@ -21,8 +21,8 @@ GND   -> GND
 
 const static uint8_t RADIO_ID = 1;
 const static uint8_t DESTINATION_RADIO_ID = 0;
-const static uint8_t PIN_RADIO_MOMI = 9;
-const static uint8_t PIN_RADIO_SCK = 10;
+const static uint8_t PIN_RADIO_CE = 9;
+const static uint8_t PIN_RADIO_CSN = 10;
 
 struct RadioPacket1
 {
@@ -44,7 +44,7 @@ void setup()
 {
     Serial.begin(115200);
 
-    if (!_radio.initTwoPin(RADIO_ID, PIN_RADIO_MOMI, PIN_RADIO_SCK))
+    if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
     {
         Serial.println("Cannot communicate with radio");
         while (1) {} // Wait here forever.
