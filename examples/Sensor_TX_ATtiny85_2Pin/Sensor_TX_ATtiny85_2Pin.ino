@@ -54,7 +54,10 @@ struct RadioPacket
 NRFLite _radio;
 RadioPacket _radioData;
 
-ISR(WDT_vect) { wdt_disable(); } // Watchdog interrupt handler.
+ISR(WDT_vect) // Watchdog interrupt handler.
+{
+    wdt_disable();
+}
 
 void setup()
 {

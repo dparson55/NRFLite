@@ -39,7 +39,7 @@ void setup()
     if (!_radio.initTwoPin(RADIO_ID, PIN_RADIO_MOMI, PIN_RADIO_SCK, NRFLite::BITRATE250KBPS)) // Note the use of 250KBPS rather than the default 2MBPS bitrate.
     {
         Serial.println("Cannot communicate with radio");
-        while (1);
+        while (1); // Wait here forever.
     }
 }
 

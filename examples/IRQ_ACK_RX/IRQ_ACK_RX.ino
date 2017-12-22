@@ -32,7 +32,7 @@ void setup()
     if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
     {
         Serial.println("Cannot communicate with radio");
-        while (1) {} // Wait here forever.
+        while (1); // Wait here forever.
     }
     
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);

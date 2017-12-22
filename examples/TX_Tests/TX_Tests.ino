@@ -47,7 +47,7 @@ void setup()
     if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE250KBPS))
     {
         debugln("Cannot communicate with radio");
-        while (1) {} // Sit here forever.
+        while (1); // Wait here forever.
     }
     else
     {
