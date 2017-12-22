@@ -1,13 +1,3 @@
-**_Dec 3: 2-pin support release is complete and includes plenty of examples!_**
-- [x] POC for ATtiny85 @ 8MHz.
-- [x] Test main features:  bitrates, dynamic packets, ack packets, and interrupts.
-- [x] Add ATtiny84 support.
-- [x] Add standard Arduino support.
-- [x] Optimize for 1MHz, 8MHz, and 16MHz microcontroller frequencies.
-- [x] Create examples.
-- [x] Perform release (will be version 2.x since Arduino development environments < 1.5 will no longer be supported).
-- [ ] Create tutorial video.
-
 ## NRFLite
 ```c++
 // TX example
