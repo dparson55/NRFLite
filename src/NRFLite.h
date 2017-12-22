@@ -20,10 +20,11 @@ class NRFLite {
     // Methods for receivers and transmitters.
     // init       = Turns the radio on and puts it into receiving mode.  Returns 0 if it cannot communicate with the radio.
     //              Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
-    // initTwoPin = Same as init but with multiplexed MOSI/MISO and CE/CSN/SCK pins.  Details available on
-    //              http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html
+    // initTwoPin = Same as init but with multiplexed MOSI/MISO and CE/CSN/SCK pins.
+    //              Follow the 2-Pin Hookup Guide on https://github.com/dparson55/NRFLite
+    //              Theory from http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html
     //              Note the capacitor and resistor values from the blog's schematic are not used, instead use a 0.1uF capacitor, 
-    //              1K resistor between CE/CSN and SCK, and 3K resistor between MOSI and MISO (three 1K in series work too).
+    //              1K resistor between CE/CSN and SCK, and 3K-6K resistor between MOSI and MISO.
     // readData   = Loads a received data packet or acknowledgment packet into the specified data parameter.
     // powerDown  = Power down the radio.  It only draws 900 nA in this state.  Turn the radio back on by calling one of the 
     //              'hasData' or 'send' methods.
@@ -63,7 +64,6 @@ class NRFLite {
   private:
 
     // Delay used to discharge the radio's CSN pin when operating in 2-pin mode.
-    // Works with 1MHz, 8MHz, and 16MHz microcontrollers.
     // Determined by measuring time to discharge CSN on a 1MHz ATtiny using 0.1uF capacitor and 1K resistor.
     const static uint16_t CSN_DISCHARGE_MICROS = 500;
 

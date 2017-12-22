@@ -560,30 +560,28 @@ uint8_t NRFLite::usiTransfer(uint8_t data)
 
 uint8_t NRFLite::twoPinTransfer(uint8_t data)
 {
-    // Toggling SCK by writing 1 to its PIN register did not work when using a pointer reference.
-    // Worked:        PINB      != _sck_MASK
-    // Did not work:  *_sck_PIN != _sck_MASK
-    // Couldn't figure out the issue so the pin is controlled using *_sck_PORT instead.  This ended up being handy though.
-
     uint8_t byteFromRadio;
     uint8_t bits = 8;
-
+    
     do
     {
         byteFromRadio <<= 1;                              // Shift the byte we are building to the left.
+        
         if (*_momi_PIN & _momi_MASK) { byteFromRadio++; } // Read bit from radio on MOMI pin.  If HIGH, set bit position 0 of our byte to 1.
         *_momi_DDR |= _momi_MASK;                         // Change MOMI to be an OUTPUT pin.
         
         if (data & 0x80) { *_momi_PORT |=  _momi_MASK; }  // Set MOMI HIGH or LOW based on bit position 7 of the byte we are sending.
         else             { *_momi_PORT &= ~_momi_MASK; }
-        
+
         *_sck_PORT |= _sck_MASK;   // Set SCK HIGH to transfer the bit to the radio.  CSN will remain LOW while the capacitor begins charging.
-        *_sck_PORT &= ~_sck_MASK;  // Set SCK LOW.  CSN will have remained LOW due to the capacitor.  SCK must be high for 40ns, no worries.
+        *_sck_PORT &= ~_sck_MASK;  // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
+        
         *_momi_DDR &= ~_momi_MASK; // Change MOMI back to being an INPUT pin.
+        
         data <<= 1;                // Shift the byte we are sending to the left.
     }
     while (--bits);
-
+    
     return byteFromRadio;
 }
 
