@@ -1,13 +1,3 @@
-**_Dec 3: 2-pin support release is complete and includes plenty of examples!_**
-- [x] POC for ATtiny85 @ 8MHz.
-- [x] Test main features:  bitrates, dynamic packets, ack packets, and interrupts.
-- [x] Add ATtiny84 support.
-- [x] Add standard Arduino support.
-- [x] Optimize for 1MHz, 8MHz, and 16MHz microcontroller frequencies.
-- [x] Create examples.
-- [x] Perform release (will be version 2.x since Arduino development environments < 1.5 will no longer be supported).
-- [ ] Create tutorial video.
-
 ## NRFLite
 ```c++
 // TX example
@@ -74,7 +64,6 @@ void loop()
 ![nRF24L01 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/nRF24L01_pinout_small.jpg)
 
 ### 2-Pin Hookup Guide
-* Microcontroller frequencies from 1MHz to 20MHz are supported.
 * This mode is much slower than the other hookup options which take advantage of the SPI and USI peripherals of the supported microcontrollers.
 * Interrupts are temporarily disabled whenever the library talks to the radio in this mode.
 * The resistor and capacitor values should only be adjusted if you have an oscilloscope and are comfortable changing the library.
