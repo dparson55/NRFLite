@@ -67,13 +67,6 @@ uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bi
     _sck_PORT = portOutputRegister(digitalPinToPort(sckPin));
     _sck_MASK = digitalPinToBitMask(sckPin);
 
-    //printRegister("_momi_PORT", *(&_momi_PORT));
-    //printRegister("_momi_DDR", *(&_momi_DDR));
-    //printRegister("_momi_PIN", *(&_momi_PIN));
-    //printRegister("_momi_MASK", _momi_MASK);
-    //printRegister("_sck_PORT", *(&_sck_PORT));
-    //printRegister("_sck_MASK", _sck_MASK);
-
     return prepForRx(radioId, bitrate, channel);
 }
 
