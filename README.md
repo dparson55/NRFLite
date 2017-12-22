@@ -64,7 +64,6 @@ void loop()
 ![nRF24L01 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/nRF24L01_pinout_small.jpg)
 
 ### 2-Pin Hookup Guide
-* Microcontroller frequencies from 1MHz to 20MHz are supported.
 * This mode is much slower than the other hookup options which take advantage of the SPI and USI peripherals of the supported microcontrollers.
 * Interrupts are temporarily disabled whenever the library talks to the radio in this mode.
 * The resistor and capacitor values should only be adjusted if you have an oscilloscope and are comfortable changing the library.
