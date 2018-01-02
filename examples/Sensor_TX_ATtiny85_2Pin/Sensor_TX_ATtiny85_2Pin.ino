@@ -1,24 +1,32 @@
 /*
 
 Demonstrates TX operation with an ATtiny85 using 2 pins for the radio.
-The ATtiny85 and radio power up, take various sensor readings, send the data, and then power down.
-An LED on Arduino Pin 0 is enabled whenever the ATtiny85 and radio are powered on.
+The ATtiny85 powers up, takes various sensor readings, sends the data, and then powers down.
+Physical Pin 5 (Arduino 0) powers the sensors to reduce current consumption.
+Messages are sent to the receiver for debugging and other informational purposes.
+The receiver can change certain settings by providing an acknowledgement NewSettingsPacket packet, see 
+the 'Sensor_RX' example for more detail.  Setting changes are stored in eeprom.
 
 Radio circuit
 * Follow the 2-Pin Hookup Guide on https://github.com/dparson55/NRFLite
 
-Light dependent resistor circuit
-* VCC > LDR > 1K resistor > GND
+LED circuit
+* Physical Pin 5 > LED > 1K resistor > GND
+
+Light dependent resistor (LDR) circuit
+* Physical Pin 5 > LDR > 1K resistor > GND
 
 Thermistor circuit
-* VCC > 10K resistor > thermistor > GND
+* Physical Pin 5 > 10K resistor > thermistor > GND
 
 Connections
 * Physical Pin 2, Arduino A3 > Connect between 10K resistor and thermistor
 * Physical Pin 3, Arduino 4  > MOMI of 2-pin circuit
 * Physical Pin 5, Arduino 0  > LED > 1K resistor > GND
+                               LDR > 1K resistor > GND
+                               10K resistor > Thermistor > GND
 * Physical Pin 6, Arduino 1  > SCK of 2-pin circuit
-* Physical Pin 7, Arduino A1 > Connect between LDR and resistor
+* Physical Pin 7, Arduino A1 > Connect between LDR and 1K resistor
 
 */
 
@@ -30,68 +38,155 @@ const static uint8_t PIN_RADIO_MOMI = 4;
 const static uint8_t PIN_RADIO_SCK = 1;
 const static uint8_t PIN_LDR = A1;
 const static uint8_t PIN_THERM = A3;
-const static uint8_t PIN_LED = 0;
+const static uint8_t PIN_SENSOR_POWER = 0;
 
-const static uint8_t RADIO_ID = 1;
 const static uint8_t DESTINATION_RADIO_ID = 0;
-
-const static uint32_t POWER_DOWN_SECONDS = 3;
 
 const static uint16_t THERM_BCOEFFICIENT = 4050;
 const static uint8_t  THERM_NOMIAL_TEMP = 25;           // Thermistor nominal temperature in C.
 const static uint16_t THERM_NOMINAL_RESISTANCE = 10000; // Thermistor resistance at the nominal temperature.
 const static uint16_t THERM_SERIES_RESISTOR = 10000;    // Value of resistor in series with the thermistor.
 
+const uint8_t EEPROM_SETTINGS_VERSION = 1;
+
+struct EepromSettings
+{
+    uint8_t RadioId;
+    uint16_t SleepIntervalSeconds;
+    float TemperatureCorrection;
+    uint8_t TemperatureType;
+    float VoltageCorrection;
+    uint8_t Version;
+};
+
 struct RadioPacket
 {
     uint8_t FromRadioId;
+    uint32_t FailedTxCount;
     uint16_t Brightness;
     float Temperature;
+    uint8_t TemperatureType; // 0 = Celsius, 1 = Fahrenheit
     float Voltage;
-    uint32_t FailedTxCount;
+};
+
+struct MessagePacket
+{
+    uint8_t FromRadioId;
+    uint8_t message[31]; // Can hold a 30 character string + the null terminator.
+};
+
+enum ChangeType
+{
+    ChangeRadioId,
+    ChangeSleepInterval,
+    ChangeTemperatureCorrection,
+    ChangeTemperatureType,
+    ChangeVoltageCorrection
+};
+
+struct NewSettingsPacket
+{
+    ChangeType ChangeType;
+    uint8_t ForRadioId;
+    uint8_t NewRadioId;
+    uint16_t NewSleepIntervalSeconds;
+    float NewTemperatureCorrection;
+    uint8_t NewTemperatureType;
+    float NewVoltageCorrection;
 };
 
 NRFLite _radio;
-RadioPacket _radioData;
+EepromSettings _settings;
+uint32_t _failedTxCount;
 
-ISR(WDT_vect) // Watchdog interrupt handler.
-{
-    wdt_disable();
-}
+#define eepromBegin() eeprom_busy_wait(); noInterrupts()
+#define eepromEnd()   interrupts()
+
+void processSettingsChange(NewSettingsPacket newSettings); // Need to pre-declare this function since it uses a custom struct as a parameter (or use a .h file instead).
 
 void setup()
-{
-    pinMode(PIN_LED, OUTPUT);
+{    
+    // Load settings from eeprom.
+    eepromBegin();
+    eeprom_read_block(&_settings, 0, sizeof(_settings));
+    eepromEnd();
 
-    if (!_radio.initTwoPin(RADIO_ID, PIN_RADIO_MOMI, PIN_RADIO_SCK, NRFLite::BITRATE250KBPS)) // Note the use of 250KBPS rather than the default 2MBPS bitrate.
+    if (_settings.Version == EEPROM_SETTINGS_VERSION)
+    {
+        setupRadio();
+        sendMessage(F("Loaded settings")); // Save memory using F() for strings.  Details on https://learn.adafruit.com/memories-of-an-arduino/optimizing-sram
+    }
+    else
+    {
+        // The settings version in eeprom is not what we expect, so assign default values.
+        _settings.RadioId = 1;
+        _settings.SleepIntervalSeconds = 2;
+        _settings.TemperatureCorrection = 0;
+        _settings.TemperatureType = 0;
+        _settings.VoltageCorrection = 0;
+        _settings.Version = EEPROM_SETTINGS_VERSION;
+
+        setupRadio();
+        sendMessage(F("Eeprom old, using defaults"));
+        saveSettings();
+    }
+}
+
+void setupRadio()
+{
+    if (!_radio.initTwoPin(_settings.RadioId, PIN_RADIO_MOMI, PIN_RADIO_SCK, NRFLite::BITRATE250KBPS))
     {
         while (1); // Cannot communicate with radio.
     }
-
-    _radioData.FromRadioId = RADIO_ID;
 }
 
 void loop()
 {
-    digitalWrite(PIN_LED, HIGH); // Indicate powered-on state.
+    sleep(_settings.SleepIntervalSeconds);
 
-    _radioData.Brightness = analogRead(PIN_LDR);
-    _radioData.Temperature = getTemp();
-    _radioData.Voltage = getVcc();
+    RadioPacket radioData;
+    radioData.FromRadioId = _settings.RadioId;
+    radioData.FailedTxCount = _failedTxCount;
+    radioData.Brightness = analogRead(PIN_LDR);
+    radioData.Temperature = getTemperature();
+    radioData.TemperatureType = _settings.TemperatureType;
+    radioData.Voltage = getVcc();
 
-    if (!_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
+    if (_radio.send(DESTINATION_RADIO_ID, &radioData, sizeof(radioData)))
     {
-        _radioData.FailedTxCount++;
+        if (_radio.hasAckData())
+        {
+            NewSettingsPacket newSettingsData;
+            _radio.readData(&newSettingsData);
+
+            if (newSettingsData.ForRadioId == _settings.RadioId)
+            {
+                processSettingsChange(newSettingsData);
+            }
+            else
+            {
+                sendMessage(F("Ignoring settings change"));
+                String msg = F(" request for Radio ");
+                msg += String(newSettingsData.ForRadioId);
+                sendMessage(msg);
+                sendMessage(F("Please try again"));
+            }
+        }
     }
-
-    digitalWrite(PIN_LED, LOW); // Indicate powered-off state.
-
-    powerDown(POWER_DOWN_SECONDS);
+    else
+    {
+        _failedTxCount++;
+    }
 }
 
-float getTemp()
+ISR(WDT_vect) // Watchdog interrupt handler.
+{ 
+    wdt_disable();
+} 
+
+float getTemperature()
 {
-    // Details available on https://learn.adafruit.com/thermistor
+    // Details on https://learn.adafruit.com/thermistor
 
     float thermReading = analogRead(PIN_THERM);
 
@@ -102,15 +197,19 @@ float getTemp()
     steinhart /= THERM_BCOEFFICIENT;
     steinhart += 1.0 / (THERM_NOMIAL_TEMP + 273.15);
     steinhart = 1.0 / steinhart;
-    steinhart -= 273.15;                             // Convert to C
-    steinhart = (steinhart * 9.0) / 5.0 + 32.0;      // Convert to F
+    steinhart -= 273.15;                            // Convert to C
 
-    return steinhart;
+    if (_settings.TemperatureType == 1)
+    {
+        steinhart = (steinhart * 9.0) / 5.0 + 32.0; // Convert to F
+    }
+
+    return steinhart + _settings.TemperatureCorrection;
 }
 
 float getVcc()
 {
-    // Details available on http://provideyourown.com/2012/secret-arduino-voltmeter-measure-battery-voltage/
+    // Details on http://provideyourown.com/2012/secret-arduino-voltmeter-measure-battery-voltage/
 
     ADMUX = _BV(MUX3) | _BV(MUX2); // Select internal 1.1V reference for measurement.
     delay(2);                      // Let voltage stabilize.
@@ -119,14 +218,91 @@ float getVcc()
     uint16_t adcReading = ADC;
     float vcc = 1.1 * 1024.0 / adcReading; // Note the 1.1V reference can be off +/- 10%, so calibration is needed.
 
-    return vcc;
+    return vcc + _settings.VoltageCorrection;
 }
 
-void powerDown(uint32_t seconds)
+void processSettingsChange(NewSettingsPacket newSettings)
 {
-    uint32_t totalPowerDownSeconds;
+    String msg;
+
+    if (newSettings.ChangeType == ChangeRadioId)
+    {
+        msg = F("Changing Id to ");
+        msg += newSettings.NewRadioId;
+        sendMessage(msg);
+
+        _settings.RadioId = newSettings.NewRadioId;
+        setupRadio();
+    }
+    else if (newSettings.ChangeType == ChangeSleepInterval)
+    {
+        sendMessage(F("Changing sleep interval"));
+        _settings.SleepIntervalSeconds = newSettings.NewSleepIntervalSeconds;
+    }
+    else if (newSettings.ChangeType == ChangeTemperatureCorrection)
+    {
+        sendMessage(F("Changing temperature"));
+        sendMessage(F(" correction"));
+        _settings.TemperatureCorrection = newSettings.NewTemperatureCorrection;
+    }
+    else if (newSettings.ChangeType == ChangeTemperatureType)
+    {
+        sendMessage(F("Changing temperature type"));
+        _settings.TemperatureType = newSettings.NewTemperatureType;
+    }
+    else if (newSettings.ChangeType == ChangeVoltageCorrection)
+    {
+        sendMessage(F("Changing voltage correction"));
+        _settings.VoltageCorrection = newSettings.NewVoltageCorrection;
+    }
+
+    saveSettings();
+}
+
+void saveSettings()
+{
+    EepromSettings settingsCurrentlyInEeprom;
+
+    eepromBegin();
+    eeprom_read_block(&settingsCurrentlyInEeprom, 0, sizeof(settingsCurrentlyInEeprom));
+    eepromEnd();
+
+    // Do not waste 1 of the 100,000 guaranteed eeprom writes if settings have not changed.
+    if (memcmp(&settingsCurrentlyInEeprom, &_settings, sizeof(_settings)) == 0)
+    {
+        sendMessage(F("Skipped eeprom save, no change"));
+    }
+    else
+    {
+        sendMessage(F("Saving settings"));
+        eepromBegin();
+        eeprom_write_block(&_settings, 0, sizeof(_settings));
+        eepromEnd();
+    }
+}
+
+void sendMessage(String msg)
+{
+    MessagePacket messageData;
+    messageData.FromRadioId = _settings.RadioId;
+
+    // Ensure the message is not too large for the MessagePacket.
+    if (msg.length() > sizeof(messageData.message) - 1)
+    {
+        msg = msg.substring(0, sizeof(messageData.message) - 1);
+    }
+
+    msg.getBytes((unsigned char*)messageData.message, msg.length() + 1);
+    _radio.send(DESTINATION_RADIO_ID, &messageData, sizeof(messageData));
+}
+
+void sleep(uint16_t seconds) // Max value = 65535 seconds = 45 days
+{
+    uint16_t totalPowerDownSeconds;
     uint8_t sleep8Seconds;
 
+    digitalWrite(PIN_SENSOR_POWER, LOW); // Disconnect power from the sensors.
+    pinMode(PIN_SENSOR_POWER, INPUT);
     _radio.powerDown();   // Put the radio into a low power state.  It will be powered back on by the library when needed.
     ADCSRA &= ~_BV(ADEN); // Disable ADC to save power.
 
@@ -157,4 +333,6 @@ void powerDown(uint32_t seconds)
     }
 
     ADCSRA |= _BV(ADEN); // Re-enable ADC.
+    pinMode(PIN_SENSOR_POWER, OUTPUT); // Provide power to the sensors.
+    digitalWrite(PIN_SENSOR_POWER, HIGH);
 }
