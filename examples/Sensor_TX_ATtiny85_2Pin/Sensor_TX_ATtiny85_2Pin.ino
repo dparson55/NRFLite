@@ -1,5 +1,8 @@
 /*
 
+Requires the use of https://github.com/damellis/attiny for the ATtiny85 rather than
+https://github.com/SpenceKonde/ATTinyCore since ATTinyCore takes up too much memory.
+
 Demonstrates TX operation with an ATtiny85 using 2 pins for the radio.
 The ATtiny85 powers up, takes various sensor readings, sends the data, and then powers down.
 Physical Pin 5 (Arduino 0) powers the sensors to reduce current consumption.
@@ -31,6 +34,7 @@ Connections
 */
 
 #include <NRFLite.h>
+#include <avr/eeprom.h>
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 
