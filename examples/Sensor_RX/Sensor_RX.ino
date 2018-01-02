@@ -12,11 +12,11 @@ setting change requests when they receive them:  they will either let you know t
 or process it.
 
 Examples:
-  'CID 1 2'    will change sensor with Radio Id = 1 to Radio Id = 2
-  'CSI 1 60'   will change sensor with Radio Id = 1 to have Sleep Interval = 60 seconds
-  'CTC 1 1.5'  will change sensor with Radio Id = 1 to have Temperature Correction = 1.5
-  'CTT 1 0'    will change sensor with Radio Id = 1 to have Temperature Type = 0 (0 = Celsius, 1 = Fahrenheit)
-  'CVC 1 -0.3' will change sensor with Radio Id = 1 to have Voltage Correction = -0.3
+  'CID 1 2'    change sensor with Radio Id = 1 to Radio Id = 2
+  'CSI 1 60'   change sensor with Radio Id = 1 to have Sleep Interval = 60 seconds
+  'CTC 1 1.5'  change sensor with Radio Id = 1 to have Temperature Correction = 1.5
+  'CTT 1 0'    change sensor with Radio Id = 1 to have Temperature Type = 0 (0 = Celsius, 1 = Fahrenheit)
+  'CVC 1 -0.3' change sensor with Radio Id = 1 to have Voltage Correction = -0.3
 
 Radio    Arduino
 CE    -> 9
@@ -83,7 +83,7 @@ void setup()
 {
     Serial.begin(115200);
 
-    if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE250KBPS)) // Note the use of 250KBPS rather than the default 2MBPS bitrate.
+    if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE250KBPS))
     {
         Serial.println("Cannot communicate with radio");
         while (1); // Wait here forever.
