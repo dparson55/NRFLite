@@ -48,7 +48,7 @@ void loop()
 ### Video Tutorials
 
 [![Tutorial 1](http://img.youtube.com/vi/tWEgvS7Sj-8/default.jpg)](https://youtu.be/tWEgvS7Sj-8)
-[![Tutorial 2](http://img.youtube.com/vi/Z4KnKrWPL_s/default.jpg)](https://youtu.be/Z4KnKrWPL_s)
+[![Tutorial 2](http://img.youtube.com/vi/URMmgQuPZVc/default.jpg)](https://youtu.be/URMmgQuPZVc)
 
 ### Features
 * 2-pin operation thanks to [NerdRalph](http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html).
