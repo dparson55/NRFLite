@@ -3,14 +3,14 @@
 #define debug(input)   { if (_serial) _serial->print(input);   }
 #define debugln(input) { if (_serial) _serial->println(input); }
 
-#if defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
-    const static uint8_t USI_DI = 6; // PA6
-    const static uint8_t USI_DO = 5; // PA5
-    const static uint8_t SCK    = 4; // PA4
-#elif defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
-    const static uint8_t USI_DI = 0; // PB0
-    const static uint8_t USI_DO = 1; // PB1
-    const static uint8_t SCK    = 2; // PB2
+#if defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+    const static uint8_t USI_DI  = 6; // PA6
+    const static uint8_t USI_DO  = 5; // PA5
+    const static uint8_t USI_SCK = 4; // PA4
+#elif defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
+    const static uint8_t USI_DI  = 0; // PB0
+    const static uint8_t USI_DO  = 1; // PB1
+    const static uint8_t USI_SCK = 2; // PB2
 #else
     #include <SPI.h> // Use the normal Arduino hardware SPI library.
 #endif
@@ -32,10 +32,10 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
     digitalWrite(_csnPin, HIGH);
     
     // Setup the microcontroller for SPI communication with the radio.
-    #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+    #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
         pinMode(USI_DI, INPUT ); digitalWrite(USI_DI, HIGH);
         pinMode(USI_DO, OUTPUT); digitalWrite(USI_DO, LOW);
-        pinMode(SCK, OUTPUT); digitalWrite(SCK, LOW);
+        pinMode(USI_SCK, OUTPUT); digitalWrite(USI_SCK, LOW);
     #else
         // Arduino SPI makes SS (D10) an output and sets it HIGH.  It must remain an output
         // for Master SPI operation to work, but in case it was originally LOW, we'll set it back.
@@ -514,7 +514,7 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
     {
         digitalWrite(_csnPin, LOW); // Signal radio it should begin listening to the SPI bus.
 
-        #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+        #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
             // ATtiny transfer with USI.
             usiTransfer(regName);
             for (uint8_t i = 0; i < length; ++i) {
@@ -536,7 +536,7 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
 
 uint8_t NRFLite::usiTransfer(uint8_t data)
 {
-    #if defined(__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+    #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
     
         USIDR = data;
         USISR = _BV(USIOIF);
