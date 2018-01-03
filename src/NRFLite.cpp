@@ -563,14 +563,14 @@ uint8_t NRFLite::twoPinTransfer(uint8_t data)
         if (*_momi_PIN & _momi_MASK) { byteFromRadio++; } // Read bit from radio on MOMI pin.  If HIGH, set bit position 0 of our byte to 1.
         *_momi_DDR |= _momi_MASK;                         // Change MOMI to be an OUTPUT pin.
         
-        if (data & 0x80) { *_momi_PORT |=  _momi_MASK; }  // Set MOMI HIGH or LOW based on bit position 7 of the byte we are sending.
-        else             { *_momi_PORT &= ~_momi_MASK; }
+        if (data & 0x80) { *_momi_PORT |=  _momi_MASK; }  // Set MOMI HIGH if bit position 7 of the byte we are sending is 1.
 
         *_sck_PORT |= _sck_MASK;   // Set SCK HIGH to transfer the bit to the radio.  CSN will remain LOW while the capacitor begins charging.
         *_sck_PORT &= ~_sck_MASK;  // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
         
-        *_momi_DDR &= ~_momi_MASK; // Change MOMI back to being an INPUT pin.
-        
+        *_momi_PORT &= ~_momi_MASK; // Set MOMI LOW.
+        *_momi_DDR &= ~_momi_MASK;  // Change MOMI back to being an INPUT pin.  Since we previously ensured it was LOW, its PULLUP resistor will not be enabled.
+
         data <<= 1;                // Shift the byte we are sending to the left.
     }
     while (--bits);
