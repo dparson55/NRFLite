@@ -7,11 +7,13 @@ Demonstrates TX operation with an ATtiny85 using 2 pins for the radio.
 The ATtiny85 powers up, takes various sensor readings, sends the data, and then powers down.
 Physical Pin 5 (Arduino 0) powers the sensors to reduce current consumption.
 Messages are sent to the receiver for debugging and other informational purposes.
-The receiver can change certain settings by providing an acknowledgement NewSettingsPacket packet, see 
-the 'Sensor_RX' example for more detail.  Setting changes are stored in eeprom.
+The receiver can change certain settings by providing an acknowledgement NewSettingsPacket packet, see
+the 'Sensor_RX' example for more detail.  Settings are stored in eeprom.
 
 Radio circuit
 * Follow the 2-Pin Hookup Guide on https://github.com/dparson55/NRFLite
+
+There is a jpeg of the circuit in the same folder as this .ino file.
 
 LED circuit
 * Physical Pin 5 > LED > 1K resistor > GND
@@ -26,8 +28,8 @@ Connections
 * Physical Pin 2, Arduino A3 > Connect between 10K resistor and thermistor
 * Physical Pin 3, Arduino 4  > MOMI of 2-pin circuit
 * Physical Pin 5, Arduino 0  > LED > 1K resistor > GND
-                               LDR > 1K resistor > GND
-                               10K resistor > Thermistor > GND
+*                              LDR > 1K resistor > GND
+*                              10K resistor > Thermistor > GND
 * Physical Pin 6, Arduino 1  > SCK of 2-pin circuit
 * Physical Pin 7, Arduino A1 > Connect between LDR and 1K resistor
 
@@ -93,7 +95,7 @@ struct NewSettingsPacket
     ChangeType ChangeType;
     uint8_t ForRadioId;
     uint8_t NewRadioId;
-    uint16_t NewSleepIntervalSeconds;
+    uint16_t NewSleepIntervalSeconds; // Max value = 65535 seconds = 45 days
     float NewTemperatureCorrection;
     uint8_t NewTemperatureType;
     float NewVoltageCorrection;
@@ -103,13 +105,13 @@ NRFLite _radio;
 EepromSettings _settings;
 uint32_t _failedTxCount;
 
-#define eepromBegin() eeprom_busy_wait(); noInterrupts()
+#define eepromBegin() eeprom_busy_wait(); noInterrupts() // Details on https://youtu.be/_yOcKwu7mQA
 #define eepromEnd()   interrupts()
 
 void processSettingsChange(NewSettingsPacket newSettings); // Need to pre-declare this function since it uses a custom struct as a parameter (or use a .h file instead).
 
 void setup()
-{    
+{
     // Load settings from eeprom.
     eepromBegin();
     eeprom_read_block(&_settings, 0, sizeof(_settings));
@@ -173,7 +175,7 @@ void loop()
                 String msg = F(" request for Radio ");
                 msg += String(newSettingsData.ForRadioId);
                 sendMessage(msg);
-                sendMessage(F("Please try again"));
+                sendMessage(F(" Please try again"));
             }
         }
     }
@@ -184,9 +186,9 @@ void loop()
 }
 
 ISR(WDT_vect) // Watchdog interrupt handler.
-{ 
+{
     wdt_disable();
-} 
+}
 
 float getTemperature()
 {
@@ -300,7 +302,7 @@ void sendMessage(String msg)
     _radio.send(DESTINATION_RADIO_ID, &messageData, sizeof(messageData));
 }
 
-void sleep(uint16_t seconds) // Max value = 65535 seconds = 45 days
+void sleep(uint16_t seconds)
 {
     uint16_t totalPowerDownSeconds;
     uint8_t sleep8Seconds;
