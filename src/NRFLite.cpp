@@ -282,15 +282,19 @@ void NRFLite::printDetails()
     
     String msg = "TX_ADDR ";
     readRegister(TX_ADDR, &data, 5);
-    for (uint8_t i = 0; i < 5; i++) msg += data[i];
+    for (uint8_t i = 0; i < 4; i++) { msg += data[i]; msg += ','; }
+    msg += data[4];
     
     msg += "\nRX_ADDR_P0 ";
     readRegister(RX_ADDR_P0, &data, 5);
-    for (uint8_t i = 0; i < 5; i++) msg += data[i];
+    for (uint8_t i = 0; i < 4; i++) { msg += data[i]; msg += ','; }
+    msg += data[4];
 
     msg += "\nRX_ADDR_P1 ";
     readRegister(RX_ADDR_P1, &data, 5);
-    for (uint8_t i = 0; i < 5; i++) msg += data[i];
+    for (uint8_t i = 0; i < 4; i++) { msg += data[i]; msg += ','; }
+    msg += data[4];
+
     debugln(msg);
 }
 
