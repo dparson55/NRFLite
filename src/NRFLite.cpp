@@ -32,7 +32,7 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
     digitalWrite(_csnPin, HIGH);
     
     // Setup the microcontroller for SPI communication with the radio.
-    #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+    #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
         pinMode(USI_DI, INPUT ); digitalWrite(USI_DI, HIGH);
         pinMode(USI_DO, OUTPUT); digitalWrite(USI_DO, LOW);
         pinMode(USI_SCK, OUTPUT); digitalWrite(USI_SCK, LOW);
@@ -518,7 +518,7 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
     {
         digitalWrite(_csnPin, LOW); // Signal radio it should begin listening to the SPI bus.
 
-        #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+        #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
             // ATtiny transfer with USI.
             usiTransfer(regName);
             for (uint8_t i = 0; i < length; ++i) {
@@ -526,7 +526,7 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
                 if (transferType == READ_OPERATION) { intData[i] = newData; }
             }
         #else
-            // ATmega transfer with the Arduino SPI library.
+            // Transfer with the Arduino SPI library.
             SPI.transfer(regName);
             for (uint8_t i = 0; i < length; ++i) {
                 uint8_t newData = SPI.transfer(intData[i]);
@@ -540,7 +540,7 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
 
 uint8_t NRFLite::usiTransfer(uint8_t data)
 {
-    #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+    #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
     
         USIDR = data;
         USISR = _BV(USIOIF);
