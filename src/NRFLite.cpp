@@ -562,7 +562,7 @@ uint8_t NRFLite::twoPinTransfer(uint8_t data)
     
     do
     {
-        byteFromRadio <<= 1;                              // Shift the byte we are building to the left.
+        byteFromRadio <<= 1; // Shift the byte we are building to the left.
         
         if (*_momi_PIN & _momi_MASK) { byteFromRadio++; } // Read bit from radio on MOMI pin.  If HIGH, set bit position 0 of our byte to 1.
         *_momi_DDR |= _momi_MASK;                         // Change MOMI to be an OUTPUT pin.
