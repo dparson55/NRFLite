@@ -1,5 +1,3 @@
-## NRFLite
-
 ```c++
 // TX example
 
