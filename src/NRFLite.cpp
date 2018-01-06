@@ -317,10 +317,10 @@ uint8_t NRFLite::getRxPacketLength()
     uint8_t dataLength;
     spiTransfer(READ_OPERATION, R_RX_PL_WID, &dataLength, 1);
 
-    // As specified in the datasheet, we verify the data length is valid (0 - 32 bytes).
+    // Verify the data length is valid (0 - 32 bytes).
     if (dataLength > 32)
     {
-        spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0); // Clear the invalid data in the RX FIFO buffer.
+        spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0); // Clear invalid data in the RX FIFO buffer.
         writeRegister(STATUS, readRegister(STATUS) | _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
         return 0;
     }
@@ -569,13 +569,14 @@ uint8_t NRFLite::twoPinTransfer(uint8_t data)
         
         if (data & 0x80) { *_momi_PORT |=  _momi_MASK; }  // Set MOMI HIGH if bit position 7 of the byte we are sending is 1.
 
-        *_sck_PORT |= _sck_MASK;   // Set SCK HIGH to transfer the bit to the radio.  CSN will remain LOW while the capacitor begins charging.
-        *_sck_PORT &= ~_sck_MASK;  // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
+        *_sck_PORT |= _sck_MASK;  // Set SCK HIGH to transfer the bit to the radio.  CSN will remain LOW while the capacitor begins charging.
+        *_sck_PORT &= ~_sck_MASK; // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
         
         *_momi_PORT &= ~_momi_MASK; // Set MOMI LOW.
-        *_momi_DDR &= ~_momi_MASK;  // Change MOMI back to being an INPUT pin.  Since we previously ensured it was LOW, its PULLUP resistor will not be enabled.
+        *_momi_DDR &= ~_momi_MASK;  // Change MOMI back to an INPUT.  Since we previously ensured it was LOW, its PULLUP resistor will never 
+                                    // be enabled which would prevent MOMI from fully reaching a LOW state.
 
-        data <<= 1;                // Shift the byte we are sending to the left.
+        data <<= 1; // Shift the byte we are sending to the left.
     }
     while (--bits);
     
