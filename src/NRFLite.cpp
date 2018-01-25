@@ -588,10 +588,11 @@ void NRFLite::printRegister(char name[], uint8_t reg)
     String msg = name;
     msg += " ";
 
-    for (int i = 7; i >= 0; i--)
+    uint8_t i = 8;
+    do
     {
-        msg += bitRead(reg, i);
+        msg += bitRead(reg, --i);
     }
-
+    while (i);
     debugln(msg);
 }
