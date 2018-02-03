@@ -1,6 +1,7 @@
 /*
 
 Demonstrates simple RX and TX operation using 2 pins for the radio.
+Only AVR architectures (ATtiny/ATmega) support 2 pin operation.
 Please read the notes in NRFLite.h for a description of all library features.
 
 Radio circuit

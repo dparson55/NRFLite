@@ -20,7 +20,7 @@ class NRFLite {
     // Methods for receivers and transmitters.
     // init       = Turns the radio on and puts it into receiving mode.  Returns 0 if it cannot communicate with the radio.
     //              Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
-    // initTwoPin = Same as init but with multiplexed MOSI/MISO and CE/CSN/SCK pins.
+    // initTwoPin = Same as init but with multiplexed MOSI/MISO and CE/CSN/SCK pins (only works on AVR architectures).
     //              Follow the 2-Pin Hookup Guide on https://github.com/dparson55/NRFLite
     //              Theory from http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html
     //              Note the capacitor and resistor values from the blog's schematic are not used, instead use a 0.1uF capacitor, 
