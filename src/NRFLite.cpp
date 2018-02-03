@@ -48,6 +48,8 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
     return prepForRx(radioId, bitrate, channel);
 }
 
+#if defined(__AVR__)
+
 uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bitrates bitrate, uint8_t channel)
 {
     _useTwoPinSpiTransfer = 1;
@@ -69,6 +71,8 @@ uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bi
 
     return prepForRx(radioId, bitrate, channel);
 }
+
+#endif
 
 void NRFLite::addAckData(void *data, uint8_t length, uint8_t removeExistingAcks)
 {
