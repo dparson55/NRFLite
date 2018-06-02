@@ -409,15 +409,11 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
 
 void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
 {
-    if (toRadioId != _lastToRadioId)
-    {
-        // TX pipe address sets the destination radio for the data.
-        // RX pipe 0 is special and needs the same address in order to receive ACK packets from the destination radio.
-       _lastToRadioId = toRadioId;
-        uint8_t address[5] = { 1, 2, 3, 4, toRadioId };
-        writeRegister(TX_ADDR, &address, 5);
-        writeRegister(RX_ADDR_P0, &address, 5);
-    }
+    // TX pipe address sets the destination radio for the data.
+    // RX pipe 0 is special and needs the same address in order to receive ACK packets from the destination radio.
+    uint8_t address[5] = { 1, 2, 3, 4, toRadioId };
+    writeRegister(TX_ADDR, &address, 5);
+    writeRegister(RX_ADDR_P0, &address, 5);
 
     // Ensure radio is powered on and ready for TX operation.
     uint8_t originalConfigReg = readRegister(CONFIG);
