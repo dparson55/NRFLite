@@ -169,10 +169,10 @@ void NRFLite::readData(void *data)
     spiTransfer(READ_OPERATION, R_RX_PAYLOAD, data, dataLength);
     
     // Clear data received flag.
-    uint8_t statusReg = readRegister(STATUS);
+    uint8_t statusReg = readRegister(STATUS_NRF);
     if (statusReg & _BV(RX_DR))
     {
-        writeRegister(STATUS, statusReg | _BV(RX_DR));
+        writeRegister(STATUS_NRF, statusReg | _BV(RX_DR));
     }
 }
 
@@ -181,10 +181,10 @@ uint8_t NRFLite::send(uint8_t toRadioId, void *data, uint8_t length, SendType se
     prepForTx(toRadioId, sendType);
 
     // Clear any previously asserted TX success or max retries flags.
-    uint8_t statusReg = readRegister(STATUS);
+    uint8_t statusReg = readRegister(STATUS_NRF);
     if (statusReg & _BV(TX_DS) || statusReg & _BV(MAX_RT))
     {
-        writeRegister(STATUS, statusReg | _BV(TX_DS) | _BV(MAX_RT));
+        writeRegister(STATUS_NRF, statusReg | _BV(TX_DS) | _BV(MAX_RT));
     }
     
     // Add data to the TX FIFO buffer, with or without an ACK request.
@@ -206,18 +206,18 @@ uint8_t NRFLite::send(uint8_t toRadioId, void *data, uint8_t length, SendType se
     while (1)
     {
         delayMicroseconds(_transmissionRetryWaitMicros);
-        statusReg = readRegister(STATUS);
+        statusReg = readRegister(STATUS_NRF);
         
         if (statusReg & _BV(TX_DS))
         {
-            writeRegister(STATUS, statusReg | _BV(TX_DS));   // Clear TX success flag.
-            return 1;                                        // Return success.
+            writeRegister(STATUS_NRF, statusReg | _BV(TX_DS));  // Clear TX success flag.
+            return 1;                                           // Return success.
         }
         else if (statusReg & _BV(MAX_RT))
         {
-            spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0); // Clear TX FIFO buffer.
-            writeRegister(STATUS, statusReg | _BV(MAX_RT));  // Clear flag which indicates max retries has been reached.
-            return 0;                                        // Return failure.
+            spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0);    // Clear TX FIFO buffer.
+            writeRegister(STATUS_NRF, statusReg | _BV(MAX_RT)); // Clear flag which indicates max retries has been reached.
+            return 0;                                           // Return failure.
         }
     }
 }
@@ -241,7 +241,7 @@ void NRFLite::startSend(uint8_t toRadioId, void *data, uint8_t length, SendType 
 
 void NRFLite::whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady)
 {
-    uint8_t statusReg = readRegister(STATUS);
+    uint8_t statusReg = readRegister(STATUS_NRF);
     
     txOk = statusReg & _BV(TX_DS);
     txFail = statusReg & _BV(MAX_RT);
@@ -252,7 +252,7 @@ void NRFLite::whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady)
     // and if we don't disable this logic, it's not possible for us to check these flags.
     if (_resetInterruptFlags)
     {
-        writeRegister(STATUS, statusReg | _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
+        writeRegister(STATUS_NRF, statusReg | _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
     }
 }
 
@@ -274,7 +274,7 @@ void NRFLite::printDetails()
     printRegister("SETUP_RETR", readRegister(SETUP_RETR));
     printRegister("RF_CH", readRegister(RF_CH));
     printRegister("RF_SETUP", readRegister(RF_SETUP));
-    printRegister("STATUS", readRegister(STATUS));
+    printRegister("STATUS", readRegister(STATUS_NRF));
     printRegister("OBSERVE_TX", readRegister(OBSERVE_TX));
     printRegister("RX_PW_P0", readRegister(RX_PW_P0));
     printRegister("RX_PW_P1", readRegister(RX_PW_P1));
@@ -312,7 +312,7 @@ uint8_t NRFLite::getPipeOfFirstRxPacket()
     // 000-101 = Data Pipe Number
     //     110 = Not Used
     //     111 = RX FIFO Empty
-    return (readRegister(STATUS) & B1110) >> 1;
+    return (readRegister(STATUS_NRF) & B1110) >> 1;
 }
 
 uint8_t NRFLite::getRxPacketLength()
@@ -325,7 +325,7 @@ uint8_t NRFLite::getRxPacketLength()
     if (dataLength > 32)
     {
         spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0); // Clear invalid data in the RX FIFO buffer.
-        writeRegister(STATUS, readRegister(STATUS) | _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
+        writeRegister(STATUS_NRF, readRegister(STATUS_NRF) | _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
         return 0;
     }
     else
@@ -394,8 +394,8 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0);
 
     // Clear any interrupts.
-    uint8_t statusReg = readRegister(STATUS);
-    writeRegister(STATUS, statusReg | _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
+    uint8_t statusReg = readRegister(STATUS_NRF);
+    writeRegister(STATUS_NRF, statusReg | _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
 
     // Power on the radio and start listening, delaying to allow startup to complete.
     uint8_t newConfigReg = _BV(PWR_UP) | _BV(PRIM_RX) | _BV(EN_CRC);
@@ -455,16 +455,16 @@ void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
             digitalWrite(_cePin, LOW);
             
             delayMicroseconds(_transmissionRetryWaitMicros);
-            statusReg = readRegister(STATUS);
+            statusReg = readRegister(STATUS_NRF);
             
             if (statusReg & _BV(TX_DS))
             {
-                writeRegister(STATUS, statusReg | _BV(TX_DS));   // Clear TX success flag.
+                writeRegister(STATUS_NRF, statusReg | _BV(TX_DS));   // Clear TX success flag.
             }
             else if (statusReg & _BV(MAX_RT))
             {
                 spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0); // Clear TX FIFO buffer.
-                writeRegister(STATUS, statusReg | _BV(MAX_RT));  // Clear flag which indicates max retries has been reached.
+                writeRegister(STATUS_NRF, statusReg | _BV(MAX_RT));  // Clear flag which indicates max retries has been reached.
             }
 
             fifoReg = readRegister(FIFO_STATUS);
