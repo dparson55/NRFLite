@@ -1,6 +1,5 @@
+### Transmitter Example
 ```c++
-// TX example
-
 #include <SPI.h>
 #include <NRFLite.h>
 
@@ -9,19 +8,19 @@ uint8_t _data;
 
 void setup()
 {
-    _radio.init(0, 9, 10); // Set radio Id = 0, along with the CE and CSN pins
+    _radio.init(0, 9, 10); // Set transmitter radio to Id = 0, along with the CE and CSN pins
 }
 
 void loop()
 {
-    _data++;
+    _data++; // Change some data.
     _radio.send(1, &_data, sizeof(_data)); // Send to the radio with Id = 1
     delay(1000);
 }
 ```
-```c++
-// RX example
 
+### Receiver Example
+```c++
 #include <SPI.h>
 #include <NRFLite.h>
 
