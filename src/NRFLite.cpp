@@ -527,11 +527,13 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
             }
         #else
             // Transfer with the Arduino SPI library.
+            SPI.beginTransaction(SPISettings(NRF_SPICLOCK, MSBFIRST, SPI_MODE0));
             SPI.transfer(regName);
             for (uint8_t i = 0; i < length; ++i) {
                 uint8_t newData = SPI.transfer(intData[i]);
                 if (transferType == READ_OPERATION) { intData[i] = newData; }
             }
+            SPI.endTransaction();
         #endif
 
         digitalWrite(_csnPin, HIGH); // Stop radio from listening to the SPI bus.
