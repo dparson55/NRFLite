@@ -70,7 +70,7 @@ class NRFLite {
     const static uint16_t POWERDOWN_TO_RXTX_MODE_MICROS = 4630; // 4500 to Standby + 130 to RX or TX mode.
     const static uint8_t CE_TRANSMISSION_MICROS = 10; // Time to initiate data transmission.
 
-    const static uint32_t NRF_SPICLOCK = 8000000; // Speed to use for SPI communication with the transceiver.
+    const static uint32_t NRF_SPICLOCK = 4000000; // Speed to use for SPI communication with the transceiver.
 
     enum SpiTransferType { READ_OPERATION, WRITE_OPERATION };
 
