@@ -23,7 +23,7 @@ const static uint8_t PIN_RADIO_CSN = 10;
 const static uint8_t PIN_RADIO_IRQ = 3;
 
 NRFLite _radio;
-uint8_t _data;
+volatile uint8_t _dataWasReceived; // Note usage of volatile for the global variable being changed in the radio interrupt.
 
 void setup()
 {
@@ -34,29 +34,42 @@ void setup()
         Serial.println("Cannot communicate with radio");
         while (1); // Wait here forever.
     }
-    
+
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
 }
 
-void loop() {}
-
-void radioInterrupt() 
+void loop()
 {
-    // Ask the radio what caused the interrupt.
-    // txOk = the radio successfully transmitted data.
-    // txFail = the radio failed to transmit data.
-    // rxReady = the radio has received data.
+    if (_dataWasReceived)
+    {
+        _dataWasReceived = false;
+
+        // Use 'hasDataISR' rather than 'hasData' when using interrupts.
+        while (_radio.hasDataISR())
+        {
+            uint8_t data;
+            _radio.readData(&data);
+            Serial.print("Received ");
+            Serial.println(data);
+            Serial.flush(); // Serial uses interrupts so let's ensure printing is complete before processing another radio interrupt.
+        }
+    }
+}
+
+void radioInterrupt()
+{
+    // Ask the radio what caused the interrupt.  This also resets the IRQ pin on the
+    // radio so a new interrupt can be triggered.
+
     uint8_t txOk, txFail, rxReady;
     _radio.whatHappened(txOk, txFail, rxReady);
 
+    // txOk = the radio successfully transmitted data.
+    // txFail = the radio failed to transmit data.
+    // rxReady = the radio received data.
+
     if (rxReady)
     {
-        // Use 'hasDataISR' rather than 'hasData' when using interrupts.
-        while (_radio.hasDataISR())
-        { 
-            _radio.readData(&_data);
-            Serial.print("Received ");
-            Serial.println(_data);      
-        }
+        _dataWasReceived = true;
     }
 }

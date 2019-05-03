@@ -25,17 +25,18 @@ const static uint8_t PIN_RADIO_IRQ = 3;
 
 NRFLite _radio;
 uint8_t _data;
+volatile uint8_t _sendSucceeded, _sendFailed; // Note usage of volatile for these global variables being changed in the radio interrupt.
 
 void setup()
 {
     Serial.begin(115200);
-    
+
     if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
     {
         Serial.println("Cannot communicate with radio");
         while (1); // Wait here forever.
     }
-    
+
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
 }
 
@@ -44,32 +45,49 @@ void loop()
     _data++;
     Serial.print("Sending ");
     Serial.print(_data);
+    Serial.flush(); // Serial uses interrupts so let's ensure printing is complete before processing another radio interrupt.
 
     // Use 'startSend' rather than 'send' when using interrupts.
     // 'startSend' will not wait for transmission to complete, instead you'll
     // need to wait for the radio to notify you via the interrupt to see if
     // the send was successful.
     _radio.startSend(DESTINATION_RADIO_ID, &_data, sizeof(_data));
-    
+
+    // Just for this demonstration, we'll wait for the radio's interrupt handler to be triggered.
     delay(1000);
+
+    if (_sendSucceeded)
+    {
+        _sendSucceeded = false;
+        Serial.println("...Success");
+    }
+    
+    if (_sendFailed)
+    {
+        _sendFailed = false;
+        Serial.println("...Failed");
+    }
 }
 
 void radioInterrupt()
 {
-    // Ask the radio what caused the interrupt.
-    // txOk = the radio successfully transmitted data.
-    // txFail = the radio failed to transmit data.
-    // rxReady = the radio has received data.
+    // Ask the radio what caused the interrupt.  This also resets the IRQ pin on the
+    // radio so a new interrupt can be triggered.
+
     uint8_t txOk, txFail, rxReady;
     _radio.whatHappened(txOk, txFail, rxReady);
 
+    // txOk = the radio successfully transmitted data.
+    // txFail = the radio failed to transmit data.
+    // rxReady = the radio received data.
+
     if (txOk)
     {
-        Serial.println("...Success");
+        _sendSucceeded = true;
     }
-
+    
     if (txFail)
     {
-        Serial.println("...Failed");
+        _sendFailed = true;
     }
 }
