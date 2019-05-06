@@ -21,9 +21,9 @@
 
 uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate, uint8_t channel)
 {
-    _useTwoPinSpiTransfer = 0;
     _cePin = cePin;
     _csnPin = csnPin;
+    _useTwoPinSpiTransfer = 0;
     
     // Default states for the radio pins.  When CSN is LOW the radio listens to SPI communication,
     // so we operate most of the time with CSN HIGH.
@@ -44,7 +44,7 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
         if (_csnPin != SS) digitalWrite(SS, savedSS);
     #endif
 
-    uint8_t success = prepForRx(radioId, bitrate, channel);
+    uint8_t success = initRadio(radioId, bitrate, channel);
     return success;
 }
 
@@ -52,9 +52,9 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
 
 uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bitrates bitrate, uint8_t channel)
 {
-    _useTwoPinSpiTransfer = 1;
     _cePin = sckPin;
     _csnPin = sckPin;
+    _useTwoPinSpiTransfer = 1;
 
     // Default states for the 2 multiplexed pins.
     pinMode(momiPin, INPUT);
@@ -69,7 +69,8 @@ uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bi
     _sck_PORT = portOutputRegister(digitalPinToPort(sckPin));
     _sck_MASK = digitalPinToBitMask(sckPin);
 
-    return prepForRx(radioId, bitrate, channel);
+    uint8_t success = initRadio(radioId, bitrate, channel);
+    return success;
 }
 
 #endif
@@ -141,7 +142,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
     // If the radio was initially powered off, wait for it to turn on.
     if ((originalConfigReg & _BV(PWR_UP)) == 0)
     { 
-        delayMicroseconds(POWERDOWN_TO_RXTX_MODE_MICROS);
+        delay(POWERDOWN_TO_RXTX_MODE_MILLIS);
     }
 
     // If we have a pipe 1 packet sitting at the top of the RX FIFO buffer, we have data.
@@ -338,7 +339,7 @@ uint8_t NRFLite::getRxPacketLength()
     }
 }
 
-uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
+uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
 {
     _resetInterruptFlags = 1;
 
@@ -355,22 +356,22 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     {
         writeRegister(RF_SETUP, B00001110);   // 2 Mbps, 0 dBm output power
         writeRegister(SETUP_RETR, B00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
-        _maxHasDataIntervalMicros = 600;      
-        _transmissionRetryWaitMicros = 600;   
-    }                                         
-    else if (bitrate == BITRATE1MBPS)         
-    {                                         
+        _maxHasDataIntervalMicros = 600;
+        _transmissionRetryWaitMicros = 600;
+    }
+    else if (bitrate == BITRATE1MBPS)
+    {
         writeRegister(RF_SETUP, B00000110);   // 1 Mbps, 0 dBm output power
         writeRegister(SETUP_RETR, B00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
-        _maxHasDataIntervalMicros = 1200;     
-        _transmissionRetryWaitMicros = 1000;  
-    }                                         
-    else                                      
-    {                                         
+        _maxHasDataIntervalMicros = 1200;
+        _transmissionRetryWaitMicros = 1000;
+    }
+    else
+    {
         writeRegister(RF_SETUP, B00100110);   // 250 Kbps, 0 dBm output power
         writeRegister(SETUP_RETR, B01011111); // 0101 = 1500 uS between retries, 1111 = 15 retries
-        _maxHasDataIntervalMicros = 8000;     
-        _transmissionRetryWaitMicros = 1500;  
+        _maxHasDataIntervalMicros = 8000;
+        _transmissionRetryWaitMicros = 1500;
     }
 
     // Assign this radio's address to RX pipe 1.  When another radio sends us data, this is the address
@@ -395,13 +396,25 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     uint8_t statusReg = readRegister(STATUS_NRF);
     writeRegister(STATUS_NRF, statusReg | _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
 
-    // Power on the radio and start listening, delaying to allow startup to complete.
-    uint8_t newConfigReg = _BV(PWR_UP) | _BV(PRIM_RX) | _BV(EN_CRC);
-    writeRegister(CONFIG, newConfigReg);
-    digitalWrite(_cePin, HIGH);
-    delayMicroseconds(POWERDOWN_TO_RXTX_MODE_MICROS);
+    uint8_t success = prepForRx();
+    return success;
+}
 
-    uint8_t configRegisterWasSet = readRegister(CONFIG) == newConfigReg;
+uint8_t NRFLite::prepForRx()
+{
+    // Put radio into Standby-I mode in order to transition into RX mode.
+    digitalWrite(_cePin, LOW);
+
+    // Power on the radio in RX mode.
+    writeRegister(CONFIG, CONFIG_REG_SETTINGS_FOR_RX_MODE);
+
+    // Start listening for packets.
+    digitalWrite(_cePin, HIGH);
+
+    // Wait for the transition into RX mode.
+    delay(POWERDOWN_TO_RXTX_MODE_MILLIS);
+
+    uint8_t configRegisterWasSet = readRegister(CONFIG) == CONFIG_REG_SETTINGS_FOR_RX_MODE;
     return configRegisterWasSet;
 }
 
@@ -427,7 +440,7 @@ void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
         }
         
         writeRegister(CONFIG, newConfigReg);
-        delayMicroseconds(POWERDOWN_TO_RXTX_MODE_MICROS);
+        delay(POWERDOWN_TO_RXTX_MODE_MILLIS);
     }
     
     // If RX FIFO buffer is full and we require an ACK, clear it so we can receive the ACK response.
