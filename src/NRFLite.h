@@ -81,7 +81,7 @@ class NRFLite {
     volatile uint8_t *_momi_PIN;
     volatile uint8_t *_sck_PORT;
     uint8_t _cePin, _csnPin, _momi_MASK, _sck_MASK;
-    uint8_t _resetInterruptFlags, _useTwoPinSpiTransfer;
+    uint8_t _resetInterruptFlags, _useTwoPinSpiTransfer, _usingSeparateCeAndCsnPins;
     uint16_t _transmissionRetryWaitMicros, _maxHasDataIntervalMicros;
     uint32_t _microsSinceLastDataCheck;
     

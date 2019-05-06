@@ -24,6 +24,7 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
     _cePin = cePin;
     _csnPin = csnPin;
     _useTwoPinSpiTransfer = 0;
+    _usingSeparateCeAndCsnPins = _cePin != _csnPin;
     
     // Default states for the radio pins.  When CSN is LOW the radio listens to SPI communication,
     // so we operate most of the time with CSN HIGH.
@@ -55,6 +56,7 @@ uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bi
     _cePin = sckPin;
     _csnPin = sckPin;
     _useTwoPinSpiTransfer = 1;
+    _usingSeparateCeAndCsnPins = 0;
 
     // Default states for the 2 multiplexed pins.
     pinMode(momiPin, INPUT);
@@ -106,8 +108,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
 {
     // If using the same pins for CE and CSN, we need to ensure CE is left HIGH long enough to receive data.
     // If we don't limit the calling program, CE could be LOW so often that no data packets can be received.
-    int8_t mustStopRadioRxToCheckForData = _cePin == _csnPin;
-    if (mustStopRadioRxToCheckForData)
+    if (!_usingSeparateCeAndCsnPins)
     {
         if (usingInterrupts)
         {
@@ -119,7 +120,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
             uint8_t giveRadioMoreTimeToReceive = micros() - _microsSinceLastDataCheck < _maxHasDataIntervalMicros;
             if (giveRadioMoreTimeToReceive)
             {
-                return 0; // Return to prevent the calling program from forcing us to bring CE low, making the radio stop receiving.
+                return 0; // Prevent the calling program from forcing us to bring CE low, making the radio stop receiving.
             }
             else
             {
@@ -196,10 +197,8 @@ uint8_t NRFLite::send(uint8_t toRadioId, void *data, uint8_t length, SendType se
 
     // Start transmission.
     // If we have separate pins for CE and CSN, CE will be LOW and we must pulse it to start transmission.
-    // If we use the same pin for CE and CSN, CE will already be HIGH and transmission will have started
-    // when data was loaded into the TX FIFO.
     uint8_t txPulseIsNeeded = _cePin != _csnPin;
-    if (txPulseIsNeeded)
+    if (_usingSeparateCeAndCsnPins)
     {
         digitalWrite(_cePin, HIGH);
         delayMicroseconds(CE_TRANSMISSION_MICROS);
@@ -235,8 +234,8 @@ void NRFLite::startSend(uint8_t toRadioId, void *data, uint8_t length, SendType 
     else                    { spiTransfer(WRITE_OPERATION, W_TX_PAYLOAD       , data, length); }
     
     // Start transmission.
-    uint8_t txPulseIsNeeded = _cePin != _csnPin;
-    if (txPulseIsNeeded)
+    // If we have separate pins for CE and CSN, CE will be LOW and we must pulse it to start transmission.
+    if (_usingSeparateCeAndCsnPins)
     {
         digitalWrite(_cePin, HIGH);
         delayMicroseconds(CE_TRANSMISSION_MICROS);
@@ -263,8 +262,11 @@ void NRFLite::whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady)
 
 void NRFLite::powerDown()
 {
-    // If we have separate CE and CSN pins, we can gracefully turn off Tx or Rx operation.
-    if (_cePin != _csnPin) { digitalWrite(_cePin, LOW); }
+    // If we have separate CE and CSN pins, we can gracefully transition into Power Down mode by first entering Standby-I mode.
+    if (_usingSeparateCeAndCsnPins)
+    {
+        digitalWrite(_cePin, LOW);
+    }
     
     // Turn off the radio.
     writeRegister(CONFIG, readRegister(CONFIG) & ~_BV(PWR_UP));
@@ -431,21 +433,15 @@ void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
     uint8_t newConfigReg = originalConfigReg & ~_BV(PRIM_RX) | _BV(PWR_UP);
     if (originalConfigReg != newConfigReg)
     {
-        // In case the radio was in RX mode (powered on and listening), we'll put the radio into
-        // Standby-I mode by setting CE LOW.  The radio cannot transition directly from RX to TX,
-        // it must go through Standby-I first.
-        if ((originalConfigReg & _BV(PRIM_RX)) && (originalConfigReg & _BV(PWR_UP)))
-        {
-            if (digitalRead(_cePin) == HIGH) { digitalWrite(_cePin, LOW); }
-        }
-        
+        // Put radio into Standby-I mode in order to transition into TX mode.
+        digitalWrite(_cePin, LOW);
         writeRegister(CONFIG, newConfigReg);
         delay(POWERDOWN_TO_RXTX_MODE_MILLIS);
     }
     
     // If RX FIFO buffer is full and we require an ACK, clear it so we can receive the ACK response.
     uint8_t fifoReg = readRegister(FIFO_STATUS);
-    if (fifoReg & _BV(RX_FULL) && sendType == REQUIRE_ACK)
+    if (sendType == REQUIRE_ACK && fifoReg & _BV(RX_FULL))
     {
         spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0);
     }
@@ -569,7 +565,7 @@ uint8_t NRFLite::usiTransfer(uint8_t data)
 uint8_t NRFLite::twoPinTransfer(uint8_t data)
 {
     uint8_t byteFromRadio;
-    uint8_t bits = 8;
+    uint8_t currentBitIndex = 8;
     
     do
     {
@@ -589,7 +585,7 @@ uint8_t NRFLite::twoPinTransfer(uint8_t data)
 
         data <<= 1; // Shift the byte we are sending to the left.
     }
-    while (--bits);
+    while (--currentBitIndex);
     
     return byteFromRadio;
 }
