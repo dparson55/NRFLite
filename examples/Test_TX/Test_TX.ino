@@ -267,35 +267,50 @@ void demoRxTxSwitching()
 {
     delay(DEMO_INTERVAL_MILLIS);
 
-    debugln("Rx Tx Switching");
+    debugln("RxTx switching");
 
     attachInterrupt(1, radioRxTxInterrupt, FALLING);
     _showMessageInInterrupt = 0;
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     String msg;
-    for (uint8_t counter = 0; counter < 4; counter++)
+    uint8_t valueOfCountToSend = 0;
+
+    // Send 3 packets, filling the TX buffer.
+    while (valueOfCountToSend < 4)
     {
-        _radioData.Counter++;
-        msg = "  Send ";
+        _radioData.Counter = valueOfCountToSend;
+        msg = "  Start send ";
         msg += _radioData.Counter;
         debugln(msg);
-        Serial.flush();
         _radio.startSend(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData));
+        valueOfCountToSend++;
     }
-
-    while (!_radio.hasData())
-    {
-        // wait
-        delay(1);
-    }
-
-    _radio.readData(&_radioData);
-    debugln2("  Received ", _radioData.Counter);
 
     while (millis() < _endMillis)
     {
-        delay(1);
+        // Test the wait logic in hasData, it should wait until all 3 packets have been sent before switching into RX mode.
+        if (_radio.hasData())
+        {
+            _radio.readData(&_radioData);
+            debug("  Received ");
+            debug(_radioData.Counter);
+
+            if (valueOfCountToSend == _radioData.Counter)
+            {
+                debugln(" - hasData wait succeeded");
+            }
+            else
+            {
+                debugln(" - hasData wait failed");
+            }
+
+            Serial.flush();
+        }
+        else
+        {
+            delay(1);
+        }
     }
 
     detachInterrupt(1);

@@ -218,11 +218,13 @@ void demoRxTxSwitching()
     _showMessageInInterrupt = 1;
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
-    delay(500);
+    delay(1000);
     detachInterrupt(1);
 
-    debug("  Sending ");
-    debug(++_radioData.Counter);
+    // Send back the last received count, plus 1.  The primary transmitter will verify this value.
+    _radioData.Counter++;
+    debug("  Send ");
+    debug(_radioData.Counter);
 
     if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
     {
