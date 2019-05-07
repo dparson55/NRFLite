@@ -91,6 +91,7 @@ class NRFLite {
     uint8_t prepForRx();
     void prepForTx(uint8_t toRadioId, SendType sendType);
     void waitForRoomInTxBuffer();
+    void waitForTxToComplete();
     uint8_t readRegister(uint8_t regName);
     void readRegister(uint8_t regName, void* data, uint8_t length);
     void writeRegister(uint8_t regName, uint8_t data);

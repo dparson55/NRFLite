@@ -129,21 +129,19 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
         }
     }
     
-    // Ensure radio is powered on and in RX mode in case the radio was powered down or in TX mode.
-    uint8_t originalConfigReg = readRegister(CONFIG);
-    uint8_t newConfigReg = originalConfigReg | _BV(PWR_UP) | _BV(PRIM_RX);
-    if (originalConfigReg != newConfigReg) 
-    { 
-        writeRegister(CONFIG, newConfigReg); 
+    uint8_t notInRxMode = readRegister(CONFIG) != CONFIG_REG_SETTINGS_FOR_RX_MODE;
+    if (notInRxMode)
+    {
+        waitForTxToComplete();
+        prepForRx();
     }
-    
-    // Ensure we're listening for packets.
-    digitalWrite(_cePin, HIGH); 
-    
-    // If the radio was initially powered off, wait for it to turn on.
-    if ((originalConfigReg & _BV(PWR_UP)) == 0)
-    { 
-        delay(POWERDOWN_TO_RXTX_MODE_MILLIS);
+    else
+    {
+        // Ensure we are listening for packets.
+        if (digitalRead(_cePin) == LOW)
+        {
+            digitalWrite(_cePin, HIGH);
+        }
     }
 
     // If we have a pipe 1 packet sitting at the top of the RX buffer, we have data.
@@ -478,6 +476,39 @@ void NRFLite::waitForRoomInTxBuffer()
         }
     }
     
+    _resetInterruptFlags = 1; // Re-enable interrupt reset logic in 'whatHappened'.
+}
+
+void NRFLite::waitForTxToComplete()
+{
+    _resetInterruptFlags = 0; // Disable interrupt flag reset logic in 'whatHappened'.
+    uint8_t statusReg;
+    uint8_t fifoReg = readRegister(FIFO_STATUS);
+    uint8_t txBufferIsEmpty = fifoReg & _BV(TX_EMPTY);
+
+    while (!txBufferIsEmpty)
+    {
+        digitalWrite(_cePin, HIGH);
+        delayMicroseconds(CE_TRANSMISSION_MICROS);
+        digitalWrite(_cePin, LOW);
+        delayMicroseconds(_transmissionRetryWaitMicros);
+        statusReg = readRegister(STATUS_NRF);
+
+        if (statusReg & _BV(TX_DS))
+        {
+            writeRegister(STATUS_NRF, statusReg | _BV(TX_DS));   // Clear TX success flag.
+        }
+        else if (statusReg & _BV(MAX_RT))
+        {
+            spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0);     // Clear TX buffer.
+            writeRegister(STATUS_NRF, statusReg | _BV(MAX_RT));  // Clear max retry flag.
+            break;
+        }
+
+        fifoReg = readRegister(FIFO_STATUS);
+        txBufferIsEmpty = fifoReg & _BV(TX_EMPTY);
+    }
+
     _resetInterruptFlags = 1; // Re-enable interrupt reset logic in 'whatHappened'.
 }
 
