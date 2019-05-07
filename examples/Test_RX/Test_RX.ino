@@ -13,6 +13,7 @@ Manually adjusted for shared CE/CSN operation, and 2-pin operation.
 #include <NRFLite.h>
 
 const static uint8_t RADIO_ID = 0;
+const static uint8_t DESTINATION_RADIO_ID = 1;
 const static uint8_t PIN_RADIO_CE = 9; // 9 or 10 depending on test condition
 const static uint8_t PIN_RADIO_CSN = 10;
 
@@ -106,6 +107,7 @@ void runDemos()
     demoPolling();
     demoInterrupts();
     demoAckPayload();
+    demoRxTxSwitching();
     demoPollingBitrate();
     demoInterruptsBitrate();
     demoPollingBitrateNoAck();
@@ -203,6 +205,37 @@ void demoAckPayload()
                 _radio.addAckData(&_radioDataAckA, sizeof(_radioDataAckA));
             }
         }
+    }
+}
+
+void demoRxTxSwitching()
+{
+    delay(DEMO_INTERVAL_MILLIS);
+
+    debugln("RxTx switching");
+
+    attachInterrupt(1, radioInterrupt, FALLING);
+    _showMessageInInterrupt = 1;
+    _endMillis = millis() + DEMO_LENGTH_MILLIS;
+
+    delay(500);
+    detachInterrupt(1);
+
+    debug("  Sending ");
+    debug(++_radioData.Counter);
+
+    if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
+    {
+        debugln("...Success");
+    }
+    else
+    {
+        debugln("...Failed");
+    }
+
+    while (millis() < _endMillis)
+    {
+        delay(1);
     }
 }
 

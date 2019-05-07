@@ -18,8 +18,9 @@ const static uint8_t PIN_RADIO_CE = 9; // 9 or 10 depending on test condition
 const static uint8_t PIN_RADIO_CSN = 10;
 
 #define SERIAL_SPEED 115200
-#define debug(input)   { Serial.print(input);   }
-#define debugln(input) { Serial.println(input); }
+#define debug(input)            { Serial.print(input);   }
+#define debugln(input)          { Serial.println(input); }
+#define debugln2(input1,input2) { Serial.print(input1); Serial.println(input2); }
 
 enum RadioStates { StartSync, RunDemos };
 
@@ -109,12 +110,19 @@ void radioInterrupt()
     }
 }
 
+void radioRxTxInterrupt()
+{
+    uint8_t txOk, txFail, rxReady;
+    _radio.whatHappened(txOk, txFail, rxReady);
+}
+
 void runDemos()
 {
     startSync();
     demoPolling();
     demoInterrupts();
     demoAckPayload();
+    demoRxTxSwitching();
     demoPollingBitrate();
     demoInterruptsBitrate();
     demoPollingBitrateNoAck();
@@ -253,6 +261,43 @@ void demoAckPayload()
             }
         }
     }
+}
+
+void demoRxTxSwitching()
+{
+    delay(DEMO_INTERVAL_MILLIS);
+
+    debugln("Rx Tx Switching");
+
+    attachInterrupt(1, radioRxTxInterrupt, FALLING);
+    _showMessageInInterrupt = 0;
+    _endMillis = millis() + DEMO_LENGTH_MILLIS;
+
+    String msg;
+    for (uint8_t counter = 0; counter < 20; counter++)
+    {
+        _radioData.Counter++;
+        msg = "  Send ";
+        msg += _radioData.Counter;
+        debugln(msg);
+        Serial.flush();
+        _radio.startSend(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData));
+    }
+
+    while (!_radio.hasData())
+    {
+        // wait
+    }
+
+    _radio.readData(&_radioData);
+    debugln2("  Received ", _radioData.Counter);
+
+    while (millis() < _endMillis)
+    {
+        delay(1);
+    }
+
+    detachInterrupt(1);
 }
 
 void demoPollingBitrate() 
