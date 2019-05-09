@@ -69,11 +69,12 @@ class NRFLite {
     // Determined by measuring time to discharge CSN on a 1MHz ATtiny using 0.1uF capacitor and 1K resistor.
     const static uint16_t CSN_DISCHARGE_MICROS = 500;
 
-    const static uint8_t OFF_TO_POWERDOWN_MILLIS = 100; // Vcc > 1.9V power on reset time.
+    const static uint8_t OFF_TO_POWERDOWN_MILLIS = 100;     // Vcc > 1.9V power on reset time.
     const static uint8_t POWERDOWN_TO_RXTX_MODE_MILLIS = 5; // 4500 to Standby + 130 to RX or TX mode, so 5 is enough.
-    const static uint8_t CE_TRANSMISSION_MICROS = 11; // Time to initiate data transmission.
+    const static uint8_t CE_TRANSMISSION_MICROS = 10;       // Time to initiate data transmission.
 
     enum SpiTransferType { READ_OPERATION, WRITE_OPERATION };
+    enum WaitType { WAIT_UNTIL_EMPTY, WAIT_UNTIL_NOT_FULL };
 
     Stream *_serial;
     volatile uint8_t *_momi_PORT;
@@ -83,6 +84,7 @@ class NRFLite {
     uint8_t _cePin, _csnPin, _momi_MASK, _sck_MASK;
     uint8_t _resetInterruptFlags, _useTwoPinSpiTransfer, _usingSeparateCeAndCsnPins;
     uint16_t _transmissionRetryWaitMicros, _maxHasDataIntervalMicros;
+    int16_t _lastToRadioId = -1;
     uint32_t _microsSinceLastDataCheck;
     
     uint8_t getPipeOfFirstRxPacket();
@@ -90,8 +92,7 @@ class NRFLite {
     uint8_t initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel);
     uint8_t prepForRx();
     void prepForTx(uint8_t toRadioId, SendType sendType);
-    void waitForRoomInTxBuffer();
-    void waitForTxToComplete();
+    uint8_t waitForTx(WaitType waitType);
     uint8_t readRegister(uint8_t regName);
     void readRegister(uint8_t regName, void* data, uint8_t length);
     void writeRegister(uint8_t regName, uint8_t data);
