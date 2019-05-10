@@ -7,6 +7,12 @@ interrupts, while measuring bitrates.
 
 Manually adjusted for shared CE/CSN operation, and 2-pin operation.
 
+Each test should follow this format:
+    Wait demo interval time.
+    Calculate demo end time.
+    Show demo message.
+    Reset shared variables necessary for the demo.
+    Run a loop that lasts until the end time.
 */
 
 #include <SPI.h>
@@ -16,6 +22,7 @@ const static uint8_t RADIO_ID = 1;
 const static uint8_t DESTINATION_RADIO_ID = 0;
 const static uint8_t PIN_RADIO_CE = 9; // 9 or 10 depending on test condition
 const static uint8_t PIN_RADIO_CSN = 10;
+const static uint8_t PIN_RADIO_IRQ = 3;
 
 #define SERIAL_SPEED 115200
 #define debug(input)            { Serial.print(input);   }
@@ -28,7 +35,7 @@ struct RadioPacket { uint8_t Counter; RadioStates RadioState; uint8_t Data[29]; 
 struct RadioAckPacketA { uint8_t Counter; uint8_t Data[31]; };
 struct RadioAckPacketB { uint8_t Counter; uint8_t Data[30]; };
 
-NRFLite _radio;
+NRFLite _radio(Serial);
 RadioPacket _radioData;
 RadioAckPacketA _radioDataAckA;
 RadioAckPacketB _radioDataAckB;
@@ -36,8 +43,9 @@ RadioAckPacketB _radioDataAckB;
 const uint16_t DEMO_LENGTH_MILLIS = 4200;
 const uint16_t DEMO_INTERVAL_MILLIS = 300;
 
-uint8_t _hadInterrupt, _showMessageInInterrupt;
-uint32_t _bitsPerSecond, _packetCount, _successPacketCount, _failedPacketCount, _ackAPacketCount, _ackBPacketCount;
+volatile uint8_t _hadTxOkInterrupt, _hadTxFailInterrupt;
+volatile uint32_t _successPacketCount, _failedPacketCount;
+uint32_t _bitsPerSecond, _packetCount, _ackAPacketCount, _ackBPacketCount;
 uint32_t _currentMillis, _lastMillis, _endMillis;
 float _packetLoss;
 
@@ -79,56 +87,36 @@ void radioInterrupt()
     uint8_t txOk, txFail, rxReady;
     _radio.whatHappened(txOk, txFail, rxReady);
 
-    if (txOk) {
-
+    if (txOk)
+    {
+        _hadTxOkInterrupt = 1;
         _successPacketCount++;
-        if (_showMessageInInterrupt) debugln("...Success");
-
-        uint8_t ackLength = _radio.hasAckData();
-
-        while (ackLength > 0)
-        {
-            if (ackLength == sizeof(_radioDataAckA))
-            {
-                _radio.readData(&_radioDataAckA);
-                _ackAPacketCount++;
-            }
-            else if (ackLength == sizeof(_radioDataAckB))
-            {
-                _radio.readData(&_radioDataAckB);
-                _ackBPacketCount++;
-            }
-
-            ackLength = _radio.hasAckData();
-        }
     }
 
     if (txFail)
     {
+        _hadTxFailInterrupt = 1;
         _failedPacketCount++;
-        if (_showMessageInInterrupt) debugln("...Failed");
     }
-}
-
-void radioRxTxInterrupt()
-{
-    uint8_t txOk, txFail, rxReady;
-    _radio.whatHappened(txOk, txFail, rxReady);
 }
 
 void runDemos()
 {
     startSync();
+
     demoPolling();
     demoInterrupts();
     demoAckPayload();
     demoRxTxSwitching();
+
     demoPollingBitrate();
-    demoInterruptsBitrate();
     demoPollingBitrateNoAck();
-    demoInterruptsBitrateNoAck();
     demoPollingBitrateAckPayload();
+
+    demoInterruptsBitrate();
+    demoInterruptsBitrateNoAck();
     demoInterruptsBitrateAckPayload();
+
     demoPollingBitrateAllPacketSizes();
     demoPollingBitrateAllAckSizes();
 }
@@ -137,7 +125,7 @@ void startSync()
 {
     debugln("  Starting sync");
 
-    detachInterrupt(1);
+    detachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ));
     _radioData.RadioState = StartSync;
 
     while (!_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
@@ -151,20 +139,10 @@ void startSync()
 
 void demoPolling()
 {
-    /*
-    Most demos have the same steps:
-    Wait demo interval time.
-    Show demo message.
-    Reset shared variables necessary for the demo.
-    Calculate demo end time.
-    Run a loop that lasts until the end time.
-    */
-
     delay(DEMO_INTERVAL_MILLIS);
+    _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Polling");
-
-    _endMillis = millis() + DEMO_LENGTH_MILLIS;
     _lastMillis = millis();
 
     while (millis() < _endMillis)
@@ -190,14 +168,14 @@ void demoPolling()
 void demoInterrupts()
 {
     delay(DEMO_INTERVAL_MILLIS);
+    _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Interrupts");
-
-    attachInterrupt(1, radioInterrupt, FALLING);
-    _showMessageInInterrupt = 1;
-
-    _endMillis = millis() + DEMO_LENGTH_MILLIS;
+    radioInterrupt(); // Clear any previously asserted interrupt.
+    attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
     _lastMillis = millis();
+    _hadTxOkInterrupt = 0;
+    _hadTxFailInterrupt = 0;
 
     while (millis() < _endMillis)
     {
@@ -207,18 +185,29 @@ void demoInterrupts()
             debug("  Start send "); debug(++_radioData.Counter);
             _radio.startSend(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData));
         }
+
+        if (_hadTxOkInterrupt)
+        {
+            _hadTxOkInterrupt = 0;
+            debugln("...Success");
+        }
+
+        if (_hadTxFailInterrupt)
+        {
+            _hadTxFailInterrupt = 0;
+            debugln("...Failed");
+        }
     }
 
-    detachInterrupt(1);
+    detachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ));
 }
 
 void demoAckPayload()
 {
     delay(DEMO_INTERVAL_MILLIS);
+    _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("ACK payloads");
-
-    _endMillis = millis() + DEMO_LENGTH_MILLIS;
     _lastMillis = millis();
 
     while (millis() < _endMillis)
@@ -226,7 +215,6 @@ void demoAckPayload()
         if (millis() - _lastMillis > 1500)
         {
             _lastMillis = millis();
-
             debug("  Send "); debug(++_radioData.Counter);
 
             if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
@@ -240,13 +228,13 @@ void demoAckPayload()
                     if (ackLength == sizeof(_radioDataAckA))
                     {
                         _radio.readData(&_radioDataAckA);
-                        debug(" - Received ACK A ");
+                        debug(", Received ACK A ");
                         debug(_radioDataAckA.Counter);
                     }
                     else if (ackLength == sizeof(_radioDataAckB))
                     {
                         _radio.readData(&_radioDataAckB);
-                        debug(" - Received ACK B ");
+                        debug(", Received ACK B ");
                         debug(_radioDataAckB.Counter);
                     }
 
@@ -266,65 +254,57 @@ void demoAckPayload()
 void demoRxTxSwitching()
 {
     delay(DEMO_INTERVAL_MILLIS);
-
-    debugln("RxTx switching");
-
-    attachInterrupt(1, radioRxTxInterrupt, FALLING);
-    _showMessageInInterrupt = 0;
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
+    debugln("RxTx switching");
+    radioInterrupt(); // Clear any previously asserted interrupt.
+    attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
     String msg;
-    uint8_t valueOfCountToSend = 0;
+    uint16_t endCount = _radioData.Counter + 3;
 
     // Send 3 packets, filling the TX buffer.
-    while (valueOfCountToSend < 4)
+    while (_radioData.Counter++ < endCount)
     {
-        _radioData.Counter = valueOfCountToSend;
         msg = "  Start send ";
         msg += _radioData.Counter;
         debugln(msg);
         _radio.startSend(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData));
-        valueOfCountToSend++;
     }
+
+    // Immediately call hasData to test that it sends all 3 packets before switching into RX mode.
+    _radio.hasData();
+
+    uint8_t expectedReturnCount = _radioData.Counter;
+    detachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ));
 
     while (millis() < _endMillis)
     {
-        // Test the wait logic in hasData, it should wait until all 3 packets have been sent before switching into RX mode.
         if (_radio.hasData())
         {
             _radio.readData(&_radioData);
             debug("  Received ");
             debug(_radioData.Counter);
 
-            if (valueOfCountToSend == _radioData.Counter)
+            if (expectedReturnCount == _radioData.Counter)
             {
-                debugln(" - hasData wait succeeded");
+                debugln(" - wait for Tx success");
             }
             else
             {
-                debugln(" - hasData wait failed");
+                debugln(" - wait for Tx failed");
             }
-
-            Serial.flush();
-        }
-        else
-        {
-            delay(1);
         }
     }
-
-    detachInterrupt(1);
 }
 
 void demoPollingBitrate()
 {
     delay(DEMO_INTERVAL_MILLIS);
+    _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Polling bitrate");
-
     _successPacketCount = 0;
     _failedPacketCount = 0;
-    _endMillis = millis() + DEMO_LENGTH_MILLIS;
     _lastMillis = millis();
 
     while (millis() < _endMillis)
@@ -359,11 +339,10 @@ void demoPollingBitrate()
 void demoPollingBitrateNoAck() {
 
     delay(DEMO_INTERVAL_MILLIS);
+    _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Polling bitrate NO_ACK");
-
     _packetCount = 0;
-    _endMillis = millis() + DEMO_LENGTH_MILLIS;
     _lastMillis = millis();
 
     while (millis() < _endMillis)
@@ -393,14 +372,13 @@ void demoPollingBitrateNoAck() {
 void demoInterruptsBitrate()
 {
     delay(DEMO_INTERVAL_MILLIS);
+    _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Interrupts bitrate");
-
-    attachInterrupt(1, radioInterrupt, FALLING);
-    _showMessageInInterrupt = 0;
+    radioInterrupt(); // Clear any previously asserted interrupt.
+    attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
     _successPacketCount = 0;
     _failedPacketCount = 0;
-    _endMillis = millis() + DEMO_LENGTH_MILLIS;
     _lastMillis = millis();
 
     while (millis() < _endMillis)
@@ -424,21 +402,20 @@ void demoInterruptsBitrate()
         _radio.startSend(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData));
     }
 
-    detachInterrupt(1);
+    detachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ));
 }
 
 void demoInterruptsBitrateNoAck()
 {
     delay(DEMO_INTERVAL_MILLIS);
+    _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Interrupts bitrate NO_ACK");
-
-    attachInterrupt(1, radioInterrupt, FALLING);
-    _showMessageInInterrupt = 0;
+    radioInterrupt(); // Clear any previously asserted interrupt.
+    attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
     _successPacketCount = 0;
     _failedPacketCount = 0;
     uint32_t sendCount = 0;
-    _endMillis = millis() + DEMO_LENGTH_MILLIS;
     _lastMillis = millis();
 
     while (millis() < _endMillis)
@@ -464,20 +441,19 @@ void demoInterruptsBitrateNoAck()
         sendCount++;
     }
 
-    detachInterrupt(1);
+    detachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ));
 }
 
 void demoPollingBitrateAckPayload()
 {
     delay(DEMO_INTERVAL_MILLIS);
+    _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Polling bitrate ACK payload");
-
     _ackAPacketCount = 0;
     _ackBPacketCount = 0;
     _successPacketCount = 0;
     _failedPacketCount = 0;
-    _endMillis = millis() + DEMO_LENGTH_MILLIS;
     _lastMillis = millis();
 
     while (millis() < _endMillis)
@@ -535,16 +511,17 @@ void demoPollingBitrateAckPayload()
 void demoInterruptsBitrateAckPayload()
 {
     delay(DEMO_INTERVAL_MILLIS);
+    _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Interrupts bitrate ACK payload");
-
-    attachInterrupt(1, radioInterrupt, FALLING);
-    _showMessageInInterrupt = 0;
+    radioInterrupt(); // Clear any previously asserted interrupt.
+    attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
+    _hadTxOkInterrupt = 0;
+    _hadTxFailInterrupt = 0;
     _successPacketCount = 0;
     _failedPacketCount = 0;
     _ackAPacketCount = 0;
     _ackBPacketCount = 0;
-    _endMillis = millis() + DEMO_LENGTH_MILLIS;
     _lastMillis = millis();
 
     while (millis() < _endMillis)
@@ -570,10 +547,32 @@ void demoInterruptsBitrateAckPayload()
             _lastMillis = _currentMillis;
         }
 
+        if (_hadTxOkInterrupt)
+        {
+            _hadTxOkInterrupt = 0;
+            uint8_t ackLength = _radio.hasAckData();
+
+            while (ackLength > 0)
+            {
+                if (ackLength == sizeof(_radioDataAckA))
+                {
+                    _radio.readData(&_radioDataAckA);
+                    _ackAPacketCount++;
+                }
+                else if (ackLength == sizeof(_radioDataAckB))
+                {
+                    _radio.readData(&_radioDataAckB);
+                    _ackBPacketCount++;
+                }
+
+                ackLength = _radio.hasAckData();
+            }
+        }
+
         _radio.startSend(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData));
     }
 
-    detachInterrupt(1);
+    detachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ));
 }
 
 void demoPollingBitrateAllPacketSizes()
@@ -581,7 +580,6 @@ void demoPollingBitrateAllPacketSizes()
     delay(DEMO_INTERVAL_MILLIS);
 
     debugln("Polling bitrate all packet sizes");
-
     _successPacketCount = 0;
     _failedPacketCount = 0;
     _lastMillis = millis();
@@ -593,7 +591,7 @@ void demoPollingBitrateAllPacketSizes()
     {
         _currentMillis = millis();
 
-        if (_currentMillis - _lastMillis > 2999) // Send 3 seconds worth of packets for each size.
+        if (_currentMillis - _lastMillis > 1999) // Send 2 seconds worth of packets for each size.
         {
             _packetCount = _successPacketCount + _failedPacketCount;
             _bitsPerSecond = packetSize * _successPacketCount * 8 / (float)(_currentMillis - _lastMillis) * 1000;
@@ -632,7 +630,6 @@ void demoPollingBitrateAllAckSizes()
     delay(DEMO_INTERVAL_MILLIS);
 
     debugln("Polling bitrate all ACK sizes");
-
     _successPacketCount = 0;
     _failedPacketCount = 0;
     _lastMillis = millis();
@@ -645,7 +642,7 @@ void demoPollingBitrateAllAckSizes()
     {
         _currentMillis = millis();
 
-        if (_currentMillis - _lastMillis > 2999) { // Send 3 seconds worth of packets for each size.
+        if (_currentMillis - _lastMillis > 1999) { // Send 2 seconds worth of packets for each size.
 
             _packetCount = _successPacketCount + _failedPacketCount;
             _bitsPerSecond = sizeof(_radioData) * _successPacketCount * 8 / (float)(_currentMillis - _lastMillis) * 1000;
