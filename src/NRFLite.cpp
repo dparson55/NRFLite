@@ -383,8 +383,8 @@ uint8_t NRFLite::prepForRx()
     // Wait for the transition into RX mode.
     delay(POWERDOWN_TO_RXTX_MODE_MILLIS);
 
-    uint8_t configRegisterWasSet = readRegister(CONFIG) == CONFIG_REG_SETTINGS_FOR_RX_MODE;
-    return configRegisterWasSet;
+    uint8_t inRxMode = readRegister(CONFIG) == CONFIG_REG_SETTINGS_FOR_RX_MODE;
+    return inRxMode;
 }
 
 void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
@@ -402,12 +402,12 @@ void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
 
     // Ensure radio is ready for TX operation.
     uint8_t configReg = readRegister(CONFIG);
-    uint8_t inRxMode = configReg == CONFIG_REG_SETTINGS_FOR_RX_MODE;
-    if (inRxMode)
+    uint8_t readyForTx = configReg == CONFIG_REG_SETTINGS_FOR_RX_MODE & ~_BV(PRIM_RX);
+    if (!readyForTx)
     {
         // Put radio into Standby-I mode in order to transition into TX mode.
         digitalWrite(_cePin, LOW);
-        configReg &= ~_BV(PRIM_RX);
+        configReg = CONFIG_REG_SETTINGS_FOR_RX_MODE & ~_BV(PRIM_RX);
         writeRegister(CONFIG, configReg);
         delay(POWERDOWN_TO_RXTX_MODE_MILLIS);
     }
