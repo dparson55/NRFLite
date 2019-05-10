@@ -62,15 +62,16 @@ class NRFLite {
     
   private:
 
+    const static uint8_t CONFIG_REG_SETTINGS_FOR_RX_MODE = _BV(PWR_UP) | _BV(PRIM_RX) | _BV(EN_CRC);
+    const static uint32_t NRF_SPICLOCK = 4000000; // Speed to use for SPI communication with the transceiver.
+
     // Delay used to discharge the radio's CSN pin when operating in 2-pin mode.
     // Determined by measuring time to discharge CSN on a 1MHz ATtiny using 0.1uF capacitor and 1K resistor.
     const static uint16_t CSN_DISCHARGE_MICROS = 500;
 
-    const static uint8_t OFF_TO_POWERDOWN_MILLIS = 100; // Vcc > 1.9V power on reset time.
-    const static uint16_t POWERDOWN_TO_RXTX_MODE_MICROS = 4630; // 4500 to Standby + 130 to RX or TX mode.
-    const static uint8_t CE_TRANSMISSION_MICROS = 10; // Time to initiate data transmission.
-
-    const static uint32_t NRF_SPICLOCK = 4000000; // Speed to use for SPI communication with the transceiver.
+    const static uint8_t OFF_TO_POWERDOWN_MILLIS = 100;     // Vcc > 1.9V power on reset time.
+    const static uint8_t POWERDOWN_TO_RXTX_MODE_MILLIS = 5; // 4500 to Standby + 130 to RX or TX mode, so 5 is enough.
+    const static uint8_t CE_TRANSMISSION_MICROS = 10;       // Time to initiate data transmission.
 
     enum SpiTransferType { READ_OPERATION, WRITE_OPERATION };
 
@@ -80,14 +81,18 @@ class NRFLite {
     volatile uint8_t *_momi_PIN;
     volatile uint8_t *_sck_PORT;
     uint8_t _cePin, _csnPin, _momi_MASK, _sck_MASK;
-    uint8_t _resetInterruptFlags, _useTwoPinSpiTransfer;
+    volatile uint8_t _resetInterruptFlags;
+    uint8_t _useTwoPinSpiTransfer, _usingSeparateCeAndCsnPins;
     uint16_t _transmissionRetryWaitMicros, _maxHasDataIntervalMicros;
+    int16_t _lastToRadioId = -1;
     uint32_t _microsSinceLastDataCheck;
     
     uint8_t getPipeOfFirstRxPacket();
     uint8_t getRxPacketLength();
-    uint8_t prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel);
+    uint8_t initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel);
+    uint8_t prepForRx();
     void prepForTx(uint8_t toRadioId, SendType sendType);
+    uint8_t waitForTxToComplete();
     uint8_t readRegister(uint8_t regName);
     void readRegister(uint8_t regName, void* data, uint8_t length);
     void writeRegister(uint8_t regName, uint8_t data);

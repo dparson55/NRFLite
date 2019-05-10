@@ -21,9 +21,9 @@
 
 uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate, uint8_t channel)
 {
-    _useTwoPinSpiTransfer = 0;
     _cePin = cePin;
     _csnPin = csnPin;
+    _useTwoPinSpiTransfer = 0;
     
     // Default states for the radio pins.  When CSN is LOW the radio listens to SPI communication,
     // so we operate most of the time with CSN HIGH.
@@ -44,7 +44,7 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
         if (_csnPin != SS) digitalWrite(SS, savedSS);
     #endif
 
-    uint8_t success = prepForRx(radioId, bitrate, channel);
+    uint8_t success = initRadio(radioId, bitrate, channel);
     return success;
 }
 
@@ -52,9 +52,9 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
 
 uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bitrates bitrate, uint8_t channel)
 {
-    _useTwoPinSpiTransfer = 1;
     _cePin = sckPin;
     _csnPin = sckPin;
+    _useTwoPinSpiTransfer = 1;
 
     // Default states for the 2 multiplexed pins.
     pinMode(momiPin, INPUT);
@@ -69,7 +69,8 @@ uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bi
     _sck_PORT = portOutputRegister(digitalPinToPort(sckPin));
     _sck_MASK = digitalPinToBitMask(sckPin);
 
-    return prepForRx(radioId, bitrate, channel);
+    uint8_t success = initRadio(radioId, bitrate, channel);
+    return success;
 }
 
 #endif
@@ -78,10 +79,10 @@ void NRFLite::addAckData(void *data, uint8_t length, uint8_t removeExistingAcks)
 {
     if (removeExistingAcks)
     {
-        spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0); // Clear the TX FIFO buffer.
+        spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0); // Clear the TX buffer.
     }
     
-    // Add the packet to the TX FIFO buffer for pipe 1, the pipe used to receive packets from radios that
+    // Add the packet to the TX buffer for pipe 1, the pipe used to receive packets from radios that
     // send us data.  When we receive the next transmission from a radio, we'll provide this ACK data in the
     // auto-acknowledgment packet that goes back.
     spiTransfer(WRITE_OPERATION, (W_ACK_PAYLOAD | 1), data, length);
@@ -89,11 +90,11 @@ void NRFLite::addAckData(void *data, uint8_t length, uint8_t removeExistingAcks)
 
 uint8_t NRFLite::hasAckData()
 {
-    // If we have a pipe 0 packet sitting at the top of the RX FIFO buffer, we have auto-acknowledgment data.
+    // If we have a pipe 0 packet sitting at the top of the RX buffer, we have auto-acknowledgment data.
     // We receive ACK data from other radios using the pipe 0 address.
     if (getPipeOfFirstRxPacket() == 0)
     {
-        return getRxPacketLength(); // Return the length of the data packet in the RX FIFO buffer.
+        return getRxPacketLength(); // Return the length of the data packet in the RX buffer.
     }
     else
     {
@@ -105,8 +106,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
 {
     // If using the same pins for CE and CSN, we need to ensure CE is left HIGH long enough to receive data.
     // If we don't limit the calling program, CE could be LOW so often that no data packets can be received.
-    int8_t mustStopRadioRxToCheckForData = _cePin == _csnPin;
-    if (mustStopRadioRxToCheckForData)
+    if (!_usingSeparateCeAndCsnPins)
     {
         if (usingInterrupts)
         {
@@ -118,7 +118,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
             uint8_t giveRadioMoreTimeToReceive = micros() - _microsSinceLastDataCheck < _maxHasDataIntervalMicros;
             if (giveRadioMoreTimeToReceive)
             {
-                return 0; // Return to prevent the calling program from forcing us to bring CE low, making the radio stop receiving.
+                return 0; // Prevent the calling program from forcing us to bring CE low, making the radio stop receiving.
             }
             else
             {
@@ -127,27 +127,25 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
         }
     }
     
-    // Ensure radio is powered on and in RX mode in case the radio was powered down or in TX mode.
-    uint8_t originalConfigReg = readRegister(CONFIG);
-    uint8_t newConfigReg = originalConfigReg | _BV(PWR_UP) | _BV(PRIM_RX);
-    if (originalConfigReg != newConfigReg) 
-    { 
-        writeRegister(CONFIG, newConfigReg); 
+    uint8_t notInRxMode = readRegister(CONFIG) != CONFIG_REG_SETTINGS_FOR_RX_MODE;
+    if (notInRxMode)
+    {
+        waitForTxToComplete();
+        prepForRx();
     }
-    
-    // Ensure we're listening for packets.
-    digitalWrite(_cePin, HIGH); 
-    
-    // If the radio was initially powered off, wait for it to turn on.
-    if ((originalConfigReg & _BV(PWR_UP)) == 0)
-    { 
-        delayMicroseconds(POWERDOWN_TO_RXTX_MODE_MICROS);
+    else
+    {
+        // Ensure we are listening for packets.
+        if (digitalRead(_cePin) == LOW)
+        {
+            digitalWrite(_cePin, HIGH);
+        }
     }
 
-    // If we have a pipe 1 packet sitting at the top of the RX FIFO buffer, we have data.
+    // If we have a pipe 1 packet sitting at the top of the RX buffer, we have data.
     if (getPipeOfFirstRxPacket() == 1)
     {
-        return getRxPacketLength(); // Return the length of the data packet in the RX FIFO buffer.
+        return getRxPacketLength(); // Return the length of the data packet in the RX buffer.
     }
     else
     {
@@ -165,7 +163,7 @@ uint8_t NRFLite::hasDataISR()
 
 void NRFLite::readData(void *data)
 {
-    // Determine length of data in the RX FIFO buffer and read it.
+    // Determine length of data in the RX buffer and read it.
     uint8_t dataLength;
     spiTransfer(READ_OPERATION, R_RX_PL_WID, &dataLength, 1);
     spiTransfer(READ_OPERATION, R_RX_PAYLOAD, data, dataLength);
@@ -183,59 +181,27 @@ uint8_t NRFLite::send(uint8_t toRadioId, void *data, uint8_t length, SendType se
     prepForTx(toRadioId, sendType);
 
     // Clear any previously asserted TX success or max retries flags.
-    uint8_t statusReg = readRegister(STATUS_NRF);
-    if (statusReg & _BV(TX_DS) || statusReg & _BV(MAX_RT))
-    {
-        writeRegister(STATUS_NRF, statusReg | _BV(TX_DS) | _BV(MAX_RT));
-    }
+    writeRegister(STATUS_NRF, _BV(TX_DS) | _BV(MAX_RT));
     
-    // Add data to the TX FIFO buffer, with or without an ACK request.
+    // Add data to the TX buffer, with or without an ACK request.
     if (sendType == NO_ACK) { spiTransfer(WRITE_OPERATION, W_TX_PAYLOAD_NO_ACK, data, length); }
     else                    { spiTransfer(WRITE_OPERATION, W_TX_PAYLOAD       , data, length); }
 
-    // Start transmission.
-    // If we have separate pins for CE and CSN, CE will be LOW and we must pulse it to start transmission.
-    // If we use the same pin for CE and CSN, CE will already be HIGH and transmission will have started
-    // when data was loaded into the TX FIFO.
-    uint8_t txPulseIsNeeded = _cePin != _csnPin;
-    if (txPulseIsNeeded)
-    {
-        digitalWrite(_cePin, HIGH);
-        delayMicroseconds(CE_TRANSMISSION_MICROS);
-        digitalWrite(_cePin, LOW);
-    }
-    
-    // Wait for transmission to succeed or fail.
-    while (1)
-    {
-        delayMicroseconds(_transmissionRetryWaitMicros);
-        statusReg = readRegister(STATUS_NRF);
-        
-        if (statusReg & _BV(TX_DS))
-        {
-            writeRegister(STATUS_NRF, statusReg | _BV(TX_DS));  // Clear TX success flag.
-            return 1;                                           // Return success.
-        }
-        else if (statusReg & _BV(MAX_RT))
-        {
-            spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0);    // Clear TX FIFO buffer.
-            writeRegister(STATUS_NRF, statusReg | _BV(MAX_RT)); // Clear flag which indicates max retries has been reached.
-            return 0;                                           // Return failure.
-        }
-    }
+    uint8_t result = waitForTxToComplete();
+    return result;
 }
 
 void NRFLite::startSend(uint8_t toRadioId, void *data, uint8_t length, SendType sendType)
 {
     prepForTx(toRadioId, sendType);
     
-    // Add data to the TX FIFO buffer, with or without an ACK request.
+    // Add data to the TX buffer, with or without an ACK request.
     if (sendType == NO_ACK) { spiTransfer(WRITE_OPERATION, W_TX_PAYLOAD_NO_ACK, data, length); }
     else                    { spiTransfer(WRITE_OPERATION, W_TX_PAYLOAD       , data, length); }
     
     // Start transmission.
-    uint8_t txPulseIsNeeded = _cePin != _csnPin;
-    if (txPulseIsNeeded)
+    // If we have separate pins for CE and CSN, CE will be LOW and we must pulse it to send the packet.
+    if (_usingSeparateCeAndCsnPins)
     {
         digitalWrite(_cePin, HIGH);
         delayMicroseconds(CE_TRANSMISSION_MICROS);
@@ -256,14 +222,17 @@ void NRFLite::whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady)
     // and if we don't disable this logic, it's not possible for us to check these flags.
     if (_resetInterruptFlags)
     {
-        writeRegister(STATUS_NRF, statusReg | _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
+        writeRegister(STATUS_NRF, _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
     }
 }
 
 void NRFLite::powerDown()
 {
-    // If we have separate CE and CSN pins, we can gracefully turn off Tx or Rx operation.
-    if (_cePin != _csnPin) { digitalWrite(_cePin, LOW); }
+    // If we have separate CE and CSN pins, we can gracefully transition into Power Down mode by first entering Standby-I mode.
+    if (_usingSeparateCeAndCsnPins)
+    {
+        digitalWrite(_cePin, LOW);
+    }
     
     // Turn off the radio.
     writeRegister(CONFIG, readRegister(CONFIG) & ~_BV(PWR_UP));
@@ -321,14 +290,14 @@ uint8_t NRFLite::getPipeOfFirstRxPacket()
 
 uint8_t NRFLite::getRxPacketLength()
 {
-    // Read the length of the first data packet sitting in the RX FIFO buffer.
+    // Read the length of the first data packet sitting in the RX buffer.
     uint8_t dataLength;
     spiTransfer(READ_OPERATION, R_RX_PL_WID, &dataLength, 1);
 
     // Verify the data length is valid (0 - 32 bytes).
     if (dataLength > 32)
     {
-        spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0); // Clear invalid data in the RX FIFO buffer.
+        spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0); // Clear invalid data in the RX buffer.
         writeRegister(STATUS_NRF, readRegister(STATUS_NRF) | _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
         return 0;
     }
@@ -338,9 +307,11 @@ uint8_t NRFLite::getRxPacketLength()
     }
 }
 
-uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
+uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
 {
+    _lastToRadioId = -1;
     _resetInterruptFlags = 1;
+    _usingSeparateCeAndCsnPins = _cePin != _csnPin;
 
     delay(OFF_TO_POWERDOWN_MILLIS);
 
@@ -355,22 +326,22 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     {
         writeRegister(RF_SETUP, B00001110);   // 2 Mbps, 0 dBm output power
         writeRegister(SETUP_RETR, B00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
-        _maxHasDataIntervalMicros = 600;      
-        _transmissionRetryWaitMicros = 600;   
-    }                                         
-    else if (bitrate == BITRATE1MBPS)         
-    {                                         
+        _transmissionRetryWaitMicros = 600;   // 100 more than the retry delay
+        _maxHasDataIntervalMicros = 1200;
+    }
+    else if (bitrate == BITRATE1MBPS)
+    {
         writeRegister(RF_SETUP, B00000110);   // 1 Mbps, 0 dBm output power
         writeRegister(SETUP_RETR, B00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
-        _maxHasDataIntervalMicros = 1200;     
-        _transmissionRetryWaitMicros = 1000;  
-    }                                         
-    else                                      
-    {                                         
+        _transmissionRetryWaitMicros = 600;   // 100 more than the retry delay
+        _maxHasDataIntervalMicros = 1700;
+    }
+    else
+    {
         writeRegister(RF_SETUP, B00100110);   // 250 Kbps, 0 dBm output power
         writeRegister(SETUP_RETR, B01011111); // 0101 = 1500 uS between retries, 1111 = 15 retries
-        _maxHasDataIntervalMicros = 8000;     
-        _transmissionRetryWaitMicros = 1500;  
+        _transmissionRetryWaitMicros = 1600;  // 100 more than the retry delay
+        _maxHasDataIntervalMicros = 5000;
     }
 
     // Assign this radio's address to RX pipe 1.  When another radio sends us data, this is the address
@@ -387,87 +358,126 @@ uint8_t NRFLite::prepForRx(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     // Enable dynamically sized payloads, ACK payloads, and TX support with or without an ACK request.
     writeRegister(FEATURE, _BV(EN_DPL) | _BV(EN_ACK_PAY) | _BV(EN_DYN_ACK));
 
-    // Ensure RX FIFO and TX FIFO buffers are empty.  Each buffer can hold 3 packets.
+    // Ensure RX and TX buffers are empty.  Each buffer can hold 3 packets.
     spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0);
     spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0);
 
     // Clear any interrupts.
-    uint8_t statusReg = readRegister(STATUS_NRF);
-    writeRegister(STATUS_NRF, statusReg | _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
+    writeRegister(STATUS_NRF, _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
 
-    // Power on the radio and start listening, delaying to allow startup to complete.
-    uint8_t newConfigReg = _BV(PWR_UP) | _BV(PRIM_RX) | _BV(EN_CRC);
-    writeRegister(CONFIG, newConfigReg);
+    uint8_t success = prepForRx();
+    return success;
+}
+
+uint8_t NRFLite::prepForRx()
+{
+    // Put radio into Standby-I mode in order to transition into RX mode.
+    digitalWrite(_cePin, LOW);
+
+    // Power on the radio in RX mode.
+    writeRegister(CONFIG, CONFIG_REG_SETTINGS_FOR_RX_MODE);
+
+    // Start listening for packets.
     digitalWrite(_cePin, HIGH);
-    delayMicroseconds(POWERDOWN_TO_RXTX_MODE_MICROS);
 
-    uint8_t configRegisterWasSet = readRegister(CONFIG) == newConfigReg;
+    // Wait for the transition into RX mode.
+    delay(POWERDOWN_TO_RXTX_MODE_MILLIS);
+
+    uint8_t configRegisterWasSet = readRegister(CONFIG) == CONFIG_REG_SETTINGS_FOR_RX_MODE;
     return configRegisterWasSet;
 }
 
 void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
 {
-    // TX pipe address sets the destination radio for the data.
-    // RX pipe 0 is special and needs the same address in order to receive ACK packets from the destination radio.
-    uint8_t address[5] = { 1, 2, 3, 4, toRadioId };
-    writeRegister(TX_ADDR, &address, 5);
-    writeRegister(RX_ADDR_P0, &address, 5);
-
-    // Ensure radio is powered on and ready for TX operation.
-    uint8_t originalConfigReg = readRegister(CONFIG);
-    uint8_t newConfigReg = originalConfigReg & ~_BV(PRIM_RX) | _BV(PWR_UP);
-    if (originalConfigReg != newConfigReg)
+    if (_lastToRadioId != toRadioId)
     {
-        // In case the radio was in RX mode (powered on and listening), we'll put the radio into
-        // Standby-I mode by setting CE LOW.  The radio cannot transition directly from RX to TX,
-        // it must go through Standby-I first.
-        if ((originalConfigReg & _BV(PRIM_RX)) && (originalConfigReg & _BV(PWR_UP)))
-        {
-            if (digitalRead(_cePin) == HIGH) { digitalWrite(_cePin, LOW); }
-        }
-        
-        writeRegister(CONFIG, newConfigReg);
-        delayMicroseconds(POWERDOWN_TO_RXTX_MODE_MICROS);
+        _lastToRadioId = toRadioId;
+
+        // TX pipe address sets the destination radio for the data.
+        // RX pipe 0 is special and needs the same address in order to receive ACK packets from the destination radio.
+        uint8_t address[5] = { 1, 2, 3, 4, toRadioId };
+        writeRegister(TX_ADDR, &address, 5);
+        writeRegister(RX_ADDR_P0, &address, 5);
     }
-    
-    // If RX FIFO buffer is full and we require an ACK, clear it so we can receive the ACK response.
+
+    // Ensure radio is ready for TX operation.
+    uint8_t configReg = readRegister(CONFIG);
+    uint8_t inRxMode = configReg == CONFIG_REG_SETTINGS_FOR_RX_MODE;
+    if (inRxMode)
+    {
+        // Put radio into Standby-I mode in order to transition into TX mode.
+        digitalWrite(_cePin, LOW);
+        configReg &= ~_BV(PRIM_RX);
+        writeRegister(CONFIG, configReg);
+        delay(POWERDOWN_TO_RXTX_MODE_MILLIS);
+    }
+
     uint8_t fifoReg = readRegister(FIFO_STATUS);
-    if (fifoReg & _BV(RX_FULL) && sendType == REQUIRE_ACK)
+
+    // If RX buffer is full and we require an ACK, clear it so we can receive the ACK response.
+    uint8_t rxBufferIsFull = fifoReg & _BV(RX_FULL);
+    if (sendType == REQUIRE_ACK && rxBufferIsFull)
     {
         spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0);
     }
     
-    // If TX FIFO buffer is full, we'll send a packet.
-    if (fifoReg & _BV(FIFO_FULL))
+    // If TX buffer is full, wait for all queued packets to be sent.
+    uint8_t txBufferIsFull = fifoReg & _BV(FIFO_FULL);
+    if (txBufferIsFull)
     {
-        // Disable interrupt flag reset logic in 'whatHappened' so we can react to the flags here.
-        _resetInterruptFlags = 0;
-        uint8_t statusReg = readRegister(STATUS_NRF);
-        
-        // While the TX FIFO buffer is full...
-        while (statusReg & _BV(TX_FULL))
+        waitForTxToComplete();
+    }
+}
+
+uint8_t NRFLite::waitForTxToComplete()
+{
+    _resetInterruptFlags = 0; // Disable interrupt flag reset logic in 'whatHappened'.
+
+    uint8_t fifoReg, statusReg;
+    uint8_t txBufferIsEmpty;
+    uint8_t packetWasSent, packetCouldNotBeSent;
+    uint8_t result = 1; // Default to indicating success.
+
+    while (1)
+    {
+        fifoReg = readRegister(FIFO_STATUS);
+        txBufferIsEmpty = fifoReg & _BV(TX_EMPTY);
+
+        if (txBufferIsEmpty)
         {
-            // Try sending a packet.
+            break;
+        }
+
+        // If we have separate pins for CE and CSN, CE will be LOW so we must toggle it to send a packet.
+        if (_usingSeparateCeAndCsnPins)
+        {
             digitalWrite(_cePin, HIGH);
             delayMicroseconds(CE_TRANSMISSION_MICROS);
             digitalWrite(_cePin, LOW);
-            
-            delayMicroseconds(_transmissionRetryWaitMicros);
-            statusReg = readRegister(STATUS_NRF);
-            
-            if (statusReg & _BV(TX_DS))
-            {
-                writeRegister(STATUS_NRF, statusReg | _BV(TX_DS));   // Clear TX success flag.
-            }
-            else if (statusReg & _BV(MAX_RT))
-            {
-                spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0); // Clear TX FIFO buffer.
-                writeRegister(STATUS_NRF, statusReg | _BV(MAX_RT));  // Clear flag which indicates max retries has been reached.
-            }
         }
+
+        delayMicroseconds(_transmissionRetryWaitMicros);
         
-        _resetInterruptFlags = 1;
+        statusReg = readRegister(STATUS_NRF);
+        packetWasSent = statusReg & _BV(TX_DS);
+        packetCouldNotBeSent = statusReg & _BV(MAX_RT);
+
+        if (packetWasSent)
+        {
+            writeRegister(STATUS_NRF, _BV(TX_DS));   // Clear TX success flag.
+        }
+        else if (packetCouldNotBeSent)
+        {
+            spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0); // Clear TX buffer.
+            writeRegister(STATUS_NRF, _BV(MAX_RT));          // Clear max retry flag.
+            result = 0;                                      // Indicate a failure.
+            break;
+        }
     }
+
+    _resetInterruptFlags = 1; // Re-enable interrupt reset logic in 'whatHappened'.
+
+    return result;
 }
 
 uint8_t NRFLite::readRegister(uint8_t regName)
@@ -496,17 +506,17 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
 {
     uint8_t* intData = reinterpret_cast<uint8_t*>(data);
 
+    noInterrupts();// Prevent an interrupt from interferring with the communication.
+
     if (_useTwoPinSpiTransfer)
     {
         digitalWrite(_csnPin, LOW);              // Signal radio it should begin listening to the SPI bus.
         delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to discharge.
-        noInterrupts();                          // Timing is critical so interrupts are disabled during the bit-bang transfer.
         twoPinTransfer(regName);
         for (uint8_t i = 0; i < length; ++i) {
             uint8_t newData = twoPinTransfer(intData[i]);
             if (transferType == READ_OPERATION) { intData[i] = newData; }
         }
-        interrupts();
         digitalWrite(_csnPin, HIGH);             // Stop radio from listening to the SPI bus.
         delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to recharge.
     }
@@ -534,6 +544,8 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
 
         digitalWrite(_csnPin, HIGH); // Stop radio from listening to the SPI bus.
     }
+
+    interrupts();
 }
 
 uint8_t NRFLite::usiTransfer(uint8_t data)
@@ -556,7 +568,7 @@ uint8_t NRFLite::usiTransfer(uint8_t data)
 uint8_t NRFLite::twoPinTransfer(uint8_t data)
 {
     uint8_t byteFromRadio;
-    uint8_t bits = 8;
+    uint8_t currentBitIndex = 8;
     
     do
     {
@@ -576,7 +588,7 @@ uint8_t NRFLite::twoPinTransfer(uint8_t data)
 
         data <<= 1; // Shift the byte we are sending to the left.
     }
-    while (--bits);
+    while (--currentBitIndex);
     
     return byteFromRadio;
 }
