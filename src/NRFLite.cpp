@@ -130,7 +130,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
     uint8_t notInRxMode = readRegister(CONFIG) != CONFIG_REG_SETTINGS_FOR_RX_MODE;
     if (notInRxMode)
     {
-        waitForTx(WAIT_UNTIL_EMPTY);
+        waitForTxToComplete();
         prepForRx();
     }
     else
@@ -187,7 +187,7 @@ uint8_t NRFLite::send(uint8_t toRadioId, void *data, uint8_t length, SendType se
     if (sendType == NO_ACK) { spiTransfer(WRITE_OPERATION, W_TX_PAYLOAD_NO_ACK, data, length); }
     else                    { spiTransfer(WRITE_OPERATION, W_TX_PAYLOAD       , data, length); }
 
-    uint8_t result = waitForTx(WAIT_UNTIL_EMPTY);
+    uint8_t result = waitForTxToComplete();
     return result;
 }
 
@@ -222,7 +222,7 @@ void NRFLite::whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady)
     // and if we don't disable this logic, it's not possible for us to check these flags.
     if (_resetInterruptFlags)
     {
-        writeRegister(STATUS_NRF, statusReg | _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
+        writeRegister(STATUS_NRF, _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
     }
 }
 
@@ -326,22 +326,22 @@ uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     {
         writeRegister(RF_SETUP, B00001110);   // 2 Mbps, 0 dBm output power
         writeRegister(SETUP_RETR, B00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
-        _maxHasDataIntervalMicros = 600;
-        _transmissionRetryWaitMicros = 600;
+        _transmissionRetryWaitMicros = 600;   // 100 more than the retry delay
+        _maxHasDataIntervalMicros = 1200;
     }
     else if (bitrate == BITRATE1MBPS)
     {
         writeRegister(RF_SETUP, B00000110);   // 1 Mbps, 0 dBm output power
         writeRegister(SETUP_RETR, B00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
-        _maxHasDataIntervalMicros = 1200;
-        _transmissionRetryWaitMicros = 1000;
+        _transmissionRetryWaitMicros = 600;   // 100 more than the retry delay
+        _maxHasDataIntervalMicros = 1700;
     }
     else
     {
         writeRegister(RF_SETUP, B00100110);   // 250 Kbps, 0 dBm output power
         writeRegister(SETUP_RETR, B01011111); // 0101 = 1500 uS between retries, 1111 = 15 retries
-        _maxHasDataIntervalMicros = 8000;
-        _transmissionRetryWaitMicros = 1500;
+        _transmissionRetryWaitMicros = 1600;  // 100 more than the retry delay
+        _maxHasDataIntervalMicros = 5000;
     }
 
     // Assign this radio's address to RX pipe 1.  When another radio sends us data, this is the address
@@ -415,43 +415,40 @@ void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
     uint8_t fifoReg = readRegister(FIFO_STATUS);
 
     // If RX buffer is full and we require an ACK, clear it so we can receive the ACK response.
-    if (sendType == REQUIRE_ACK && fifoReg & _BV(RX_FULL))
+    uint8_t rxBufferIsFull = fifoReg & _BV(RX_FULL);
+    if (sendType == REQUIRE_ACK && rxBufferIsFull)
     {
         spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0);
     }
     
-    // If TX buffer is full, send at least 1 packet.
-    if (fifoReg & _BV(FIFO_FULL))
+    // If TX buffer is full, wait for all queued packets to be sent.
+    uint8_t txBufferIsFull = fifoReg & _BV(FIFO_FULL);
+    if (txBufferIsFull)
     {
-        waitForTx(WAIT_UNTIL_NOT_FULL);
+        waitForTxToComplete();
     }
 }
 
-uint8_t NRFLite::waitForTx(WaitType waitType)
+uint8_t NRFLite::waitForTxToComplete()
 {
     _resetInterruptFlags = 0; // Disable interrupt flag reset logic in 'whatHappened'.
 
     uint8_t fifoReg, statusReg;
-    uint8_t txBufferIsEmpty, txBufferIsFull;
+    uint8_t txBufferIsEmpty;
     uint8_t packetWasSent, packetCouldNotBeSent;
-    uint8_t result = 1;
+    uint8_t result = 1; // Default to indicating success.
 
     while (1)
     {
         fifoReg = readRegister(FIFO_STATUS);
         txBufferIsEmpty = fifoReg & _BV(TX_EMPTY);
-        txBufferIsFull = fifoReg & _BV(FIFO_FULL);
 
-        if (waitType == WAIT_UNTIL_EMPTY && txBufferIsEmpty)
-        {
-            break;
-        }
-        else if (waitType == WAIT_UNTIL_NOT_FULL && !txBufferIsFull)
+        if (txBufferIsEmpty)
         {
             break;
         }
 
-        // If we have separate pins for CE and CSN, CE will be LOW so we must pulse it to send the packet.
+        // If we have separate pins for CE and CSN, CE will be LOW so we must toggle it to send a packet.
         if (_usingSeparateCeAndCsnPins)
         {
             digitalWrite(_cePin, HIGH);
@@ -473,7 +470,7 @@ uint8_t NRFLite::waitForTx(WaitType waitType)
         {
             spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0); // Clear TX buffer.
             writeRegister(STATUS_NRF, _BV(MAX_RT));          // Clear max retry flag.
-            result = 0;
+            result = 0;                                      // Indicate a failure.
             break;
         }
     }
@@ -509,17 +506,17 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
 {
     uint8_t* intData = reinterpret_cast<uint8_t*>(data);
 
+    noInterrupts();// Prevent an interrupt from interferring with the communication.
+
     if (_useTwoPinSpiTransfer)
     {
         digitalWrite(_csnPin, LOW);              // Signal radio it should begin listening to the SPI bus.
         delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to discharge.
-        noInterrupts();                          // Timing is critical so interrupts are disabled during the bit-bang transfer.
         twoPinTransfer(regName);
         for (uint8_t i = 0; i < length; ++i) {
             uint8_t newData = twoPinTransfer(intData[i]);
             if (transferType == READ_OPERATION) { intData[i] = newData; }
         }
-        interrupts();
         digitalWrite(_csnPin, HIGH);             // Stop radio from listening to the SPI bus.
         delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to recharge.
     }
@@ -547,6 +544,8 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
 
         digitalWrite(_csnPin, HIGH); // Stop radio from listening to the SPI bus.
     }
+
+    interrupts();
 }
 
 uint8_t NRFLite::usiTransfer(uint8_t data)

@@ -74,7 +74,6 @@ class NRFLite {
     const static uint8_t CE_TRANSMISSION_MICROS = 10;       // Time to initiate data transmission.
 
     enum SpiTransferType { READ_OPERATION, WRITE_OPERATION };
-    enum WaitType { WAIT_UNTIL_EMPTY, WAIT_UNTIL_NOT_FULL };
 
     Stream *_serial;
     volatile uint8_t *_momi_PORT;
@@ -82,7 +81,8 @@ class NRFLite {
     volatile uint8_t *_momi_PIN;
     volatile uint8_t *_sck_PORT;
     uint8_t _cePin, _csnPin, _momi_MASK, _sck_MASK;
-    uint8_t _resetInterruptFlags, _useTwoPinSpiTransfer, _usingSeparateCeAndCsnPins;
+    volatile uint8_t _resetInterruptFlags;
+    uint8_t _useTwoPinSpiTransfer, _usingSeparateCeAndCsnPins;
     uint16_t _transmissionRetryWaitMicros, _maxHasDataIntervalMicros;
     int16_t _lastToRadioId = -1;
     uint32_t _microsSinceLastDataCheck;
@@ -92,7 +92,7 @@ class NRFLite {
     uint8_t initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel);
     uint8_t prepForRx();
     void prepForTx(uint8_t toRadioId, SendType sendType);
-    uint8_t waitForTx(WaitType waitType);
+    uint8_t waitForTxToComplete();
     uint8_t readRegister(uint8_t regName);
     void readRegister(uint8_t regName, void* data, uint8_t length);
     void writeRegister(uint8_t regName, uint8_t data);
