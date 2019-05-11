@@ -436,15 +436,21 @@ uint8_t NRFLite::waitForTxToComplete()
     uint8_t fifoReg, statusReg;
     uint8_t txBufferIsEmpty;
     uint8_t packetWasSent, packetCouldNotBeSent;
-    uint8_t result = 1; // Default to indicating success.
+    uint8_t txAttemptCount;
+    uint8_t result = 0; // Default to indicating a failure.
 
-    while (1)
+    // TX buffer can store 3 packets, sends retry up to 15 times, and the retry wait time is about half
+    // the time necessary to send a 32 byte packet and receive a 32 byte ACK response.  3 x 15 x 2 = 90
+    const static uint8_t MAX_TX_ATTEMPT_COUNT = 90;
+
+    while (txAttemptCount++ < MAX_TX_ATTEMPT_COUNT)
     {
         fifoReg = readRegister(FIFO_STATUS);
         txBufferIsEmpty = fifoReg & _BV(TX_EMPTY);
 
         if (txBufferIsEmpty)
         {
+            result = 1; // Indicate success.
             break;
         }
 
@@ -470,7 +476,6 @@ uint8_t NRFLite::waitForTxToComplete()
         {
             spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0); // Clear TX buffer.
             writeRegister(STATUS_NRF, _BV(MAX_RT));          // Clear max retry flag.
-            result = 0;                                      // Indicate a failure.
             break;
         }
     }
