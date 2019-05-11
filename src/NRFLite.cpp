@@ -402,7 +402,7 @@ void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)
 
     // Ensure radio is ready for TX operation.
     uint8_t configReg = readRegister(CONFIG);
-    uint8_t readyForTx = configReg == CONFIG_REG_SETTINGS_FOR_RX_MODE & ~_BV(PRIM_RX);
+    uint8_t readyForTx = configReg == (CONFIG_REG_SETTINGS_FOR_RX_MODE & ~_BV(PRIM_RX));
     if (!readyForTx)
     {
         // Put radio into Standby-I mode in order to transition into TX mode.
@@ -506,11 +506,11 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
 {
     uint8_t* intData = reinterpret_cast<uint8_t*>(data);
 
-    noInterrupts();// Prevent an interrupt from interferring with the communication.
+    noInterrupts(); // Prevent an interrupt from interferring with the communication.
 
     if (_useTwoPinSpiTransfer)
     {
-        digitalWrite(_csnPin, LOW);              // Signal radio it should begin listening to the SPI bus.
+        digitalWrite(_csnPin, LOW);              // Signal radio to list on the SPI bus.
         delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to discharge.
         twoPinTransfer(regName);
         for (uint8_t i = 0; i < length; ++i) {
@@ -522,7 +522,7 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
     }
     else
     {
-        digitalWrite(_csnPin, LOW); // Signal radio it should begin listening to the SPI bus.
+        digitalWrite(_csnPin, LOW); // Signal radio to list on the SPI bus.
 
         #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
             // ATtiny transfer with USI.
