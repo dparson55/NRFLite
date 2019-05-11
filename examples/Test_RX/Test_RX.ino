@@ -29,7 +29,7 @@ struct RadioPacket { uint8_t Counter; RadioStates RadioState; uint8_t Data[29]; 
 struct RadioAckPacketA { uint8_t Counter; uint8_t Data[31]; };
 struct RadioAckPacketB { uint8_t Counter; uint8_t Data[30]; };
 
-NRFLite _radio;
+NRFLite _radio(Serial);
 RadioPacket _radioData;
 RadioAckPacketA _radioDataAckA;
 RadioAckPacketB _radioDataAckB;
@@ -85,10 +85,12 @@ void runDemos()
 {
     startSync();
 
+    demoRxTxSwitching();
+    demoPowerOff();
+
     demoPolling();
     demoInterrupts();
     demoAckPayload();
-    demoRxTxSwitching();
 
     demoPollingBitrate();
     demoPollingBitrateNoAck();
@@ -118,8 +120,8 @@ void startSync()
     }
 }
 
-void demoPolling() {
-
+void demoPolling()
+{
     delay(DEMO_INTERVAL_MILLIS);
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
@@ -219,7 +221,7 @@ void demoRxTxSwitching()
     detachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ));
     delay(500); // Wait for transmitter to become a receiver.
 
-    // Send back the last received count, plus 1.  The primary transmitter will verify this value.
+                // Send back the last received count, plus 1.  The primary transmitter will verify this value.
     _radioData.Counter++;
     debug("  Send ");
     debug(_radioData.Counter);
@@ -238,6 +240,26 @@ void demoRxTxSwitching()
     while (millis() < _endMillis)
     {
         delay(1);
+    }
+}
+
+void demoPowerOff()
+{
+    delay(DEMO_INTERVAL_MILLIS);
+    _endMillis = millis() + DEMO_LENGTH_MILLIS;
+
+    debugln("Power off");
+
+    debugln("  Radio power down");
+    _radio.powerDown();
+
+    while (millis() < _endMillis)
+    {
+        while (_radio.hasData())
+        {
+            _radio.readData(&_radioData);
+            debugln2("  Received ", _radioData.Counter);
+        }
     }
 }
 
@@ -525,7 +547,7 @@ void demoPollingBitrateAllPacketSizes()
             debug(_packetCount); debug(" packets "); debug(_bitsPerSecond); debugln(" bps");
 
             if (lastPacketSize == 32) break; // Stop demo when we reach the max packet size.
-            
+
             _packetCount = 0;
             delay(DEMO_INTERVAL_MILLIS);
         }

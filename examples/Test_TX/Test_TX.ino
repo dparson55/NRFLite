@@ -8,11 +8,11 @@ interrupts, while measuring bitrates.
 Manually adjusted for shared CE/CSN operation, and 2-pin operation.
 
 Each test should follow this format:
-    Wait demo interval time.
-    Calculate demo end time.
-    Show demo message.
-    Reset shared variables necessary for the demo.
-    Run a loop that lasts until the end time.
+Wait demo interval time.
+Calculate demo end time.
+Show demo message.
+Reset shared variables necessary for the demo.
+Run a loop that lasts until the end time.
 */
 
 #include <SPI.h>
@@ -104,10 +104,12 @@ void runDemos()
 {
     startSync();
 
+    demoRxTxSwitching();
+    demoPowerOff();
+
     demoPolling();
     demoInterrupts();
     demoAckPayload();
-    demoRxTxSwitching();
 
     demoPollingBitrate();
     demoPollingBitrateNoAck();
@@ -297,6 +299,44 @@ void demoRxTxSwitching()
     }
 }
 
+void demoPowerOff()
+{
+    delay(DEMO_INTERVAL_MILLIS);
+    _endMillis = millis() + DEMO_LENGTH_MILLIS;
+
+    debugln("Power off");
+    _lastMillis = millis();
+
+    debug("  Send "); debug(++_radioData.Counter);
+    if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
+    {
+        debugln("...Success");
+    }
+    else
+    {
+        debugln("...Failed");
+    }
+
+    debugln("  Radio power down");
+    _radio.powerDown();
+    delay(1000);
+
+    debug("  Send "); debug(++_radioData.Counter);
+    if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
+    {
+        debugln("...Success");
+    }
+    else
+    {
+        debugln("...Failed");
+    }
+
+    while (millis() < _endMillis)
+    {
+        delay(1);
+    }
+}
+
 void demoPollingBitrate()
 {
     delay(DEMO_INTERVAL_MILLIS);
@@ -389,7 +429,7 @@ void demoInterruptsBitrate()
         {
             _packetCount = _successPacketCount + _failedPacketCount;
             _bitsPerSecond = sizeof(_radioData) * _successPacketCount * 8 / (float)(_currentMillis - _lastMillis) * 1000;
-            _packetLoss = _successPacketCount / (float)_packetCount * 100;
+            _packetLoss = _successPacketCount / (float)_packetCount * 100.0;
             debug("  ");
             debug(_successPacketCount); debug("/"); debug(_packetCount); debug(" packets ");
             debug(_packetLoss); debug("% ");
@@ -397,6 +437,28 @@ void demoInterruptsBitrate()
             _successPacketCount = 0;
             _failedPacketCount = 0;
             _lastMillis = _currentMillis;
+        }
+
+        if (_hadTxOkInterrupt)
+        {
+            _hadTxOkInterrupt = 0;
+            uint8_t ackLength = _radio.hasAckData();
+
+            while (ackLength > 0)
+            {
+                if (ackLength == sizeof(_radioDataAckA))
+                {
+                    _radio.readData(&_radioDataAckA);
+                    _ackAPacketCount++;
+                }
+                else if (ackLength == sizeof(_radioDataAckB))
+                {
+                    _radio.readData(&_radioDataAckB);
+                    _ackBPacketCount++;
+                }
+
+                ackLength = _radio.hasAckData();
+            }
         }
 
         _radio.startSend(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData));
