@@ -4,7 +4,7 @@ The receiver for the 'Sensor_TX_ATtiny85_2Pin' example where an ATtiny85 sends v
 Sensor settings can be changed by entering a specially formatted string into the Serial Monitor.
 This allows you to modify a few things such as how often the sensor sends its data, calibrate sensor readings, etc.
 If you have multiple sensors, it is possible that the wrong sensor will receive the setting change request but
-if this happens, the sensor will ignore it.  This problem is due to a simple acknowledgement data packet being 
+if this happens, the sensor will ignore it.  This problem is due to a simple acknowledgement data packet being
 used to send settings, so whichever sensor contacts the receiver immediately after you enter the setting change
 string will receive the setting change request.  To work around this, just enter the setting change string
 again until the correct sensor receives the change request.  Sensors will send informational messages about
@@ -12,11 +12,11 @@ setting change requests when they receive them:  they will either let you know t
 or process it.
 
 Examples:
-  'CID 1 2'    change sensor with Radio Id = 1 to Radio Id = 2
-  'CSI 1 60'   change sensor with Radio Id = 1 to have Sleep Interval = 60 seconds
-  'CTC 1 1.5'  change sensor with Radio Id = 1 to have Temperature Correction = 1.5
-  'CTT 1 0'    change sensor with Radio Id = 1 to have Temperature Type = 0 (0 = Celsius, 1 = Fahrenheit)
-  'CVC 1 -0.3' change sensor with Radio Id = 1 to have Voltage Correction = -0.3
+'CID 1 2'    change sensor with Radio Id = 1 to Radio Id = 2
+'CSI 1 60'   change sensor with Radio Id = 1 to have Sleep Interval = 60 seconds
+'CTC 1 1.5'  change sensor with Radio Id = 1 to have Temperature Correction = 1.5
+'CTT 1 0'    change sensor with Radio Id = 1 to have Temperature Type = 0 (0 = Celsius, 1 = Fahrenheit)
+'CVC 1 -0.3' change sensor with Radio Id = 1 to have Voltage Correction = -0.3
 
 Radio    Arduino
 CE    -> 9
@@ -55,10 +55,10 @@ struct MessagePacket
 };
 
 enum ChangeType
-{ 
-    ChangeRadioId, 
+{
+    ChangeRadioId,
     ChangeSleepInterval,
-    ChangeTemperatureCorrection, 
+    ChangeTemperatureCorrection,
     ChangeTemperatureType,
     ChangeVoltageCorrection
 };
@@ -68,7 +68,7 @@ struct NewSettingsPacket
     ChangeType ChangeType;
     uint8_t ForRadioId;
     uint8_t NewRadioId;
-    uint16_t NewSleepIntervalSeconds;
+    uint32_t NewSleepIntervalSeconds; // Max is about 4,000,000,000 seconds (126 years) due to Serial conversion from float.
     float NewTemperatureCorrection;
     uint8_t NewTemperatureType;
     float NewVoltageCorrection;
@@ -78,6 +78,8 @@ NRFLite _radio;
 RadioPacket _radioData;
 MessagePacket _messageData;
 NewSettingsPacket _newSettingsData;
+
+volatile uint8_t _hadRadioInterrupt; // Note usage of volatile for the global variable being changed in the radio interrupt.
 
 void setup()
 {
@@ -92,22 +94,18 @@ void setup()
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
 }
 
-void loop() 
+void loop()
 {
     if (Serial.available())
     {
         String input = Serial.readString();
         processSettingsChange(input);
     }
-}
 
-void radioInterrupt()
-{
-    uint8_t txOk, txFail, rxReady;
-    _radio.whatHappened(txOk, txFail, rxReady);
-
-    if (rxReady)
+    if (_hadRadioInterrupt)
     {
+        _hadRadioInterrupt = 0;
+
         while (_radio.hasDataISR()) // Note the use of 'hasDataISR' rather than 'hasData' when using interrupts.
         {
             uint8_t packetSize = _radio.hasDataISR();
@@ -145,13 +143,25 @@ void radioInterrupt()
     }
 }
 
+void radioInterrupt()
+{
+    uint8_t txOk, txFail, rxReady;
+    _radio.whatHappened(txOk, txFail, rxReady);
+
+    if (rxReady)
+    {
+        _hadRadioInterrupt = 1;
+    }        
+}
+
 void processSettingsChange(String input)
 {
     input.toUpperCase();
+    String msg = "Enqueued ACK packet to change ";
 
     if (input.startsWith("CID"))
     {
-        // CID 1 2
+        // CID 1 2 (change id of radio 1 to radio id 2)
         uint8_t spaceIndex = input.indexOf(' ', 4);
         String forRadioId = input.substring(4, spaceIndex);
         String newValue = input.substring(spaceIndex + 1);
@@ -159,25 +169,28 @@ void processSettingsChange(String input)
         _newSettingsData.ChangeType = ChangeRadioId;
         _newSettingsData.ForRadioId = forRadioId.toInt();
         _newSettingsData.NewRadioId = newValue.toInt();
-
+        
+        msg += "id of radio " + forRadioId;
         _radio.addAckData(&_newSettingsData, sizeof(_newSettingsData));
     }
     else if (input.startsWith("CSI"))
     {
-        // CSI 1 4
+
+        // CSI 1 4 (change sleep interval for radio 1 to 4 seconds)
         uint8_t spaceIndex = input.indexOf(' ', 4);
         String forRadioId = input.substring(4, spaceIndex);
         String newValue = input.substring(spaceIndex + 1);
 
         _newSettingsData.ChangeType = ChangeSleepInterval;
         _newSettingsData.ForRadioId = forRadioId.toInt();
-        _newSettingsData.NewSleepIntervalSeconds = newValue.toInt();
+        _newSettingsData.NewSleepIntervalSeconds = (uint32_t)newValue.toFloat();
 
+        msg += "sleep interval for radio " + forRadioId;
         _radio.addAckData(&_newSettingsData, sizeof(_newSettingsData));
     }
     else if (input.startsWith("CTC"))
     {
-        // CTC 1 1.5
+        // CTC 1 1.5 (change temperature correction for radio 1 to positive 1.5 degrees)
         uint8_t spaceIndex = input.indexOf(' ', 4);
         String forRadioId = input.substring(4, spaceIndex);
         String newValue = input.substring(spaceIndex + 1);
@@ -186,11 +199,12 @@ void processSettingsChange(String input)
         _newSettingsData.ForRadioId = forRadioId.toInt();
         _newSettingsData.NewTemperatureCorrection = newValue.toFloat();
 
+        msg += "temperature correction for radio " + forRadioId;
         _radio.addAckData(&_newSettingsData, sizeof(_newSettingsData));
     }
     else if (input.startsWith("CTT"))
     {
-        // CTT 1 0
+        // CTT 1 1 (change temperature type for radio 1 to Fahrenheit)
         uint8_t spaceIndex = input.indexOf(' ', 4);
         String forRadioId = input.substring(4, spaceIndex);
         String newValue = input.substring(spaceIndex + 1);
@@ -199,11 +213,12 @@ void processSettingsChange(String input)
         _newSettingsData.ForRadioId = forRadioId.toInt();
         _newSettingsData.NewTemperatureType = newValue.toInt();
 
+        msg += "temperature type for radio " + forRadioId;
         _radio.addAckData(&_newSettingsData, sizeof(_newSettingsData));
     }
     else if (input.startsWith("CVC"))
     {
-        // CVC 1 -0.3
+        // CVC 1 -0.3 (change voltage correction for radio 1 to negative 0.3 volts)
         uint8_t spaceIndex = input.indexOf(' ', 4);
         String forRadioId = input.substring(4, spaceIndex);
         String newValue = input.substring(spaceIndex + 1);
@@ -212,6 +227,9 @@ void processSettingsChange(String input)
         _newSettingsData.ForRadioId = forRadioId.toInt();
         _newSettingsData.NewVoltageCorrection = newValue.toFloat();
 
+        msg += "voltage correction for radio " + forRadioId;
         _radio.addAckData(&_newSettingsData, sizeof(_newSettingsData));
     }
+
+    Serial.println(msg);
 }

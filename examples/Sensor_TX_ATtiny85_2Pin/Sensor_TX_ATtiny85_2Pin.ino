@@ -4,34 +4,29 @@ Requires the use of https://github.com/damellis/attiny for the ATtiny85 rather t
 https://github.com/SpenceKonde/ATTinyCore since ATTinyCore takes up too much memory.
 
 Demonstrates TX operation with an ATtiny85 using 2 pins for the radio.
-The ATtiny85 powers up, takes various sensor readings, sends the data, and then powers down.
-Physical Pin 5 (Arduino 0) powers the sensors to reduce current consumption.
-Messages are sent to the receiver for debugging and other informational purposes.
-The receiver can change certain settings by providing an acknowledgement NewSettingsPacket packet, see
-the 'Sensor_RX' example for more detail.  Settings are stored in eeprom.
+* The ATtiny powers up, takes sensor readings, sends the data, and then powers down.
+* Current consumption is about 5 microamps when powered down.
+* The watchdog timer is used to wake the the ATtiny at a configurable interval.
+* The receiver can change certain settings by providing an acknowledgement NewSettingsPacket packet, see
+  the 'Sensor_RX' example for more detail.  New settings are saved in eeprom.
+* Informational messages are sent to the receiver for certain events, like when the eeprom is loaded.
+  This logic can be used for remote debugging, which is very cool.
+* Physical pin 5 (Arduino 0) acts as a power switch.  The radio and sensors all have VCC connected,
+  and physical pin 5 provides their connection to GND.  So when the ATtiny wakes from sleep, it makes
+  physical pin 5 an OUTPUT and sets it LOW in order to power-on the radio and sensors.
+* Follow the 2-Pin Hookup Guide on https://github.com/dparson55/NRFLite to create the MOMI and SCK
+  connections for the radio.
+* There is an image of the circuit in the same folder as this .ino file.
 
-Radio circuit
-* Follow the 2-Pin Hookup Guide on https://github.com/dparson55/NRFLite
-
-There is a jpeg of the circuit in the same folder as this .ino file.
-
-LED circuit
-* Physical Pin 5 > LED > 1K resistor > GND
-
-Light dependent resistor (LDR) circuit
-* Physical Pin 5 > LDR > 1K resistor > GND
-
-Thermistor circuit
-* Physical Pin 5 > 10K resistor > thermistor > GND
-
-Connections
-* Physical Pin 2, Arduino A3 > Connect between 10K resistor and thermistor
-* Physical Pin 3, Arduino 4  > MOMI of 2-pin circuit
-* Physical Pin 5, Arduino 0  > LED > 1K resistor > GND
-*                              LDR > 1K resistor > GND
-*                              10K resistor > Thermistor > GND
-* Physical Pin 6, Arduino 1  > SCK of 2-pin circuit
-* Physical Pin 7, Arduino A1 > Connect between LDR and 1K resistor
+ATtiny Connections
+* Physical pin 1 > Reset button > GND
+* Physical pin 2 > Connect between 10K resistor and thermistor
+* Physical pin 3 > MOMI of radio 2-pin circuit
+* Physical pin 4 > GND
+* Physical pin 5 > Connect to the radio GND and the GND for the thermistor, LED, and LDR circuits
+* Physical pin 6 > SCK of radio 2-pin circuit
+* Physical pin 7 > Connect between LDR and 1K resistor
+* Physical pin 8 > VCC (no more than 3.6 volts since that is the max for the radio)
 
 */
 
@@ -44,7 +39,7 @@ const static uint8_t PIN_RADIO_MOMI = 4;
 const static uint8_t PIN_RADIO_SCK = 1;
 const static uint8_t PIN_LDR = A1;
 const static uint8_t PIN_THERM = A3;
-const static uint8_t PIN_SENSOR_POWER = 0;
+const static uint8_t PIN_POWER_BUS = 0;
 
 const static uint8_t DESTINATION_RADIO_ID = 0;
 
@@ -58,7 +53,7 @@ const uint8_t EEPROM_SETTINGS_VERSION = 1;
 struct EepromSettings
 {
     uint8_t RadioId;
-    uint16_t SleepIntervalSeconds;
+    uint32_t SleepIntervalSeconds;
     float TemperatureCorrection;
     uint8_t TemperatureType;
     float VoltageCorrection;
@@ -95,7 +90,7 @@ struct NewSettingsPacket
     ChangeType ChangeType;
     uint8_t ForRadioId;
     uint8_t NewRadioId;
-    uint16_t NewSleepIntervalSeconds; // Max value = 65535 seconds = 45 days
+    uint32_t NewSleepIntervalSeconds;
     float NewTemperatureCorrection;
     uint8_t NewTemperatureType;
     float NewVoltageCorrection;
@@ -112,6 +107,10 @@ void processSettingsChange(NewSettingsPacket newSettings); // Need to pre-declar
 
 void setup()
 {
+    // Enable the power bus.
+    pinMode(PIN_POWER_BUS, OUTPUT);
+    digitalWrite(PIN_POWER_BUS, LOW);
+
     // Load settings from eeprom.
     eepromBegin();
     eeprom_read_block(&_settings, 0, sizeof(_settings));
@@ -302,21 +301,20 @@ void sendMessage(String msg)
     _radio.send(DESTINATION_RADIO_ID, &messageData, sizeof(messageData));
 }
 
-void sleep(uint16_t seconds)
+void sleep(uint32_t seconds)
 {
-    uint16_t totalPowerDownSeconds;
-    uint8_t sleep8Seconds;
+    uint32_t totalPowerDownSeconds;
+    uint8_t canSleep8Seconds;
 
-    digitalWrite(PIN_SENSOR_POWER, LOW); // Disconnect power from the sensors.
-    pinMode(PIN_SENSOR_POWER, INPUT);
-    _radio.powerDown();   // Put the radio into a low power state.  It will be powered back on by the library when needed.
-    ADCSRA &= ~_BV(ADEN); // Disable ADC to save power.
+    _radio.powerDown();            // Put the radio into a low power state.
+    pinMode(PIN_POWER_BUS, INPUT); // Disconnect power bus.
+    ADCSRA &= ~_BV(ADEN);          // Disable ADC to save power.
 
     while (totalPowerDownSeconds < seconds)
     {
-        sleep8Seconds = seconds - totalPowerDownSeconds >= 8;
+        canSleep8Seconds = seconds - totalPowerDownSeconds >= 8;
 
-        if (sleep8Seconds)
+        if (canSleep8Seconds)
         {
             WDTCR = _BV(WDIE) | _BV(WDP3) | _BV(WDP0); // Enable watchdog and set 8 second interrupt time.
             totalPowerDownSeconds += 8;
@@ -338,7 +336,7 @@ void sleep(uint16_t seconds)
         sleep_disable();
     }
 
-    ADCSRA |= _BV(ADEN); // Re-enable ADC.
-    pinMode(PIN_SENSOR_POWER, OUTPUT); // Provide power to the sensors.
-    digitalWrite(PIN_SENSOR_POWER, HIGH);
+    ADCSRA |= _BV(ADEN);            // Re-enable ADC.
+    pinMode(PIN_POWER_BUS, OUTPUT); // Re-enable power bus.  It will already be LOW since it was configured in 'setup()'.
+    setupRadio();                   // Re-initialize the radio.
 }
