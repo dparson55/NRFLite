@@ -86,7 +86,7 @@ Radio CE   -> Any GPIO Pin (can be same as CSN)
 Radio CSN  -> Any GPIO Pin (pin 10 recommended)
 Radio IRQ  -> Any GPIO Pin (optional)
 ```
-Arduino Pin 10 is the *SPI slave select* pin and must stay as an *OUTPUT*.
+_Arduino Pin 10 is the SPI Slave Select (SS) pin and must stay as an OUTPUT._
 
 ![ATmega328 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATmega328_pinout_small.jpg)
 
@@ -99,7 +99,7 @@ Radio CE   -> Any GPIO Pin (can be same as CSN)
 Radio CSN  -> Any GPIO Pin
 Radio IRQ  -> Any GPIO Pin (optional)
 ```
-Arduino pin names (pictured in brown) when using the [MIT High-Low Tech](http://highlowtech.org/?p=1695) library https://github.com/damellis/attiny.
+_Arduino pin names (pictured in brown) using the [MIT High-Low Tech](http://highlowtech.org/?p=1695) library https://github.com/damellis/attiny._
 
 ![ATtiny84 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny84_pinout_small.png)
 
@@ -112,6 +112,6 @@ Radio CE   -> Any GPIO Pin (can be same as CSN)
 Radio CSN  -> Any GPIO Pin
 Radio IRQ  -> Any GPIO Pin (optional)
 ```
-Arduino pin names (pictured in brown) when using the [MIT High-Low Tech](http://highlowtech.org/?p=1695) library https://github.com/damellis/attiny.
+_Arduino pin names (pictured in brown) using the [MIT High-Low Tech](http://highlowtech.org/?p=1695) library https://github.com/damellis/attiny._
 
 ![ATtiny85 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny85_pinout_small.png)
