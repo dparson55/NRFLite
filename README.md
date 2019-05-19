@@ -70,7 +70,6 @@ void loop()
 
 ### 2-Pin Hookup Guide
 * This mode is much slower than the other hookup options which take advantage of the SPI and USI peripherals of the supported microcontrollers.
-* Interrupts are temporarily disabled whenever the library talks to the radio in this mode.
 * The resistor and capacitor values should only be adjusted if you have an oscilloscope and are comfortable changing the library.
 
 ![2-Pin](https://github.com/dparson55/NRFLite/raw/master/extras/Two_pin_schematic.png)
