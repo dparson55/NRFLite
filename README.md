@@ -90,7 +90,7 @@ Radio IRQ  -> Any GPIO Pin (optional)
 ![ATmega328 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATmega328_pinout_small.jpg)
 
 ### ATtiny84 USI Hookup Guide
-Arduino pin numbers (in brown) when using the [MIT High-Low Tech](http://highlowtech.org/?p=1695) library https://github.com/damellis/attiny.
+Arduino pin names (pictured in brown) when using the [MIT High-Low Tech](http://highlowtech.org/?p=1695) library https://github.com/damellis/attiny.
 ```
 Radio MISO -> Physical Pin 7, Arduino 6
 Radio MOSI -> Physical Pin 8, Arduino 5
@@ -102,7 +102,7 @@ Radio IRQ  -> Any GPIO Pin (optional)
 ![ATtiny84 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny84_pinout_small.png)
 
 ### ATtiny85 USI Hookup Guide
-Arduino pin numbers (in brown) when using the [MIT High-Low Tech](http://highlowtech.org/?p=1695) library https://github.com/damellis/attiny.
+Arduino pin names (pictured in brown) when using the [MIT High-Low Tech](http://highlowtech.org/?p=1695) library https://github.com/damellis/attiny.
 ```
 Radio MISO -> Physical Pin 5, Arduino 0
 Radio MOSI -> Physical Pin 6, Arduino 1
