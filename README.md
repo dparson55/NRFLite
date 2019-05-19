@@ -78,7 +78,6 @@ void loop()
 ![2-Pin](https://github.com/dparson55/NRFLite/raw/master/extras/Two_pin_schematic.png)
 
 ### ATmega328 SPI Hookup Guide
-* Arduino Pin 10 is the *SPI slave select* pin and must stay as an *OUTPUT*.
 ```
 Radio MISO -> Arduino 12 MISO
 Radio MOSI -> Arduino 11 MOSI
@@ -87,6 +86,8 @@ Radio CE   -> Any GPIO Pin (can be same as CSN)
 Radio CSN  -> Any GPIO Pin (pin 10 recommended)
 Radio IRQ  -> Any GPIO Pin (optional)
 ```
+Arduino Pin 10 is the *SPI slave select* pin and must stay as an *OUTPUT*.
+
 ![ATmega328 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATmega328_pinout_small.jpg)
 
 ### ATtiny84 USI Hookup Guide
@@ -98,9 +99,9 @@ Radio CE   -> Any GPIO Pin (can be same as CSN)
 Radio CSN  -> Any GPIO Pin
 Radio IRQ  -> Any GPIO Pin (optional)
 ```
-![ATtiny84 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny84_pinout_small.png)
-
 Arduino pin names (pictured in brown) when using the [MIT High-Low Tech](http://highlowtech.org/?p=1695) library https://github.com/damellis/attiny.
+
+![ATtiny84 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny84_pinout_small.png)
 
 ### ATtiny85 USI Hookup Guide
 ```
@@ -111,6 +112,6 @@ Radio CE   -> Any GPIO Pin (can be same as CSN)
 Radio CSN  -> Any GPIO Pin
 Radio IRQ  -> Any GPIO Pin (optional)
 ```
-![ATtiny85 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny85_pinout_small.png)
-
 Arduino pin names (pictured in brown) when using the [MIT High-Low Tech](http://highlowtech.org/?p=1695) library https://github.com/damellis/attiny.
+
+![ATtiny85 Pinout](https://github.com/dparson55/NRFLite/raw/master/extras/ATtiny85_pinout_small.png)
