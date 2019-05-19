@@ -1,4 +1,4 @@
-### Transmitter Example
+### Transmitter Example (see Basic_TX.ino for more detail)
 ```c++
 #include <SPI.h>
 #include <NRFLite.h>
@@ -19,7 +19,7 @@ void loop()
 }
 ```
 
-### Receiver Example
+### Receiver Example (see Basic_RX.ino for more detail)
 ```c++
 #include <SPI.h>
 #include <NRFLite.h>
