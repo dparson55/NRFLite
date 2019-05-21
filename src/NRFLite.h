@@ -53,6 +53,7 @@ class NRFLite {
     // Note that if interrupts are used, do not use the send and hasData functions.  Instead the functions below should be used.
     // hasDataISR   = Same as hasData(1), it will greatly speed up the receive bitrate when CE and CSN share the same pin.
     // startRx      = Allows switching the radio into RX mode rather than calling 'hasData'.
+    //                Returns 0 if it cannot communicate with the radio.
     // startSend    = Start sending a data packet without waiting for it to complete.
     // whatHappened = Use this inside the interrupt handler to see what caused the interrupt.
     uint8_t hasDataISR(); 
