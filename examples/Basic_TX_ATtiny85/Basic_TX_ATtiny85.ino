@@ -1,7 +1,7 @@
 /*
 
-Demonstrates simple TX operation with an ATtiny85.  ATtiny's have a Universal Serial Interface
-peripheral (USI) that can be used for SPI communication, and NRFLite utilizes this capability.
+Demonstrates simple TX operation with an ATtiny85.
+Any of the Basic_RX examples can be used as a receiver.
 
 Radio    ATtiny85
 CE    -> Physical Pin 2, Arduino 3         

@@ -1,7 +1,7 @@
 /*
 
 Demonstrates simple RX and TX operation.
-Please read the notes in NRFLite.h for a description of all library features.
+Any of the Basic_RX examples can be used as a receiver.
 
 Radio    Arduino
 CE    -> 9

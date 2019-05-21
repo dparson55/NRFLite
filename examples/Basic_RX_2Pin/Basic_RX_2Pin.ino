@@ -1,8 +1,8 @@
 /*
 
 Demonstrates simple RX and TX operation using 2 pins for the radio.
+Any of the Basic_TX examples can be used as a transmitter.
 Only AVR architectures (ATtiny/ATmega) support 2 pin operation.
-Please read the notes in NRFLite.h for a description of all library features.
 
 Radio circuit
 * Follow the 2-Pin Hookup Guide on https://github.com/dparson55/NRFLite
