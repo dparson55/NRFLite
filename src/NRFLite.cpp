@@ -130,16 +130,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
     uint8_t notInRxMode = readRegister(CONFIG) != CONFIG_REG_SETTINGS_FOR_RX_MODE;
     if (notInRxMode)
     {
-        waitForTxToComplete();
-        prepForRx();
-    }
-    else
-    {
-        // Ensure we are listening for packets.
-        if (digitalRead(_cePin) == LOW)
-        {
-            digitalWrite(_cePin, HIGH);
-        }
+        startRx();
     }
 
     // If we have a pipe 1 packet sitting at the top of the RX buffer, we have data.
@@ -174,6 +165,26 @@ void NRFLite::readData(void *data)
     {
         writeRegister(STATUS_NRF, statusReg | _BV(RX_DR));
     }
+}
+
+uint8_t NRFLite::startRx()
+{
+    waitForTxToComplete();
+
+    // Put radio into Standby-I mode in order to transition into RX mode.
+    digitalWrite(_cePin, LOW);
+
+    // Power on the radio in RX mode.
+    writeRegister(CONFIG, CONFIG_REG_SETTINGS_FOR_RX_MODE);
+
+    // Start listening for packets.
+    digitalWrite(_cePin, HIGH);
+
+    // Wait for the transition into RX mode.
+    delay(POWERDOWN_TO_RXTX_MODE_MILLIS);
+
+    uint8_t inRxMode = readRegister(CONFIG) == CONFIG_REG_SETTINGS_FOR_RX_MODE;
+    return inRxMode;
 }
 
 uint8_t NRFLite::send(uint8_t toRadioId, void *data, uint8_t length, SendType sendType)
@@ -365,26 +376,8 @@ uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     // Clear any interrupts.
     writeRegister(STATUS_NRF, _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
 
-    uint8_t success = prepForRx();
+    uint8_t success = startRx();
     return success;
-}
-
-uint8_t NRFLite::prepForRx()
-{
-    // Put radio into Standby-I mode in order to transition into RX mode.
-    digitalWrite(_cePin, LOW);
-
-    // Power on the radio in RX mode.
-    writeRegister(CONFIG, CONFIG_REG_SETTINGS_FOR_RX_MODE);
-
-    // Start listening for packets.
-    digitalWrite(_cePin, HIGH);
-
-    // Wait for the transition into RX mode.
-    delay(POWERDOWN_TO_RXTX_MODE_MILLIS);
-
-    uint8_t inRxMode = readRegister(CONFIG) == CONFIG_REG_SETTINGS_FOR_RX_MODE;
-    return inRxMode;
 }
 
 void NRFLite::prepForTx(uint8_t toRadioId, SendType sendType)

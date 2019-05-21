@@ -21,10 +21,9 @@ class NRFLite {
     // init       = Turns the radio on and puts it into receiving mode.  Returns 0 if it cannot communicate with the radio.
     //              Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
     // initTwoPin = Same as init but with multiplexed MOSI/MISO and CE/CSN/SCK pins (only works on AVR architectures).
-    //              Follow the 2-pin hookup schematic shown on https://github.com/dparson55/NRFLite
-    // readData   = Loads a received data packet or acknowledgment packet into the specified data parameter.
-    // powerDown  = Power down the radio.  It only draws 900 nA in this state.  Turn the radio back on by calling one of the 
-    //              'hasData' or 'send' methods.
+    //              Follow the 2-pin hookup schematic on https://github.com/dparson55/NRFLite
+    // readData   = Loads a received data packet or acknowledgment data packet into the specified data parameter.
+    // powerDown  = Power down the radio.  Turn the radio back on by calling one of the 'hasData' or 'send' methods.
     // printDetails = For debugging, it prints most radio registers if a serial object is provided in the constructor.
     uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
 #if defined(__AVR__)
@@ -43,22 +42,23 @@ class NRFLite {
     uint8_t hasAckData();
 
     // Methods for receivers.
-    // hasData    = Checks to see if a data packet has been received and returns its length.
-    // addAckData = Enqueues an acknowledgment packet for sending back to a transmitter.  Whenever the transmitter sends the 
+    // hasData    = Checks to see if a data packet has been received and returns its length.  Also puts the radio in RX mode if needed.
+    // addAckData = Enqueues an acknowledgment data packet for sending back to a transmitter.  Whenever the transmitter sends the 
     //              next data packet, it will get this ACK packet back in the response.  The radio will store up to 3 ACK packets
     //              and will not enqueue more if full, so you can clear any stale packets using the 'removeExistingAcks' parameter.
     uint8_t hasData(uint8_t usingInterrupts = 0);
     void addAckData(void *data, uint8_t length, uint8_t removeExistingAcks = 0); 
     
     // Methods when using the radio's IRQ pin for interrupts.
-    // Note that if interrupts are used, do not use the send and hasData functions.  Instead the functions below must be used.
+    // Note that if interrupts are used, do not use the send and hasData functions.  Instead the functions below should be used.
+    // hasDataISR   = Same as hasData(1), it will greatly speed up the receive bitrate when CE and CSN share the same pin.
+    // startRx      = Allows switching the radio into RX mode rather than calling 'hasData'.
     // startSend    = Start sending a data packet without waiting for it to complete.
     // whatHappened = Use this inside the interrupt handler to see what caused the interrupt.
-    // hasDataISR   = Same as hasData(1) and is just for clarity.  It will greatly speed up the receive bitrate when
-    //                CE and CSN share the same pin.
+    uint8_t hasDataISR(); 
+    uint8_t startRx();
     void startSend(uint8_t toRadioId, void *data, uint8_t length, SendType sendType = REQUIRE_ACK); 
     void whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady);
-    uint8_t hasDataISR(); 
     
   private:
 
@@ -70,7 +70,7 @@ class NRFLite {
     const static uint16_t CSN_DISCHARGE_MICROS = 500;
 
     const static uint8_t OFF_TO_POWERDOWN_MILLIS = 100;     // Vcc > 1.9V power on reset time.
-    const static uint8_t POWERDOWN_TO_RXTX_MODE_MILLIS = 5; // 4500 to Standby + 130 to RX or TX mode, so 5 is enough.
+    const static uint8_t POWERDOWN_TO_RXTX_MODE_MILLIS = 5; // 4500uS to Standby + 130uS to RX or TX mode, so 5ms is enough.
     const static uint8_t CE_TRANSMISSION_MICROS = 10;       // Time to initiate data transmission.
 
     enum SpiTransferType { READ_OPERATION, WRITE_OPERATION };
@@ -90,7 +90,6 @@ class NRFLite {
     uint8_t getPipeOfFirstRxPacket();
     uint8_t getRxPacketLength();
     uint8_t initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel);
-    uint8_t prepForRx();
     void prepForTx(uint8_t toRadioId, SendType sendType);
     uint8_t waitForTxToComplete();
     uint8_t readRegister(uint8_t regName);
