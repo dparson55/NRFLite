@@ -24,21 +24,20 @@ const static uint8_t DESTINATION_RADIO_ID = 0;
 const static uint8_t PIN_RADIO_CE = 9;
 const static uint8_t PIN_RADIO_CSN = 10;
 
-struct HeartbeatPacket
+enum RadioPacketType
 {
-    uint8_t FromRadioId;
-    uint32_t OnTimeMillis;
+    Heartbeat,
+    ReceiverData
 };
 
-struct MessagePacket
+struct RadioPacket
 {
+    RadioPacketType PacketType;
     uint8_t FromRadioId;
     uint32_t OnTimeMillis;
 };
 
 NRFLite _radio;
-HeartbeatPacket _heartbeatData;
-MessagePacket _messageData;
 uint32_t _lastHeartbeatSendTime;
 
 void setup()
@@ -60,10 +59,12 @@ void loop()
         _lastHeartbeatSendTime = millis();
 
         Serial.print("Sending heartbeat");
-        _heartbeatData.FromRadioId = RADIO_ID;
-        _heartbeatData.OnTimeMillis = _lastHeartbeatSendTime;
+        RadioPacket radioData;
+        radioData.PacketType = Heartbeat;
+        radioData.FromRadioId = RADIO_ID;
+        radioData.OnTimeMillis = _lastHeartbeatSendTime;
 
-        if (_radio.send(DESTINATION_RADIO_ID, &_heartbeatData, sizeof(_heartbeatData))) // 'send' puts the radio into Tx mode.
+        if (_radio.send(DESTINATION_RADIO_ID, &radioData, sizeof(radioData))) // 'send' puts the radio into Tx mode.
         {
             Serial.println("...Success");
         }
@@ -73,15 +74,16 @@ void loop()
         }
     }
 
-    // Check to see if any messages have been received.
+    // Check to see if any data has been received.
     while (_radio.hasData()) // 'hasData' ensures the radio is in Rx mode.  You can call '_radio.StartRx' as well.
     {
-        _radio.readData(&_messageData);
+        RadioPacket radioData;
+        _radio.readData(&radioData);
 
-        String msg = "Received message from ";
-        msg += _messageData.FromRadioId;
+        String msg = "Received data from ";
+        msg += radioData.FromRadioId;
         msg += ", ";
-        msg += _messageData.OnTimeMillis;
+        msg += radioData.OnTimeMillis;
         msg += " ms";
         Serial.println(msg);
     }

@@ -24,21 +24,20 @@ const static uint8_t DESTINATION_RADIO_ID = 1;
 const static uint8_t PIN_RADIO_CE = 9;
 const static uint8_t PIN_RADIO_CSN = 10;
 
-struct HeartbeatPacket
+enum RadioPacketType
 {
-    uint8_t FromRadioId;
-    uint32_t OnTimeMillis;
+    Heartbeat,
+    ReceiverData
 };
 
-struct MessagePacket
+struct RadioPacket
 {
+    RadioPacketType PacketType;
     uint8_t FromRadioId;
     uint32_t OnTimeMillis;
 };
 
 NRFLite _radio;
-HeartbeatPacket _heartbeatData;
-MessagePacket _messageData;
 uint32_t _lastMessageSendTime;
 
 void setup()
@@ -54,16 +53,18 @@ void setup()
 
 void loop()
 {
-    // Send a message once every 4 seconds.
+    // Send data once every 4 seconds.
     if (millis() - _lastMessageSendTime > 3999)
     {
         _lastMessageSendTime = millis();
 
-        Serial.print("Sending message");
-        _messageData.FromRadioId = RADIO_ID;
-        _messageData.OnTimeMillis = millis();
+        Serial.print("Sending data");
+        RadioPacket radioData;
+        radioData.PacketType = ReceiverData;
+        radioData.FromRadioId = RADIO_ID;
+        radioData.OnTimeMillis = millis();
 
-        if (_radio.send(DESTINATION_RADIO_ID, &_messageData, sizeof(_messageData))) // 'send' puts the radio into Tx mode.
+        if (_radio.send(DESTINATION_RADIO_ID, &radioData, sizeof(radioData))) // 'send' puts the radio into Tx mode.
         {
             Serial.println("...Success");
         }
@@ -76,13 +77,17 @@ void loop()
     // Check to see if any heartbeats have been received.
     while (_radio.hasData()) // 'hasData' ensures the radio is in Rx mode.  You can call '_radio.StartRx' as well.
     {
-        _radio.readData(&_heartbeatData);
+        RadioPacket radioData;
+        _radio.readData(&radioData);
 
-        String msg = "Heartbeat from ";
-        msg += _heartbeatData.FromRadioId;
-        msg += ", ";
-        msg += _heartbeatData.OnTimeMillis;
-        msg += " ms";
-        Serial.println(msg);
+        if (radioData.PacketType == Heartbeat)
+        {
+            String msg = "Heartbeat from ";
+            msg += radioData.FromRadioId;
+            msg += ", ";
+            msg += radioData.OnTimeMillis;
+            msg += " ms";
+            Serial.println(msg);
+        }
     }
 }

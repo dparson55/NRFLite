@@ -29,30 +29,27 @@ GND   -> GND
 #include <NRFLite.h>
 
 const static uint8_t RADIO_ID = 0;
+const static uint8_t DESTINATION_RADIO_ID = 1;
 const static uint8_t PIN_RADIO_CE = 9;
 const static uint8_t PIN_RADIO_CSN = 10;
 
-enum MessagePacketType
+enum RadioPacketType
 {
-    Normal,
+    Heartbeat,
     BeginGetData,
-    EndGetData
+    EndGetData,
+    ReceiverData
 };
 
-struct MessagePacket
+struct RadioPacket
 {
-    MessagePacketType MessageType;
+    RadioPacketType PacketType;
     uint8_t FromRadioId;
-};
-
-struct AckPacket
-{
-    uint32_t ReceiverOnTimeMillis;
+    uint32_t OnTimeMillis;
 };
 
 NRFLite _radio;
-MessagePacket _messagePacket;
-AckPacket _ackPacket;
+uint32_t _lastMessageSendTime;
 
 void setup()
 {
@@ -69,25 +66,34 @@ void loop()
 {
     while (_radio.hasData())
     {
-        _radio.readData(&_messagePacket);
-        
-        if (_messagePacket.MessageType == Normal)
+        RadioPacket radioData;
+        _radio.readData(&radioData);
+
+        if (radioData.PacketType == Heartbeat)
         {
-            Serial.print("Received message from ");
-            Serial.println(_messagePacket.FromRadioId);
+            String msg = "Heartbeat from ";
+            msg += radioData.FromRadioId;
+            msg += ", ";
+            msg += radioData.OnTimeMillis;
+            msg += " ms";
+            Serial.println(msg);
         }
-        else if (_messagePacket.MessageType == BeginGetData)
+        else if (radioData.PacketType == BeginGetData)
         {
-            Serial.println("Received data request, added ACK");
-            _ackPacket.ReceiverOnTimeMillis = millis();
-            
+            Serial.println("Received data request, adding ACK packet");
+
+            RadioPacket ackData;
+            ackData.PacketType = ReceiverData;
+            ackData.FromRadioId = RADIO_ID;
+            ackData.OnTimeMillis = millis();
+
             // Add the data to send back to the transmitter.
             // The next packet we receive will be acknowledged with this data.
-            _radio.addAckData(&_ackPacket, sizeof(_ackPacket));
+            _radio.addAckData(&ackData, sizeof(ackData));
         }
-        else if (_messagePacket.MessageType == EndGetData)
+        else if (radioData.PacketType == EndGetData)
         {
-            // The transmitter will have received the acknowledgement data packet at this point.
+            // The transmitter hopefully received the acknowledgement data packet at this point.
         }
     }
 }
