@@ -286,6 +286,59 @@ void NRFLite::printDetails()
     debugln(msg);
 }
 
+void NRFLite::printChannels()
+{
+    uint8_t signalStrength[MAX_NRF_CHANNEL] = { 0 };  // Holds carrier detect counts for each channel.
+    uint8_t originalChannelReg = readRegister(RF_CH);
+    
+    // Put radio into Standby-I mode.
+    startRx();
+    digitalWrite(_cePin, LOW);
+    
+    // Loop through each channel.
+    for (uint8_t channelNumber = 0; channelNumber <= MAX_NRF_CHANNEL; channelNumber++)
+    {
+        // Set the channel.
+        writeRegister(RF_CH, channelNumber);
+
+        // Take a bunch of measurements.
+        for (uint8_t measurementCount = 0; measurementCount < 200; measurementCount++)
+        {
+            // Put the radio into RX mode and wait a little time for a signal to be received.
+            digitalWrite(_cePin, HIGH);
+            delayMicroseconds(400);
+            digitalWrite(_cePin, LOW);
+
+            uint8_t signalWasReceived = readRegister(CD);
+            if (signalWasReceived)
+            {
+                signalStrength[channelNumber]++;
+            }
+        }
+
+        // Build the message about the channel, e.g. 'Channel 125 XXXXXXXXX'
+        String channelMsg = "Channel ";
+        
+        if      (channelNumber < 10 ) { channelMsg += "  "; } // Right-align
+        else if (channelNumber < 100) { channelMsg += " ";  } // the channel
+        channelMsg += channelNumber;                          // number.
+
+        channelMsg += " ";
+        uint8_t strength = signalStrength[channelNumber];
+
+        while (strength--)
+        {
+            channelMsg += "X";
+        }
+
+        // Print the message.
+        debugln(channelMsg);
+    }
+
+    writeRegister(RF_CH, originalChannelReg); // Set the radio back to the original channel.
+    startRx();
+}
+
 /////////////////////
 // Private methods //
 /////////////////////
@@ -327,7 +380,7 @@ uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     delay(OFF_TO_POWERDOWN_MILLIS);
 
     // Valid channel range is 2400 - 2525 MHz, in 1 MHz increments.
-    if (channel > 125) { channel = 125; }
+    if (channel > MAX_NRF_CHANNEL) { channel = MAX_NRF_CHANNEL; }
     writeRegister(RF_CH, channel);
 
     // Transmission speed, retry times, and output power setup.
