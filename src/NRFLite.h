@@ -42,7 +42,8 @@ class NRFLite {
     uint8_t hasAckData();
 
     // Methods for receivers.
-    // hasData    = Checks to see if a data packet has been received and returns its length.  Also puts the radio in RX mode if needed.
+    // hasData    = Checks to see if a data packet has been received and returns its length.  It also puts the radio in RX mode
+    //              if it was previously in TX mode.
     // addAckData = Enqueues an acknowledgment data packet for sending back to a transmitter.  Whenever the transmitter sends the 
     //              next data packet, it will get this ACK packet back in the response.  The radio will store up to 3 ACK packets
     //              and will not enqueue more if full, so you can clear any stale packets using the 'removeExistingAcks' parameter.
