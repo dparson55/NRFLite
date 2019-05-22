@@ -255,6 +255,7 @@ void demoPowerOff()
 
     while (millis() < _endMillis)
     {
+        // Verify the call to 'hasData' powers the radio on.
         while (_radio.hasData())
         {
             _radio.readData(&_radioData);

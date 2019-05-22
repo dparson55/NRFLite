@@ -273,8 +273,8 @@ void demoRxTxSwitching()
         _radio.startSend(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData));
     }
 
-    // Immediately call hasData to test that it sends all 3 packets before switching into RX mode.
-    _radio.hasData();
+    // Immediately switch into RX mode to verify all 3 packets are sent before the mode switch.
+    _radio.startRx();
 
     uint8_t expectedReturnCount = _radioData.Counter;
     detachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ));
@@ -321,6 +321,7 @@ void demoPowerOff()
     _radio.powerDown();
     delay(1000);
 
+    // Verify the call to 'send' powers the radio on.
     debug("  Send "); debug(++_radioData.Counter);
     if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
     {
