@@ -1,7 +1,6 @@
 /*
 
-Demonstrates sending data packets of different length.  The receiver will check to see what size of
-packet was received and act accordingly.
+Demonstrates sending and receiving packets of different length.
 
 Radio    Arduino
 CE    -> 9
@@ -51,7 +50,7 @@ void setup()
 
 void loop()
 {
-    // hasData returns 0 if there is no data, otherwise it returns the size of the data it received.
+    // 'hasData' returns the size of the packet that was received, or 0 if there is no data.
     uint8_t packetSize = _radio.hasData();
 
     if (packetSize == sizeof(RadioPacket1))

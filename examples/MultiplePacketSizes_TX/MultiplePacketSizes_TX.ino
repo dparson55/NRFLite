@@ -1,7 +1,6 @@
 /*
 
-Demonstrates sending data packets of different length.  The receiver will check to see what size of
-packet was received and act accordingly.
+Demonstrates sending and receiving packets of different length.
 
 Radio    Arduino
 CE    -> 9
@@ -55,8 +54,8 @@ void setup()
 
 void loop()
 {
-    // Pick a number from 10,000 - 60,000.
-    uint16_t randomNumber = random(10000, 60001);
+    // Pick a number from 0 - 60,000.
+    uint16_t randomNumber = random(60001);
 
     if (randomNumber > 30000)
     {
