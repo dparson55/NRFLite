@@ -34,7 +34,7 @@ void setup()
 {
     Serial.begin(115200);
 
-    if (!_radio.initTwoPin(RADIO_ID, PIN_RADIO_MOMI, PIN_RADIO_SCK))
+    if (!_radio.initTwoPin(RADIO_ID, PIN_RADIO_MOMI, PIN_RADIO_SCK)) // Note usage of 'initTwoPin' rather than 'init'.
     {
         Serial.println("Cannot communicate with radio");
         while (1); // Wait here forever.
