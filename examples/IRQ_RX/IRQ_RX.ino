@@ -51,7 +51,6 @@ void loop()
             _radio.readData(&data);
             Serial.print("Received ");
             Serial.println(data);
-            Serial.flush(); // Serial uses interrupts so let's ensure printing is complete before processing another radio interrupt.
         }
     }
 }

@@ -25,6 +25,7 @@ const static uint8_t PIN_RADIO_IRQ = 3;
 
 NRFLite _radio;
 uint8_t _data;
+uint32_t _lastSendTime;
 volatile uint8_t _sendSucceeded, _sendFailed; // Note usage of volatile for these global variables being changed in the radio interrupt.
 
 void setup()
@@ -42,19 +43,21 @@ void setup()
 
 void loop()
 {
-    _data++;
-    Serial.print("Sending ");
-    Serial.print(_data);
-    Serial.flush(); // Serial uses interrupts so let's ensure printing is complete before processing another radio interrupt.
+    // Send data once per second.
+    if (millis() - _lastSendTime > 999)
+    {
+        _lastSendTime = millis();
+        
+        _data++;
+        Serial.print("Sending ");
+        Serial.print(_data);
 
-    // Use 'startSend' rather than 'send' when using interrupts.
-    // 'startSend' will not wait for transmission to complete, instead you'll
-    // need to wait for the radio to notify you via the interrupt to see if
-    // the send was successful.
-    _radio.startSend(DESTINATION_RADIO_ID, &_data, sizeof(_data));
-
-    // Just for this demonstration, we'll wait for the radio's interrupt handler to be triggered.
-    delay(1000);
+        // Use 'startSend' rather than 'send' when using interrupts.
+        // 'startSend' will not wait for transmission to complete, instead you'll
+        // need to wait for the radio to notify you via the interrupt to see if
+        // the send was successful.
+        _radio.startSend(DESTINATION_RADIO_ID, &_data, sizeof(_data));
+    }
 
     if (_sendSucceeded)
     {
