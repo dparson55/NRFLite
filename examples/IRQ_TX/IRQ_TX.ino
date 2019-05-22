@@ -57,6 +57,9 @@ void loop()
         // need to wait for the radio to notify you via the interrupt to see if
         // the send was successful.
         _radio.startSend(DESTINATION_RADIO_ID, &_data, sizeof(_data));
+        
+        // Note that behind the scenes, sending data puts the radio into TX mode.  If you want to be able to receive data
+        // again, you can call 'startRx'.  The radio will complete the transmission before switching itself into RX mode.
     }
 
     if (_sendSucceeded)

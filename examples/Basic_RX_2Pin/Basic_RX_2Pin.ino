@@ -15,11 +15,11 @@ Connections
 
 #include <NRFLite.h>
 
-const static uint8_t RADIO_ID = 0;       // Our radio's id.  The transmitter will send to this id.
+const static uint8_t RADIO_ID = 0;
 const static uint8_t PIN_RADIO_MOMI = 9;
 const static uint8_t PIN_RADIO_SCK = 10;
 
-struct RadioPacket // Any packet up to 32 bytes can be sent.
+struct RadioPacket
 {
     uint8_t FromRadioId;
     uint32_t OnTimeMillis;
@@ -44,7 +44,7 @@ void loop()
 {
     while (_radio.hasData())
     {
-        _radio.readData(&_radioData); // Note how '&' must be placed in front of the variable name.
+        _radio.readData(&_radioData);
 
         String msg = "Radio ";
         msg += _radioData.FromRadioId;

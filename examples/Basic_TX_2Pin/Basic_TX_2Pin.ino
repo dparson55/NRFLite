@@ -15,12 +15,12 @@ Connections
 
 #include <NRFLite.h>
 
-const static uint8_t RADIO_ID = 2;             // Our radio's id.
-const static uint8_t DESTINATION_RADIO_ID = 0; // Id of the radio we will transmit to.
+const static uint8_t RADIO_ID = 2;
+const static uint8_t DESTINATION_RADIO_ID = 0;
 const static uint8_t PIN_RADIO_MOMI = 9;
 const static uint8_t PIN_RADIO_SCK = 10;
 
-struct RadioPacket // Any packet up to 32 bytes can be sent.
+struct RadioPacket
 {
     uint8_t FromRadioId;
     uint32_t OnTimeMillis;
@@ -51,7 +51,7 @@ void loop()
     Serial.print(_radioData.OnTimeMillis);
     Serial.print(" ms");
 
-    if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData))) // Note how '&' must be placed in front of the variable name.
+    if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
     {
         Serial.println("...Success");
     }

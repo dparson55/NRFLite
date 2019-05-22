@@ -21,7 +21,7 @@ GND   -> GND
 #include <SPI.h>
 #include <NRFLite.h>
 
-const static uint8_t RADIO_ID = 0;       // Our radio's id.  The transmitter will send to this id.
+const static uint8_t RADIO_ID = 0;
 const static uint8_t PIN_RADIO_CE = 4;
 const static uint8_t PIN_RADIO_CSN = 8;
 
@@ -44,22 +44,13 @@ void setup()
         Serial.println("Cannot communicate with radio");
         while (1); // Wait here forever.
     }
-    
-    /*
-    By default, 'init' configures the radio to use a 2MBPS bitrate on channel 100 (channels 0-125 are valid).
-    Both the RX and TX radios must have the same bitrate and channel to communicate with each other.
-    You can assign a different bitrate and channel as shown below.
-    _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE250KBPS, 0)
-    _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE1MBPS, 75)
-    _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE2MBPS, 100) // THE DEFAULT
-    */
 }
 
 void loop()
 {
     while (_radio.hasData())
     {
-        _radio.readData(&_radioData); // Note how '&' must be placed in front of the variable name.
+        _radio.readData(&_radioData);
 
         String msg = "Radio ";
         msg += _radioData.FromRadioId;
