@@ -1,8 +1,8 @@
 /*
 
-Demonstrates two-way communication by manually switching between RX and TX modes.  This is much slower
-than the hardware based two-way communication shown in the 'TwoWayCom_HardwareBased' example, but this
-software based approach is more flexible.
+Demonstrates two-way communication without using acknowledgement data packets.  This is much slower
+than the hardware-based, ACK packet approach shown in the 'TwoWayCom_HardwareBased' example, but is
+more flexible.
 
 Radio    Arduino
 CE    -> 9
@@ -74,8 +74,8 @@ void loop()
         }
     }
 
-    // Check to see if any heartbeats have been received.
-    while (_radio.hasData()) // 'hasData' ensures the radio is in Rx mode.  You can call '_radio.StartRx' as well.
+    // Show any received data.
+    while (_radio.hasData())
     {
         RadioPacket radioData;
         _radio.readData(&radioData);

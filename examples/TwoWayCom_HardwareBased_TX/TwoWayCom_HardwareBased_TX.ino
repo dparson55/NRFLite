@@ -75,7 +75,7 @@ void loop()
         }
     }
 
-    // Request data once every 4 seconds.
+    // Request data from the primary receiver once every 4 seconds.
     if (millis() - _lastMessageRequestTime > 3999)
     {
         _lastMessageRequestTime = millis();
