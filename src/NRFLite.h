@@ -105,7 +105,7 @@ class NRFLite {
     uint8_t usiTransfer(uint8_t data);    
     uint8_t twoPinTransfer(uint8_t data);
 
-    void printRegister(char name[], uint8_t regName);
+    void printRegister(const char name[], uint8_t regName);
 };
 
 #endif
