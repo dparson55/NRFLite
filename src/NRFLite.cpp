@@ -482,7 +482,7 @@ uint8_t NRFLite::waitForTxToComplete()
     uint8_t fifoReg, statusReg;
     uint8_t txBufferIsEmpty;
     uint8_t packetWasSent, packetCouldNotBeSent;
-    uint8_t txAttemptCount;
+    uint8_t txAttemptCount = 0;
     uint8_t result = 0; // Default to indicating a failure.
 
     // TX buffer can store 3 packets, sends retry up to 15 times, and the retry wait time is about half
@@ -620,7 +620,7 @@ uint8_t NRFLite::usiTransfer(uint8_t data)
 
 uint8_t NRFLite::twoPinTransfer(uint8_t data)
 {
-    uint8_t byteFromRadio;
+    uint8_t byteFromRadio = 0;
     uint8_t currentBitIndex = 8;
     
     do
