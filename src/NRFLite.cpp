@@ -288,7 +288,7 @@ void NRFLite::printDetails()
 
 void NRFLite::printChannels()
 {
-    uint8_t signalStrength[MAX_NRF_CHANNEL] = { 0 };  // Holds carrier detect counts for each channel.
+    uint8_t signalStrength[MAX_NRF_CHANNEL + 1] = { 0 };  // Holds carrier detect counts for each channel.
     uint8_t originalChannelReg = readRegister(RF_CH);
     
     // Put radio into Standby-I mode.
