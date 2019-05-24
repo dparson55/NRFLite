@@ -42,9 +42,9 @@ void setup()
     // Both the RX and TX radios must have the same bitrate and channel to communicate with each other.
     // You can run the 'ChannelScanner' example to help select the best channel for your environment.
     // You can assign a different bitrate and channel as shown below.
-    //   _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE250KBPS, 0)
-    //   _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE1MBPS, 75)
     //   _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE2MBPS, 100) // THE DEFAULT
+    //   _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE1MBPS, 75)
+    //   _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE250KBPS, 0)
     
     if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
     {
@@ -64,12 +64,12 @@ void loop()
     Serial.print(" ms");
 
     // By default, 'send' transmits data and waits for an acknowledgement.  If no acknowledgement is received,
-    // it will try again up to 16 times.  You can also perform a NO_ACK send that does not request an acknowledgement.
-    // The data packet will only be transmitted a single time so there is no guarantee it will be successful.  Any random
-    // electromagnetic interference can sporatically cause packets to be lost, so NO_ACK sends are only suited for certain
-    // types of situations, such as streaming real-time data where performance is more important than reliability.
-    //   _radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData), NRFLite::NO_ACK)
+    // it will try again up to 16 times.  This retry logic is built into the radio hardware itself, so it is very fast.
+    // You can also perform a NO_ACK send that does not request an acknowledgement.  In this situation, the data packet
+    // will only be transmitted a single time and there is no verification of delivery.  So NO_ACK sends are suited for
+    // situations where performance is more important than reliability.
     //   _radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData), NRFLite::REQUIRE_ACK) // THE DEFAULT
+    //   _radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData), NRFLite::NO_ACK)
     
     if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData))) // Note how '&' must be placed in front of the variable name.
     {

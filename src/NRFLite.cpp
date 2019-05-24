@@ -174,10 +174,10 @@ uint8_t NRFLite::startRx()
     // Put radio into Standby-I mode in order to transition into RX mode.
     digitalWrite(_cePin, LOW);
 
-    // Power on the radio in RX mode.
+    // Configure the radio for receiving.
     writeRegister(CONFIG, CONFIG_REG_SETTINGS_FOR_RX_MODE);
 
-    // Start listening for packets.
+    // Put radio into RX mode.
     digitalWrite(_cePin, HIGH);
 
     // Wait for the transition into RX mode.
@@ -322,16 +322,15 @@ void NRFLite::printChannels()
         if      (channelNumber < 10 ) { channelMsg += "  "; } // Right-align
         else if (channelNumber < 100) { channelMsg += " ";  } // the channel
         channelMsg += channelNumber;                          // number.
-
+        
         channelMsg += " ";
         uint8_t strength = signalStrength[channelNumber];
-
         while (strength--)
         {
             channelMsg += "X";
         }
 
-        // Print the message.
+        // Print the channel message.
         debugln(channelMsg);
     }
 
@@ -561,7 +560,7 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
 
     if (_useTwoPinSpiTransfer)
     {
-        digitalWrite(_csnPin, LOW);              // Signal radio to list on the SPI bus.
+        digitalWrite(_csnPin, LOW);              // Signal radio to listen to the SPI bus.
         delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to discharge.
         twoPinTransfer(regName);
         for (uint8_t i = 0; i < length; ++i) {
@@ -573,7 +572,7 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
     }
     else
     {
-        digitalWrite(_csnPin, LOW); // Signal radio to list on the SPI bus.
+        digitalWrite(_csnPin, LOW); // Signal radio to listen to the SPI bus.
 
         #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
             // ATtiny transfer with USI.
