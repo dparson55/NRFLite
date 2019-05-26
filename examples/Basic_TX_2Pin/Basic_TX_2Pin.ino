@@ -1,8 +1,10 @@
 /*
 
-Demonstrates simple RX and TX operation using 2 pins for the radio.
+Demonstrates simple RX and TX operation using 2 pins for the radio.  This greatly slows down the communication speed between
+the microcontroller and radio compared to using the SPI and USI peripherials of the ATmega and ATtiny microcontrollers.
+Only AVR architectures (ATMega/ATtiny) support 2 pin operation.
+
 Any of the Basic_RX examples can be used as a receiver.
-Only AVR architectures (ATtiny/ATmega) support 2 pin operation.
 
 Radio circuit
 * Follow the 2-Pin Hookup Guide on https://github.com/dparson55/NRFLite
