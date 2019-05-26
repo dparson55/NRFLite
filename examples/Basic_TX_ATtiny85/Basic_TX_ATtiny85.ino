@@ -21,7 +21,7 @@ GND   -> GND
 
 const static uint8_t RADIO_ID = 4;
 const static uint8_t DESTINATION_RADIO_ID = 0;
-const static uint8_t PIN_RADIO_CE = 3; // NRFLite supports sharing the same pin for CE+CSN, but you give up some performance.
+const static uint8_t PIN_RADIO_CE = 3;
 const static uint8_t PIN_RADIO_CSN = 3;
 
 struct RadioPacket
