@@ -1,6 +1,8 @@
 /*
 
-Demonstrates simple TX operation with an ATtiny84.
+Demonstrates simple TX operation with an ATtiny84.  Note in this example the same pin is used for CE and CSN.
+This slows the communication between the microcontroller and radio, but it frees up one pin.
+
 Any of the Basic_RX examples can be used as a receiver.
 
 Radio    ATtiny84
