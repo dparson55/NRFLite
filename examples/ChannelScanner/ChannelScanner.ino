@@ -1,10 +1,10 @@
 /*
 
-Run this to select a free channel to use with the radio.  A graph will be shown in the serial montior
-that shows any existing signals on the channels supported by the radio.
+Run this to help identify a free channel to use with the radio.  It shows a graph in the serial montior which allows you
+to visualize channels that already have a signal.  You should configure the radio to use a channel with no existing signals.
 
-By default, 'init' configures the radio to use a 2MBPS bitrate on channel 100 (channels 0-125 are valid).
-Both the RX and TX radios must have the same bitrate and channel to communicate with each other.
+By default, 'init' configures the radio to use channel 100 (channels 0-125 are valid).
+Both the RX and TX radios must have the same channel to communicate with each other.
 You can assign a different channel as shown below.
 _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE2MBPS, 0);   // Channel 0
 _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN, NRFLite::BITRATE2MBPS, 75);  // Channel 75
