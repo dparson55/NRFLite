@@ -27,6 +27,8 @@ class NRFLite {
     // printDetails  = Prints many of the radio registers.  Requires a serial object in the constructor, e.g. NRFLite _radio(Serial);
     // printChannels = Prints a graph showing received signals across all available channels.  Requires a serial object in the constructor.
     uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
+    uint8_t init(uint8_t radioId, uint8_t miso_pin, uint8_t mosi_pin, uint8_t sclk_pin, uint8_t cePin, uint8_t csnPin, Bitrates bitrate, uint8_t channel);
+
 #if defined(__AVR__)
     uint8_t initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
 #endif
@@ -95,6 +97,7 @@ class NRFLite {
     uint8_t getPipeOfFirstRxPacket();
     uint8_t getRxPacketLength();
     uint8_t initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel);
+
     void prepForTx(uint8_t toRadioId, SendType sendType);
     uint8_t waitForTxToComplete();
     uint8_t readRegister(uint8_t regName);
