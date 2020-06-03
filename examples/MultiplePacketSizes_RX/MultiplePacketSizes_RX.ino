@@ -78,7 +78,12 @@ void loop()
         else
         {
             // We have a packet with an unexpected size, either an invalid packet or packet
-            // that was sent from a radio that we cannot handle, so remove it.
+            // that was sent from a radio that we cannot handle, so remove it from the radio.
+
+            Serial.print("Received packet with length '");
+            Serial.print(packetSize);
+            Serial.println("', it will be discarded");
+
             _radio.discardData(packetSize);
         }
     }
