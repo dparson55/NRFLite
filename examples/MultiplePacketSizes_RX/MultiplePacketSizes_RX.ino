@@ -53,24 +53,33 @@ void loop()
     // 'hasData' returns the size of the packet that was received, or 0 if there is no data.
     uint8_t packetSize = _radio.hasData();
 
-    if (packetSize == sizeof(RadioPacket1))
+    if (packetSize > 0)
     {
-        _radio.readData(&_radioData1);
+        if (packetSize == sizeof(RadioPacket1))
+        {
+            _radio.readData(&_radioData1);
 
-        Serial.print("Received ");
-        Serial.print(_radioData1.Counter);
-        Serial.print(" from radio ");
-        Serial.println(_radioData1.FromRadioId);
-    }
-    else if (packetSize == sizeof(RadioPacket2))
-    {
-        _radio.readData(&_radioData2);
+            Serial.print("Received ");
+            Serial.print(_radioData1.Counter);
+            Serial.print(" from radio ");
+            Serial.println(_radioData1.FromRadioId);
+        }
+        else if (packetSize == sizeof(RadioPacket2))
+        {
+            _radio.readData(&_radioData2);
 
-        String msg = String(_radioData2.Message);
+            String msg = String(_radioData2.Message);
 
-        Serial.print("Received '");
-        Serial.print(msg);
-        Serial.print("' from radio ");
-        Serial.println(_radioData2.FromRadioId);
+            Serial.print("Received '");
+            Serial.print(msg);
+            Serial.print("' from radio ");
+            Serial.println(_radioData2.FromRadioId);
+        }
+        else
+        {
+            // We have a packet with an unexpected size, either an invalid packet or packet
+            // that was sent from a radio that we cannot handle, so remove it.
+            _radio.discardData(packetSize);
+        }
     }
 }
