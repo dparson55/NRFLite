@@ -88,6 +88,20 @@ void NRFLite::addAckData(void *data, uint8_t length, uint8_t removeExistingAcks)
     spiTransfer(WRITE_OPERATION, (W_ACK_PAYLOAD | 1), data, length);
 }
 
+void NRFLite::discardData(uint8_t unexpectedDataLength)
+{
+    // Read data from the RX buffer.
+    uint8_t data[unexpectedDataLength];
+    spiTransfer(READ_OPERATION, R_RX_PAYLOAD, &data, unexpectedDataLength);
+
+    // Clear data received flag.
+    uint8_t statusReg = readRegister(STATUS_NRF);
+    if (statusReg & _BV(RX_DR))
+    {
+        writeRegister(STATUS_NRF, statusReg | _BV(RX_DR));
+    }
+}
+
 uint8_t NRFLite::hasAckData()
 {
     // If we have a pipe 0 packet sitting at the top of the RX buffer, we have auto-acknowledgment data.

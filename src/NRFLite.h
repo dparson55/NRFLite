@@ -44,13 +44,15 @@ class NRFLite {
     uint8_t hasAckData();
 
     // Methods for receivers.
-    // hasData    = Checks to see if a data packet has been received and returns its length.  It also puts the radio in RX mode
-    //              if it was previously in TX mode.
-    // addAckData = Enqueues an acknowledgment data packet for sending back to a transmitter.  Whenever the transmitter sends the 
-    //              next data packet, it will get this ACK packet back in the response.  The radio will store up to 3 ACK packets
-    //              and will not enqueue more if full, so you can clear any stale packets using the 'removeExistingAcks' parameter.
+    // hasData     = Checks to see if a data packet has been received and returns its length.  It also puts the radio in RX mode
+    //               if it was previously in TX mode.
+    // addAckData  = Enqueues an acknowledgment data packet for sending back to a transmitter.  Whenever the transmitter sends the 
+    //               next data packet, it will get this ACK packet back in the response.  The radio will store up to 3 ACK packets
+    //               and will not enqueue more if full, so you can clear any stale packets using the 'removeExistingAcks' parameter.
+    // discardData = Removes the current received data packet.  Useful if a packet of an unexpected size is received.
     uint8_t hasData(uint8_t usingInterrupts = 0);
-    void addAckData(void *data, uint8_t length, uint8_t removeExistingAcks = 0); 
+    void addAckData(void *data, uint8_t length, uint8_t removeExistingAcks = 0);
+    void discardData(uint8_t unexpectedDataLength);
     
     // Methods when using the radio's IRQ pin for interrupts.
     // Note that if interrupts are used, do not use the send and hasData functions.  Instead the functions below should be used.
