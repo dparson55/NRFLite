@@ -346,6 +346,10 @@ void NRFLite::printChannels()
 
         // Print the channel message.
         debugln(channelMsg);
+
+#if defined(ESP8266)
+        yield();
+#endif
     }
 
     writeRegister(RF_CH, originalChannelReg); // Set the radio back to the original channel.
