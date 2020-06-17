@@ -303,7 +303,7 @@ void sendMessage(String msg)
 
 void sleep(uint32_t seconds)
 {
-    uint32_t totalPowerDownSeconds;
+    uint32_t totalPowerDownSeconds = 0;
     uint8_t canSleep8Seconds;
 
     _radio.powerDown();            // Put the radio into a low power state.
