@@ -9,6 +9,9 @@ to the transmitter, but the receiver cannot initiate the communication.
 Another limitation is the receiver doesn't get the opportunity to process a received packet and then load an
 acknowledgement data packet to send back, instead the acknowledgement packet must to be loaded prior to receiving
 a packet from the transmitting radio.  An approach to work around this limitation is demonstrated in this example.
+When the transmitter wants data from the receiver, the transmitter will send a 'BeginGetData' packet.  When the
+receiver processes this packet, it will load itself with an acknowledgement data packet.  The transmitter will
+then send an 'EndGetData' packet in order to finally receive the data from the receiver.
 
 If you need the ability to initiate communication from either radio and do not require the high-speed,
 hardware based two-way communication, see the 'TwoWayCom_SoftwareBased' example instead.
