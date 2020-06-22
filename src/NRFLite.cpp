@@ -40,7 +40,11 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
         // Arduino SPI makes SS (D10 on ATmega328) an output and sets it HIGH.  It must remain an output
         // for Master SPI operation, but in case it started as LOW, we'll set it back.
         uint8_t savedSS = digitalRead(SS);
-        SPI.begin();
+        #if defined (ESP32)
+            SPI.begin(14, 2, 15);
+        #else
+            SPI.begin();
+        #endif
         if (_csnPin != SS) digitalWrite(SS, savedSS);
     #endif
 
