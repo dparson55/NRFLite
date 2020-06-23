@@ -32,7 +32,7 @@ class NRFLite {
     uint8_t initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
 #endif
 #if defined(ESP32)
-    uint8_t initEsp32(uint8_t radioId, uint8_t cePin, uint8_t csnPin, int8_t sckPin, int8_t misoPin, int8_t mosiPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100)
+    uint8_t initEsp32(uint8_t radioId, uint8_t cePin, uint8_t csnPin, int8_t sckPin, int8_t misoPin, int8_t mosiPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
 #endif
     void readData(void *data);
     void powerDown();
