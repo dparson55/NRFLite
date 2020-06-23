@@ -24,7 +24,7 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
     _cePin = cePin;
     _csnPin = csnPin;
     _useTwoPinSpiTransfer = 0;
-    
+
     // Default states for the radio pins.  When CSN is LOW the radio listens to SPI communication,
     // so we operate most of the time with CSN HIGH.
     pinMode(_cePin, OUTPUT);
@@ -40,11 +40,7 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
         // Arduino SPI makes SS (D10 on ATmega328) an output and sets it HIGH.  It must remain an output
         // for Master SPI operation, but in case it started as LOW, we'll set it back.
         uint8_t savedSS = digitalRead(SS);
-        #if defined (ESP32)
-            SPI.begin(14, 2, 15);
-        #else
-            SPI.begin();
-        #endif
+        SPI.begin();
         if (_csnPin != SS) digitalWrite(SS, savedSS);
     #endif
 
@@ -72,6 +68,29 @@ uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bi
     _momi_MASK = digitalPinToBitMask(momiPin);
     _sck_PORT = portOutputRegister(digitalPinToPort(sckPin));
     _sck_MASK = digitalPinToBitMask(sckPin);
+
+    uint8_t success = initRadio(radioId, bitrate, channel);
+    return success;
+}
+
+#endif
+
+#if defined(ESP32)
+
+uint8_t NRFLite::initEsp32(uint8_t radioId, uint8_t cePin, uint8_t csnPin, int8_t sckPin, int8_t misoPin, int8_t mosiPin, Bitrates bitrate, uint8_t channel)
+{
+    _cePin = cePin;
+    _csnPin = csnPin;
+    _useTwoPinSpiTransfer = 0;
+
+    // Default states for the radio pins.  When CSN is LOW the radio listens to SPI communication,
+    // so we operate most of the time with CSN HIGH.
+    pinMode(_cePin, OUTPUT);
+    pinMode(_csnPin, OUTPUT);
+    digitalWrite(_csnPin, HIGH);
+
+    // Setup SPI pins.
+    SPI.begin(sckPin, misoPin, mosiPin, csnPin);
 
     uint8_t success = initRadio(radioId, bitrate, channel);
     return success;
@@ -351,7 +370,7 @@ void NRFLite::printChannels()
         // Print the channel message.
         debugln(channelMsg);
 
-#if defined(ESP8266)
+#if defined(ESP8266) || defined(ESP32)
         yield();
 #endif
     }

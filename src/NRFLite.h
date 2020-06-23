@@ -22,6 +22,7 @@ class NRFLite {
     //              Channel can be 0-125 and sets the exact frequency of the radio between 2400 - 2525 MHz.
     // initTwoPin = Same as init but with multiplexed MOSI/MISO and CE/CSN/SCK pins (only works on AVR architectures).
     //              Follow the 2-pin hookup schematic on https://github.com/dparson55/NRFLite
+    // initEsp32  = Same as init but allows configuration of the SPI pins on ESP32 microcontrollers.
     // readData   = Loads a received data packet or acknowledgment data packet into the specified data parameter.
     // powerDown  = Power down the radio.  Turn the radio back on by calling one of the 'hasData' or 'send' methods.
     // printDetails  = Prints many of the radio registers.  Requires a serial object in the constructor, e.g. NRFLite _radio(Serial);
@@ -29,6 +30,9 @@ class NRFLite {
     uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
 #if defined(__AVR__)
     uint8_t initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
+#endif
+#if defined(ESP32)
+    uint8_t initEsp32(uint8_t radioId, uint8_t cePin, uint8_t csnPin, int8_t sckPin, int8_t misoPin, int8_t mosiPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100)
 #endif
     void readData(void *data);
     void powerDown();
