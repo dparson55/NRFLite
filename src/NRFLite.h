@@ -26,7 +26,7 @@ class NRFLite {
     // powerDown  = Power down the radio.  Turn the radio back on by calling one of the 'hasData' or 'send' methods.
     // printDetails  = Prints many of the radio registers.  Requires a serial object in the constructor, e.g. NRFLite _radio(Serial);
     // printChannels = Prints a graph showing received signals across all available channels.  Requires a serial object in the constructor.
-    uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
+    uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100, uint8_t callSpiBegin = 1);
 #if defined(__AVR__)
     uint8_t initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
 #endif
