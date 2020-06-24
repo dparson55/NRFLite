@@ -8,7 +8,7 @@ to ensure the bytes within the structure are aligned properly in memory.
 
 The ESP32 SPI library supports configurable SPI pins and NRFLite's mechanism to support this is shown.
 
-Radio    ESP32 (TTGO brand) module
+Radio    ESP32 module
 CE    -> 4
 CSN   -> 5
 MOSI  -> 23
