@@ -19,7 +19,7 @@
 // Public methods //
 ////////////////////
 
-uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate, uint8_t channel)
+uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate, uint8_t channel, uint8_t callSpiBegin)
 {
     _cePin = cePin;
     _csnPin = csnPin;
@@ -37,13 +37,17 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
         pinMode(USI_DO, OUTPUT); digitalWrite(USI_DO, LOW);
         pinMode(USI_SCK, OUTPUT); digitalWrite(USI_SCK, LOW);
     #else
-        // Arduino SPI makes SS (D10 on ATmega328) an output and sets it HIGH.  It must remain an output
-        // for Master SPI operation, but in case it started as LOW, we'll set it back.
-        uint8_t savedSS = digitalRead(SS);
-        SPI.begin();
-        if (_csnPin != SS) digitalWrite(SS, savedSS);
+        if (callSpiBegin)
+        {
+            // Arduino SPI makes SS (D10 on ATmega328) an output and sets it HIGH.  It must remain an output
+            // for Master SPI operation, but in case it started as LOW, we'll set it back.
+            uint8_t savedSS = digitalRead(SS);
+            SPI.begin();
+            if (_csnPin != SS) digitalWrite(SS, savedSS);
+        }
     #endif
 
+    // With the microcontroller's pins setup, we can now initialize the radio.
     uint8_t success = initRadio(radioId, bitrate, channel);
     return success;
 }
@@ -68,29 +72,6 @@ uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bi
     _momi_MASK = digitalPinToBitMask(momiPin);
     _sck_PORT = portOutputRegister(digitalPinToPort(sckPin));
     _sck_MASK = digitalPinToBitMask(sckPin);
-
-    uint8_t success = initRadio(radioId, bitrate, channel);
-    return success;
-}
-
-#endif
-
-#if defined(ESP32)
-
-uint8_t NRFLite::initEsp32(uint8_t radioId, uint8_t cePin, uint8_t csnPin, int8_t sckPin, int8_t misoPin, int8_t mosiPin, Bitrates bitrate, uint8_t channel)
-{
-    _cePin = cePin;
-    _csnPin = csnPin;
-    _useTwoPinSpiTransfer = 0;
-
-    // Default states for the radio pins.  When CSN is LOW the radio listens to SPI communication,
-    // so we operate most of the time with CSN HIGH.
-    pinMode(_cePin, OUTPUT);
-    pinMode(_csnPin, OUTPUT);
-    digitalWrite(_csnPin, HIGH);
-
-    // Setup SPI pins.
-    SPI.begin(sckPin, misoPin, mosiPin, csnPin);
 
     uint8_t success = initRadio(radioId, bitrate, channel);
     return success;
