@@ -1,8 +1,12 @@
 /*
 
-Demonstrates two-way communication without using acknowledgement data packets.  This is much slower
-than the hardware-based, ACK packet approach shown in the 'TwoWayCom_HardwareBased' example, but is
-more flexible.
+Demonstrates two-way communication without using acknowledgement data packets.  This is much slower than
+the hardware-based, acknowledgement data packet approach shown in the 'TwoWayCom_HardwareBased' example,
+but is more flexible.
+
+When using this software-based approach it is important to keep track of the radio's state.  When a send
+is performed the radio will be switched into transmitter mode, so you will need to manually switch the radio
+back into receiver mode when needed.
 
 Radio    Arduino
 CE    -> 9
