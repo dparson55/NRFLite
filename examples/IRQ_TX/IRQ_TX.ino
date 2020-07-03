@@ -26,8 +26,8 @@ const static uint8_t PIN_RADIO_IRQ = 3;
 NRFLite _radio;
 uint8_t _data;
 uint32_t _lastSendTime;
-volatile uint8_t _sendSucceeded, _sendFailed; // Note usage of volatile for these global variables being changed in the radio interrupt.
-
+volatile uint8_t _sendSucceeded, _sendFailed; // Note usage of volatile since the variables are used in the radio
+                                              // interrupt while also being used outside the interrupt.
 void setup()
 {
     Serial.begin(115200);

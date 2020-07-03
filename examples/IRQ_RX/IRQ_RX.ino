@@ -23,7 +23,8 @@ const static uint8_t PIN_RADIO_CSN = 10;
 const static uint8_t PIN_RADIO_IRQ = 3;
 
 NRFLite _radio;
-volatile uint8_t _dataWasReceived; // Note usage of volatile for the global variable being changed in the radio interrupt.
+volatile uint8_t _dataWasReceived; // Note usage of volatile since the variable is used in the radio interrupt
+                                   // while also being used outside the interrupt.
 
 void setup()
 {
