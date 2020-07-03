@@ -620,24 +620,22 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
     interrupts();
 }
 
+#if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+
 uint8_t NRFLite::usiTransfer(uint8_t data)
 {
-    #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
-    
-        USIDR = data;
-        USISR = _BV(USIOIF);
-    
-        while ((USISR & _BV(USIOIF)) == 0)
-        {
-            USICR = _BV(USIWM0) | _BV(USICS1) | _BV(USICLK) | _BV(USITC);
-        }
-    
-        return USIDR;
-    
-    #endif
+    USIDR = data;
+    USISR = _BV(USIOIF);
 
-    return 0;
+    while ((USISR & _BV(USIOIF)) == 0)
+    {
+        USICR = _BV(USIWM0) | _BV(USICS1) | _BV(USICLK) | _BV(USITC);
+    }
+
+    return USIDR;
 }
+
+#endif
 
 uint8_t NRFLite::twoPinTransfer(uint8_t data)
 {

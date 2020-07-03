@@ -104,7 +104,9 @@ class NRFLite {
     void writeRegister(uint8_t regName, uint8_t data);
     void writeRegister(uint8_t regName, void* data, uint8_t length);
     void spiTransfer(SpiTransferType transferType, uint8_t regName, void* data, uint8_t length);
-    uint8_t usiTransfer(uint8_t data);    
+#if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+    uint8_t usiTransfer(uint8_t data);
+#endif
     uint8_t twoPinTransfer(uint8_t data);
 
     void printRegister(const char name[], uint8_t regName);
