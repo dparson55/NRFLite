@@ -16,6 +16,8 @@ class NRFLite {
     
     enum Bitrates { BITRATE2MBPS, BITRATE1MBPS, BITRATE250KBPS };
     enum SendType { REQUIRE_ACK, NO_ACK };
+
+    const static uint8_t MAX_NRF_CHANNEL = 125; // Maximum channel number.
     
     // Methods for receivers and transmitters.
     // init       = Turns the radio on and puts it into receiving mode.  Returns 0 if it cannot communicate with the radio.
@@ -24,8 +26,8 @@ class NRFLite {
     //              Follow the 2-pin hookup schematic on https://github.com/dparson55/NRFLite
     // readData   = Loads a received data packet or acknowledgment data packet into the specified data parameter.
     // powerDown  = Power down the radio.  Turn the radio back on by calling one of the 'hasData' or 'send' methods.
-    // printDetails  = Prints many of the radio registers.  Requires a serial object in the constructor, e.g. NRFLite _radio(Serial);
-    // printChannels = Prints a graph showing received signals across all available channels.  Requires a serial object in the constructor.
+    // printDetails = Prints many of the radio registers.  Requires a serial object in the constructor, e.g. NRFLite _radio(Serial);
+    // printChannel = Prints a simple graph showing any received signals across the channel.  Requires a serial object in the constructor.
     uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100, uint8_t callSpiBegin = 1);
 #if defined(__AVR__)
     uint8_t initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
@@ -33,7 +35,7 @@ class NRFLite {
     void readData(void *data);
     void powerDown();
     void printDetails();
-    void printChannels();
+    void printChannel(uint8_t channel);
 
     // Methods for transmitters.
     // send = Sends a data packet and waits for success or failure.  The default REQUIRE_ACK sendType causes the radio
@@ -68,7 +70,6 @@ class NRFLite {
     
   private:
 
-    const static uint8_t MAX_NRF_CHANNEL = 125; // Valid channel range is 2400 - 2525 MHz, in 1 MHz increments.
     const static uint8_t CONFIG_REG_SETTINGS_FOR_RX_MODE = _BV(PWR_UP) | _BV(PRIM_RX) | _BV(EN_CRC);
     const static uint32_t NRF_SPICLOCK = 4000000; // Speed to use for SPI communication with the transceiver.
 

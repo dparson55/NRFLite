@@ -1,7 +1,8 @@
 /*
 
-Run this to help identify a free channel to use with the radio.  It shows a graph in the serial montior which allows you
-to visualize channels that already have a signal.  You should configure the radio to use a channel with no existing signals.
+Run this to help identify a free channel to use with the radio.  It shows a graph in the serial montior
+which allows you to visualize channels that already have a signal.  You should configure the radio to use
+a channel with no existing signals.
 
 By default, 'init' configures the radio to use channel 100 (channels 0-125 are valid).
 Both the RX and TX radios must have the same channel to communicate with each other.
@@ -41,9 +42,18 @@ void setup()
         while (1); // Wait here forever.
     }
 
-    Serial.println();
     Serial.println("Use a channel without existing signals.");
-    _radio.printChannels();
+    Serial.println("Each X indicates a signal was received.");
+    Serial.println();
+
+    for (uint8_t channel = 0; channel <= NRFLite::MAX_NRF_CHANNEL; channel++)
+    {
+        _radio.printChannel(channel);
+
+#if defined(ESP8266) || defined(ESP32)
+        yield();
+#endif
+    }
 }
 
 void loop() {}

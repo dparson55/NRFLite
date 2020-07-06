@@ -304,60 +304,45 @@ void NRFLite::printDetails()
     debugln(msg);
 }
 
-void NRFLite::printChannels()
+void NRFLite::printChannel(uint8_t channel)
 {
-    uint8_t signalStrength[MAX_NRF_CHANNEL + 1] = { 0 };  // Holds carrier detect counts for each channel.
-    uint8_t originalChannelReg = readRegister(RF_CH);
-    
     // Put radio into Standby-I mode.
-    startRx();
     digitalWrite(_cePin, LOW);
-    
-    // Loop through each channel.
-    for (uint8_t channelNumber = 0; channelNumber <= MAX_NRF_CHANNEL; channelNumber++)
+
+    // Set the channel.
+    writeRegister(RF_CH, channel);
+
+    // Take measurements.
+    uint8_t signalStrength = 0;
+    for (uint8_t measurementCount = 0; measurementCount < 200; measurementCount++)
     {
-        // Set the channel.
-        writeRegister(RF_CH, channelNumber);
+        // Put the radio into RX mode and wait a little time for a signal to be received.
+        digitalWrite(_cePin, HIGH);
+        delayMicroseconds(400);
+        digitalWrite(_cePin, LOW);
 
-        // Take a bunch of measurements.
-        for (uint8_t measurementCount = 0; measurementCount < 200; measurementCount++)
+        uint8_t signalWasReceived = readRegister(CD);
+        if (signalWasReceived)
         {
-            // Put the radio into RX mode and wait a little time for a signal to be received.
-            digitalWrite(_cePin, HIGH);
-            delayMicroseconds(400);
-            digitalWrite(_cePin, LOW);
-
-            uint8_t signalWasReceived = readRegister(CD);
-            if (signalWasReceived)
-            {
-                signalStrength[channelNumber]++;
-            }
+            signalStrength++;
         }
-
-        // Build the message about the channel, e.g. 'Channel 125 XXXXXXXXX'
-        String channelMsg = "Channel ";
-        
-        if      (channelNumber < 10 ) { channelMsg += "  "; } // Right-align
-        else if (channelNumber < 100) { channelMsg += " ";  } // the channel
-        channelMsg += channelNumber;                          // number.
-        
-        channelMsg += " ";
-        uint8_t strength = signalStrength[channelNumber];
-        while (strength--)
-        {
-            channelMsg += "X";
-        }
-
-        // Print the channel message.
-        debugln(channelMsg);
-
-#if defined(ESP8266) || defined(ESP32)
-        yield();
-#endif
     }
 
-    writeRegister(RF_CH, originalChannelReg); // Set the radio back to the original channel.
-    startRx();
+    // Build the message about the channel, e.g. 'Channel 125 XXXXXXXXX'
+    String channelMsg = "Channel ";
+    
+    if      (channel < 10 ) { channelMsg += "  "; }
+    else if (channel < 100) { channelMsg += " ";  }
+    channelMsg += channel;
+    channelMsg += "  ";
+
+    while (signalStrength--)
+    {
+        channelMsg += "X";
+    }
+
+    // Print the channel message.
+    debugln(channelMsg);
 }
 
 /////////////////////
