@@ -2,11 +2,19 @@
 
 Demonstrates two-way communication without using acknowledgement data packets.  This is much slower than
 the hardware-based, acknowledgement data packet approach shown in the 'TwoWayCom_HardwareBased' example,
-but is more flexible.
+but it is more flexible.
 
-When using this software-based approach it is important to keep track of the radio's state.  When a send
-is performed the radio will be switched into transmitter mode, so you will need to manually switch the radio
-back into receiver mode when needed.
+It is important to keep in mind the radio cannot send and receive data at the same time, instead, the
+radio will either be in receiver mode or transmitter mode.  NRFLite switches the mode of the radio in
+hopefully a natural way based on the methods being called, e.g. 'send' puts the radio into transmitter
+mode while 'hasData' puts it into receiver mode.  But you may need to be aware of this mode switching
+behavior when doing two-way communication.  For example, you may need to minimize the amount of time the
+radio is in transmitter mode if you would like it to participate in two-way communication with another
+radio.  An approach to minimize the amount of time the radio is a transmitter is shown in this example.
+
+Software-based two-way communication is slow compared to the two-way communication support implemented
+by the designers of the radio module in hardware.  So check out the hardware-based two-way communication
+example if you would like a faster solution.
 
 Radio    Arduino
 CE    -> 9
@@ -30,8 +38,7 @@ const static uint8_t PIN_RADIO_CSN = 10;
 
 enum RadioPacketType
 {
-    Heartbeat,
-    ReceiverData
+    Heartbeat
 };
 
 struct RadioPacket
@@ -61,34 +68,47 @@ void loop()
     if (millis() - _lastHeartbeatSendTime > 999)
     {
         _lastHeartbeatSendTime = millis();
-
-        Serial.print("Sending heartbeat");
-        RadioPacket radioData;
-        radioData.PacketType = Heartbeat;
-        radioData.FromRadioId = RADIO_ID;
-        radioData.OnTimeMillis = _lastHeartbeatSendTime;
-
-        if (_radio.send(DESTINATION_RADIO_ID, &radioData, sizeof(radioData)))
-        {
-            Serial.println("...Success");
-        }
-        else
-        {
-            Serial.println("...Failed");
-        }
+        sendHeartbeat();        
     }
 
     // Show any received data.
-    while (_radio.hasData())
+    checkRadio();
+}
+
+void sendHeartbeat()
+{
+    Serial.print("Sending heartbeat");
+
+    RadioPacket radioData;
+    radioData.PacketType = Heartbeat;
+    radioData.FromRadioId = RADIO_ID;
+    radioData.OnTimeMillis = millis();
+
+    if (_radio.send(DESTINATION_RADIO_ID, &radioData, sizeof(radioData))) // 'send' puts the radio into Tx mode.
+    {
+        Serial.println("...Success");
+    }
+    else
+    {
+        Serial.println("...Failed");
+    }
+}
+
+void checkRadio()
+{
+    while (_radio.hasData()) // 'hasData' puts the radio into Rx mode.
     {
         RadioPacket radioData;
         _radio.readData(&radioData);
 
-        String msg = "Received data from ";
-        msg += radioData.FromRadioId;
-        msg += ", ";
-        msg += radioData.OnTimeMillis;
-        msg += " ms";
-        Serial.println(msg);
+        if (radioData.PacketType == Heartbeat)
+        {
+            String msg = "Heartbeat from ";
+            msg += radioData.FromRadioId;
+            msg += ", ";
+            msg += radioData.OnTimeMillis;
+            msg += " ms";
+            Serial.println(msg);
+        }
     }
 }

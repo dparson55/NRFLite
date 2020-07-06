@@ -18,7 +18,7 @@ demonstrated in this example.  When the transmitter wants data from the receiver
 packet.  The transmitter then sends an 'EndGetData' packet in order to finally receive the data from the receiver.
 
 If you need the ability to initiate communication from either radio and do not require the higher-speed data
-transfer that is possible using acknowledgement data packets, see the software-based two way communication example.
+transfer that is possible using acknowledgement data packets, see the software-based two-way communication example.
 
 Radio    Arduino
 CE    -> 9
@@ -42,8 +42,8 @@ const static uint8_t PIN_RADIO_CSN = 10;
 
 enum RadioPacketType
 {
-    AcknowledgementData,
-    Heartbeat,
+    AcknowledgementData, // Produced by the primary receiver and provided to the transmitter via an acknowledgement data packet.
+    Heartbeat,    // Sent by the primary transmitter.
     BeginGetData, // Sent by the primary transmitter to tell the receiver it should load itself with an acknowledgement data packet.
     EndGetData    // Sent by the primary transmitter to receive the acknowledgement data packet from the receiver.
 };
@@ -56,7 +56,7 @@ struct RadioPacket
 };
 
 NRFLite _radio;
-uint32_t _lastHeartbeatSendTime, _lastAckDataRequestTime;
+uint32_t _lastHeartbeatSendTime, _lastDataRequestTime;
 
 void setup()
 {
@@ -75,49 +75,77 @@ void loop()
     if (millis() - _lastHeartbeatSendTime > 999)
     {
         _lastHeartbeatSendTime = millis();
+        sendHeartbeat();
+    }
 
-        Serial.print("Sending heartbeat");
-        RadioPacket radioData;
-        radioData.PacketType = Heartbeat;
-        radioData.FromRadioId = RADIO_ID;
-        radioData.OnTimeMillis = _lastHeartbeatSendTime;
+    // Request data from the primary receiver once every 4 seconds.
+    if (millis() - _lastDataRequestTime > 3999)
+    {
+        _lastDataRequestTime = millis();
+        requestData();        
+    }
+}
+
+void sendHeartbeat()
+{
+    Serial.print("Sending heartbeat");
+    RadioPacket radioData;
+    radioData.PacketType = Heartbeat;
+    radioData.FromRadioId = RADIO_ID;
+    radioData.OnTimeMillis = millis();
+
+    if (_radio.send(DESTINATION_RADIO_ID, &radioData, sizeof(radioData)))
+    {
+        Serial.println("...Success");
+    }
+    else
+    {
+        Serial.println("...Failed");
+    }
+}
+
+void requestData()
+{
+    Serial.println("Requesting data");
+    Serial.print("  Sending BeginGetData");
+
+    RadioPacket radioData;
+    radioData.PacketType = BeginGetData; // When the receiver sees this packet type, it will load an ACK data packet.
+    
+    if (_radio.send(DESTINATION_RADIO_ID, &radioData, sizeof(radioData)))
+    {
+        Serial.println("...Success");
+        Serial.print("  Sending EndGetData");
+
+        radioData.PacketType = EndGetData; // When the receiver acknowledges this packet, we will get the ACK data.
 
         if (_radio.send(DESTINATION_RADIO_ID, &radioData, sizeof(radioData)))
         {
             Serial.println("...Success");
+
+            while (_radio.hasAckData()) // Look to see if the receiver provided the ACK data.
+            {
+                RadioPacket ackData;
+                _radio.readData(&ackData);
+
+                if (ackData.PacketType == AcknowledgementData)
+                {
+                    String msg = "  Received ACK data from ";
+                    msg += ackData.FromRadioId;
+                    msg += ", ";
+                    msg += ackData.OnTimeMillis;
+                    msg += " ms";
+                    Serial.println(msg);
+                }
+            }
         }
         else
         {
             Serial.println("...Failed");
         }
     }
-
-    // Request data from the primary receiver once every 4 seconds.
-    if (millis() - _lastAckDataRequestTime > 3999)
+    else
     {
-        _lastAckDataRequestTime = millis();
-
-        Serial.println("Requesting data");
-        Serial.println("  Sending BeginGetData");
-        RadioPacket radioData;
-        radioData.PacketType = BeginGetData; // When the receiver sees this packet type, it will load an ACK data packet.
-        _radio.send(DESTINATION_RADIO_ID, &radioData, sizeof(radioData));
-
-        Serial.println("  Sending EndGetData");
-        radioData.PacketType = EndGetData; // When the receiver acknowledges this packet, we will get the ACK data.
-        _radio.send(DESTINATION_RADIO_ID, &radioData, sizeof(radioData));
-        
-        while (_radio.hasAckData())
-        {
-            RadioPacket ackData;
-            _radio.readData(&ackData);
-
-            String msg = "  Received ACK data from ";
-            msg += ackData.FromRadioId;
-            msg += ", ";
-            msg += ackData.OnTimeMillis;
-            msg += " ms";
-            Serial.println(msg);
-        }
-    }
+        Serial.println("...Failed");
+    }    
 }

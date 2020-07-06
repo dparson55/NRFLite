@@ -18,7 +18,7 @@ demonstrated in this example.  When the transmitter wants data from the receiver
 packet.  The transmitter then sends an 'EndGetData' packet in order to finally receive the data from the receiver.
 
 If you need the ability to initiate communication from either radio and do not require the higher-speed data
-transfer that is possible using acknowledgement data packets, see the software-based two way communication example.
+transfer that is possible using acknowledgement data packets, see the software-based two-way communication example.
 
 Radio    Arduino
 CE    -> 9
@@ -42,8 +42,8 @@ const static uint8_t PIN_RADIO_CSN = 10;
 
 enum RadioPacketType
 {
-    AcknowledgementData,
-    Heartbeat,
+    AcknowledgementData, // Produced by the primary receiver and provided to the transmitter via an acknowledgement data packet.
+    Heartbeat,    // Sent by the primary transmitter.
     BeginGetData, // Sent by the primary transmitter to tell the receiver it should load itself with an acknowledgement data packet.
     EndGetData    // Sent by the primary transmitter to receive the acknowledgement data packet from the receiver.
 };
