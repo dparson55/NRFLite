@@ -46,8 +46,8 @@ void loop()
 ```
 
 ### Video Tutorials
-* [![Tutorial 1](http://img.youtube.com/vi/tWEgvS7Sj-8/default.jpg)](https://youtu.be/tWEgvS7Sj-8) Introduction
-* [![Tutorial 2](http://img.youtube.com/vi/URMmgQuPZVc/default.jpg)](https://youtu.be/URMmgQuPZVc) 2-pin Operation 
+* [![Tutorial 1](http://img.youtube.com/vi/tWEgvS7Sj-8/default.jpg)](https://youtu.be/tWEgvS7Sj-8) Introduction and all basic features
+* [![Tutorial 2](http://img.youtube.com/vi/URMmgQuPZVc/default.jpg)](https://youtu.be/URMmgQuPZVc) 2-pin Operation and ATtiny sensor walkthrough
 
 ### Installation
 * Start the Arduino IDE.
