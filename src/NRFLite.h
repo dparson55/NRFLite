@@ -4,6 +4,10 @@
 #include <Arduino.h>
 #include <nRF24L01.h>
 
+#ifndef _BV
+#define _BV(bit) (1 << (bit))
+#endif
+
 class NRFLite {
 
   public:
