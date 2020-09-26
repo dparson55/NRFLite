@@ -40,6 +40,7 @@ class NRFLite {
     void powerDown();
     void printDetails();
     void printChannel(uint8_t channel);
+    uint8_t scanChannel(uint8_t channel);
 
     // Methods for transmitters.
     // send = Sends a data packet and waits for success or failure.  The default REQUIRE_ACK sendType causes the radio

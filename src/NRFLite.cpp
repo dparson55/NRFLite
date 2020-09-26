@@ -306,31 +306,12 @@ void NRFLite::printDetails()
 
 void NRFLite::printChannel(uint8_t channel)
 {
-    // Put radio into Standby-I mode.
-    digitalWrite(_cePin, LOW);
-
-    // Set the channel.
-    writeRegister(RF_CH, channel);
-
     // Take measurements.
-    uint8_t signalStrength = 0;
-    for (uint8_t measurementCount = 0; measurementCount < 200; measurementCount++)
-    {
-        // Put the radio into RX mode and wait a little time for a signal to be received.
-        digitalWrite(_cePin, HIGH);
-        delayMicroseconds(400);
-        digitalWrite(_cePin, LOW);
-
-        uint8_t signalWasReceived = readRegister(CD);
-        if (signalWasReceived)
-        {
-            signalStrength++;
-        }
-    }
+    uint8_t signalStrength = scanChannel(channel);
 
     // Build the message about the channel, e.g. 'Channel 125 XXXXXXXXX'
     String channelMsg = "Channel ";
-    
+
     if      (channel < 10 ) { channelMsg += "  "; }
     else if (channel < 100) { channelMsg += " ";  }
     channelMsg += channel;
@@ -343,6 +324,33 @@ void NRFLite::printChannel(uint8_t channel)
 
     // Print the channel message.
     debugln(channelMsg);
+}
+
+uint8_t NRFLite::scanChannel(uint8_t channel)
+{
+    uint8_t strength = 0;
+
+    // Put radio into Standby-I mode.
+    digitalWrite(_cePin, LOW);
+
+    // Set the channel.
+    writeRegister(RF_CH, channel);
+
+    // Take a bunch of measurements.
+    for (uint8_t measurementCount = 0; measurementCount < 200; measurementCount++)
+    {
+        // Put the radio into RX mode and wait a little time for a signal to be received.
+        digitalWrite(_cePin, HIGH);
+        delayMicroseconds(400);
+        digitalWrite(_cePin, LOW);
+
+        uint8_t signalWasReceived = readRegister(CD);
+        if (signalWasReceived)
+        {
+            strength++;
+        }
+    }
+    return strength;
 }
 
 /////////////////////
