@@ -304,28 +304,6 @@ void NRFLite::printDetails()
     debugln(msg);
 }
 
-void NRFLite::printChannel(uint8_t channel)
-{
-    // Take measurements.
-    uint8_t signalStrength = scanChannel(channel);
-
-    // Build the message about the channel, e.g. 'Channel 125 XXXXXXXXX'
-    String channelMsg = "Channel ";
-
-    if      (channel < 10 ) { channelMsg += "  "; }
-    else if (channel < 100) { channelMsg += " ";  }
-    channelMsg += channel;
-    channelMsg += "  ";
-
-    while (signalStrength--)
-    {
-        channelMsg += "X";
-    }
-
-    // Print the channel message.
-    debugln(channelMsg);
-}
-
 uint8_t NRFLite::scanChannel(uint8_t channel)
 {
     uint8_t strength = 0;
@@ -337,7 +315,8 @@ uint8_t NRFLite::scanChannel(uint8_t channel)
     writeRegister(RF_CH, channel);
 
     // Take a bunch of measurements.
-    for (uint8_t measurementCount = 0; measurementCount < 200; measurementCount++)
+    uint8_t measurementCount = 255;
+    do
     {
         // Put the radio into RX mode and wait a little time for a signal to be received.
         digitalWrite(_cePin, HIGH);
@@ -349,7 +328,8 @@ uint8_t NRFLite::scanChannel(uint8_t channel)
         {
             strength++;
         }
-    }
+    } while (measurementCount--);
+    
     return strength;
 }
 

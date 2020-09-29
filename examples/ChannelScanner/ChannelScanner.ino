@@ -48,7 +48,23 @@ void setup()
 
     for (uint8_t channel = 0; channel <= NRFLite::MAX_NRF_CHANNEL; channel++)
     {
-        _radio.printChannel(channel);
+        uint8_t signalStrength = _radio.scanChannel(channel);
+
+        // Build the message about the channel, e.g. 'Channel 125 XXXXXXXXX'
+        String channelMsg = "Channel ";
+
+        if (channel < 10) { channelMsg += "  "; }
+        else if (channel < 100) { channelMsg += " "; }
+        channelMsg += channel;
+        channelMsg += "  ";
+
+        while (signalStrength--)
+        {
+            channelMsg += "X";
+        }
+
+        // Print the channel message.
+        Serial.println(channelMsg);
 
 #if defined(ESP8266) || defined(ESP32)
         yield();
