@@ -304,7 +304,7 @@ void NRFLite::printDetails()
     debugln(msg);
 }
 
-uint8_t NRFLite::scanChannel(uint8_t channel)
+uint8_t NRFLite::scanChannel(uint8_t channel, uint8_t measurementCount /*= 255*/)
 {
     uint8_t strength = 0;
 
@@ -315,7 +315,6 @@ uint8_t NRFLite::scanChannel(uint8_t channel)
     writeRegister(RF_CH, channel);
 
     // Take a bunch of measurements.
-    uint8_t measurementCount = 255;
     do
     {
         // Put the radio into RX mode and wait a little time for a signal to be received.
