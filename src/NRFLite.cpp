@@ -304,7 +304,7 @@ void NRFLite::printDetails()
     debugln(msg);
 }
 
-uint8_t NRFLite::scanChannel(uint8_t channel, uint8_t measurementCount /*= 255*/)
+uint8_t NRFLite::scanChannel(uint8_t channel, uint8_t measurementCount)
 {
     uint8_t strength = 0;
 
