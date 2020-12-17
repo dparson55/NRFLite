@@ -107,7 +107,7 @@ void processSettingsChange(NewSettingsPacket newSettings); // Need to pre-declar
 
 void setup()
 {
-    // Enable the power bus.
+    // Enable the power bus.  This provides power to all the sensors and radio, and we'll turn it off when we sleep to conserve power.
     pinMode(PIN_POWER_BUS, OUTPUT);
     digitalWrite(PIN_POWER_BUS, LOW);
 
@@ -141,14 +141,16 @@ void setupRadio()
 {
     if (!_radio.initTwoPin(_settings.RadioId, PIN_RADIO_MOMI, PIN_RADIO_SCK, NRFLite::BITRATE250KBPS))
     {
-        while (1); // Cannot communicate with radio.
+        while (1); // Cannot communicate with the radio so stop all processing.
     }
 }
 
 void loop()
 {
+    // Put the microcontroller, sensors, and radio into a low power state.  Processing stops here until the watchdog timer wakes us up.
     sleep(_settings.SleepIntervalSeconds);
 
+    // Now that we are awake, collect all the sensor readings.
     RadioPacket radioData;
     radioData.FromRadioId = _settings.RadioId;
     radioData.FailedTxCount = _failedTxCount;
@@ -157,13 +159,19 @@ void loop()
     radioData.TemperatureType = _settings.TemperatureType;
     radioData.Voltage = getVcc();
 
+    // Try sending the sensor data.
     if (_radio.send(DESTINATION_RADIO_ID, &radioData, sizeof(radioData)))
     {
+        // If we are here it means the data was sent successful.
+      
+        // Check to see if the receiver provided an acknowledgement data packet.
+        // It will do this if it wants us to change one of our settings.
         if (_radio.hasAckData())
         {
             NewSettingsPacket newSettingsData;
             _radio.readData(&newSettingsData);
 
+            // Confirm the settings we received are meant for us (maybe it was trying to change the settings for a different transmitter).
             if (newSettingsData.ForRadioId == _settings.RadioId)
             {
                 processSettingsChange(newSettingsData);
@@ -297,7 +305,9 @@ void sendMessage(String msg)
         msg = msg.substring(0, sizeof(messageData.message) - 1);
     }
 
+    // Convert the message string into an array of bytes.
     msg.getBytes((unsigned char*)messageData.message, msg.length() + 1);
+  
     _radio.send(DESTINATION_RADIO_ID, &messageData, sizeof(messageData));
 }
 
