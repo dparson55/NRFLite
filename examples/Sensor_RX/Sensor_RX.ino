@@ -112,6 +112,8 @@ void loop()
 
             if (packetSize == sizeof(_radioData))
             {
+                // Show the received sensor data.
+                
                 _radio.readData(&_radioData);
 
                 String msg = "Radio ";
@@ -130,6 +132,8 @@ void loop()
             }
             else if (packetSize == sizeof(_messageData))
             {
+                // Show the message string sent by a sensor.
+                
                 _radio.readData(&_messageData);
 
                 String msg = "Radio ";
@@ -175,7 +179,6 @@ void processSettingsChange(String input)
     }
     else if (input.startsWith("CSI"))
     {
-
         // CSI 1 4 (change sleep interval for radio 1 to 4 seconds)
         uint8_t spaceIndex = input.indexOf(' ', 4);
         String forRadioId = input.substring(4, spaceIndex);
