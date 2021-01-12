@@ -66,6 +66,7 @@ void loop()
 * No need to add delays or implement timeouts.
 * No long radio addresses to manage.
 * No need to set the transmit power (max is enabled by default).
+* [Compatibility with RF24 library](https://github.com/dparson55/NRFLite/issues/54)
 
 ### nRF24L01+ Pin Reference
 
