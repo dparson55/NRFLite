@@ -74,7 +74,8 @@ void loop()
 
 ### 2-Pin Hookup Guide
 * This mode is much slower than the other hookup options which take advantage of the SPI and USI peripherals of the supported microcontrollers.
-* The resistor and capacitor values should only be adjusted if you have an oscilloscope and are comfortable changing the library.
+* The GPIO pins you select on the microcontroller should not share any additional components, e.g. a Digispark board contains an LED on PB1 and USB connections on PB3 and PB4, so do not use these pins.
+* The R2 resistor does not need to be exactly 5K, anything between 4K and 6K is good.
 
 ![2-Pin](https://github.com/dparson55/NRFLite/raw/master/extras/Two_pin_schematic.png)
 
