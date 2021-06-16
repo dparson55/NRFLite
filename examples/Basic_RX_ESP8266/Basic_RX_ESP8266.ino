@@ -18,7 +18,7 @@ GND   -> GND
 
 */
 
-#include <SPI.h>
+#include <SPI.h>  // You can also try <SPISlave.h> if this does not work.
 #include <NRFLite.h>
 
 const static uint8_t RADIO_ID = 0;
@@ -39,10 +39,20 @@ void setup()
 {
     Serial.begin(115200);
 
-    if (!_radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN))
+    uint8_t initWasSuccessful = _radio.init(RADIO_ID, PIN_RADIO_CE, PIN_RADIO_CSN);
+
+    if (initWasSuccessful)
     {
-        Serial.println("Cannot communicate with radio");
-        while (1); // Wait here forever.
+        Serial.println("Successfully configured the registers within the nRF24L01");
+    }
+    else
+    {
+        Serial.println("Failed to validate the register assignments within the nRF24L01");
+
+        while (1)     // Wait here forever since there is some problem with the ESP8266 and nRF24L01 communication.
+        {
+            yield();  // Allow the ESP8266 to boot successfully by allowing its background tasks to execute.
+        }
     }
 }
 
