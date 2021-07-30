@@ -57,7 +57,7 @@ void loop()
 * View examples in the menu File > Examples > NRFLite.
 
 ### Features
-* 2-pin operation on ATtiny and ATmega microcontrollers thanks to [NerdRalph](http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html).
+* 2-pin operation on many ATtiny and ATmega microcontrollers thanks to [NerdRalph](http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html).
 * 4-pin operation using shared CE and CSN pins while continuing to use the high-speed SPI and USI peripherals of the supported microcontrollers.
 * Operation with or without interrupts using the radio's IRQ pin.
 * ATtiny84/85 support when used with the [MIT High-Low Tech](http://highlowtech.org/?p=1695) library https://github.com/damellis/attiny.  This library uses much less memory than https://github.com/SpenceKonde/ATTinyCore and is required for the [ATtiny85 sensor example](https://github.com/dparson55/NRFLite/tree/master/examples/Sensor_TX_ATtiny85_2Pin).
