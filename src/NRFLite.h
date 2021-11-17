@@ -1,8 +1,8 @@
 #ifndef _NRFLite_h_
 #define _NRFLite_h_
 
-#include <Arduino.h>
-#include <nRF24L01.h>
+#include "Arduino.h"
+#include "nRF24L01.h"
 
 #ifndef _BV
 #define _BV(bit) (1 << (bit))

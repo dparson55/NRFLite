@@ -15,8 +15,8 @@ Reset shared variables necessary for the demo.
 Run a loop that lasts until the end time.
 */
 
-#include <SPI.h>
-#include <NRFLite.h>
+#include "SPI.h"
+#include "NRFLite.h"
 
 const static uint8_t RADIO_ID = 1;
 const static uint8_t DESTINATION_RADIO_ID = 0;

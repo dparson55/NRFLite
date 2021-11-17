@@ -1,8 +1,8 @@
 ### Transmitter Example
 See [Basic_TX.ino](https://github.com/dparson55/NRFLite/blob/master/examples/Basic_TX/Basic_TX.ino) for a more complete example.
 ```c++
-#include <SPI.h>
-#include <NRFLite.h>
+#include "SPI.h"
+#include "NRFLite.h"
 
 NRFLite _radio;
 uint8_t _data;
@@ -23,8 +23,8 @@ void loop()
 ### Receiver Example
 See [Basic_RX.ino](https://github.com/dparson55/NRFLite/blob/master/examples/Basic_RX/Basic_RX.ino) for a more complete example.
 ```c++
-#include <SPI.h>
-#include <NRFLite.h>
+#include "SPI.h"
+#include "NRFLite.h"
 
 NRFLite _radio;
 uint8_t _data;

@@ -18,8 +18,8 @@ GND   -> GND
 
 */
 
-#include <SPI.h>  // You can also try <SPISlave.h> if this does not work.
-#include <NRFLite.h>
+#include "SPI.h"  // You can also try SPISlave.h if this does not work.
+#include "NRFLite.h"
 
 const static uint8_t RADIO_ID = 0;
 const static uint8_t PIN_RADIO_CE = 4;

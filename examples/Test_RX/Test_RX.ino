@@ -9,8 +9,8 @@ Manually adjusted for shared CE/CSN operation, and 2-pin operation.
 
 */
 
-#include <SPI.h>
-#include <NRFLite.h>
+#include "SPI.h"
+#include "NRFLite.h"
 
 const static uint8_t RADIO_ID = 0;
 const static uint8_t DESTINATION_RADIO_ID = 1;

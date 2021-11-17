@@ -13,7 +13,7 @@ Connections
 
 */
 
-#include <NRFLite.h>
+#include "NRFLite.h"
 
 const static uint8_t RADIO_ID = 0;
 const static uint8_t PIN_RADIO_MOMI = 9;

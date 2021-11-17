@@ -1,4 +1,4 @@
-#include <NRFLite.h>
+#include "NRFLite.h"
 
 #define debug(input)   { if (_serial) _serial->print(input);   }
 #define debugln(input) { if (_serial) _serial->println(input); }
@@ -12,7 +12,7 @@
     const static uint8_t USI_DO  = 1; // PB1
     const static uint8_t USI_SCK = 2; // PB2
 #else
-    #include <SPI.h> // Use the normal Arduino hardware SPI library.
+    #include "SPI.h" // Use the normal Arduino hardware SPI library.
 #endif
 
 ////////////////////

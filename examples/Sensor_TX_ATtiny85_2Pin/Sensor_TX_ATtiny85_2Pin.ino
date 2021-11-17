@@ -30,7 +30,7 @@ ATtiny Connections
 
 */
 
-#include <NRFLite.h>
+#include "NRFLite.h"
 #include <avr/eeprom.h>
 #include <avr/sleep.h>
 #include <avr/wdt.h>

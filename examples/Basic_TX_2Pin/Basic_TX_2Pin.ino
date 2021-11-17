@@ -15,7 +15,7 @@ Connections
 
 */
 
-#include <NRFLite.h>
+#include "NRFLite.h"
 
 const static uint8_t RADIO_ID = 2;
 const static uint8_t DESTINATION_RADIO_ID = 0;

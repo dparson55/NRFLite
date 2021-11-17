@@ -28,8 +28,8 @@ GND   -> GND
 
 */
 
-#include <SPI.h>
-#include <NRFLite.h>
+#include "SPI.h"
+#include "NRFLite.h"
 
 const static uint8_t RADIO_ID = 0;
 const static uint8_t DESTINATION_RADIO_ID = 1;
