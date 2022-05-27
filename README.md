@@ -45,6 +45,10 @@ void loop()
 }
 ```
 
+### PA+LNA nRF24L01 Limitation
+* Issues [44](https://github.com/dparson55/NRFLite/issues/44), [56](https://github.com/dparson55/NRFLite/issues/56), [63](https://github.com/dparson55/NRFLite/issues/63), [66](https://github.com/dparson55/NRFLite/issues/66), [77](https://github.com/dparson55/NRFLite/issues/77) have been raised about PA+LNA nRF24L01+ modules not working correctly when using the automatic acknowledgement (ACK) feature of the radio.  The nRF24L01+ chip itself does not provide settings to solve this incompatibiity so a work around is to implement ACK manually in software.  The `TwoWayCom_SoftwareBased` examples can be used as a starting point.
+* Consider using [RFM69](https://github.com/LowPowerLab/RFM69) modules rather than PA+LNA nRF24L01+ modules when needing a long range, low power solution.  The nRF24L01+ chip is well suited for short range, high bitrate projects while the RFM69 excels in longer range, lower bitrate applications.
+
 ### Video Tutorials
 * [![Tutorial 1](http://img.youtube.com/vi/tWEgvS7Sj-8/default.jpg)](https://youtu.be/tWEgvS7Sj-8) Introduction and all basic features
 * [![Tutorial 2](http://img.youtube.com/vi/URMmgQuPZVc/default.jpg)](https://youtu.be/URMmgQuPZVc) 2-pin Operation and ATtiny sensor walkthrough
