@@ -1,7 +1,7 @@
 /*
 
-Demonstrates simple RX operation with an ESP32.
-Any of the Basic_TX examples can be used as a transmitter.
+Demonstrates simple TX operation with an ESP32.
+Any of the Basic_RX examples can be used as a receiver.
 
 ESP's require the use of '__attribute__((packed))' on the RadioPacket data structure
 to ensure the bytes within the structure are aligned properly in memory.
@@ -23,7 +23,8 @@ GND   -> GND
 #include "SPI.h"
 #include "NRFLite.h"
 
-const static uint8_t RADIO_ID = 0;
+const static uint8_t RADIO_ID = 5;
+const static uint8_t DESTINATION_RADIO_ID = 0;
 const static uint8_t PIN_RADIO_CE = 4;
 const static uint8_t PIN_RADIO_CSN = 5;
 const static uint8_t PIN_RADIO_MOSI = 23;
@@ -59,18 +60,21 @@ void setup()
 
 void loop()
 {
-    while (_radio.hasData())
+    _radioData.OnTimeMillis = millis();
+
+    Serial.print("Sending ");
+    Serial.print(_radioData.OnTimeMillis);
+    Serial.print(" ms");
+    
+    if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
     {
-        _radio.readData(&_radioData);
-
-        String msg = "Radio ";
-        msg += _radioData.FromRadioId;
-        msg += ", ";
-        msg += _radioData.OnTimeMillis;
-        msg += " ms, ";
-        msg += _radioData.FailedTxCount;
-        msg += " Failed TX";
-
-        Serial.println(msg);
+        Serial.println("...Success");
     }
+    else
+    {
+        Serial.println("...Failed");
+        _radioData.FailedTxCount++;
+    }
+
+    delay(1000);
 }
