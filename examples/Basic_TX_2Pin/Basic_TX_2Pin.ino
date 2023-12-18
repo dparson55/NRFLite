@@ -22,7 +22,7 @@ const static uint8_t DESTINATION_RADIO_ID = 0;
 const static uint8_t PIN_RADIO_MOMI = 9;
 const static uint8_t PIN_RADIO_SCK = 10;
 
-struct RadioPacket
+struct RadioPacket // Any packet up to 32 bytes can be sent.
 {
     uint8_t FromRadioId;
     uint32_t OnTimeMillis;
