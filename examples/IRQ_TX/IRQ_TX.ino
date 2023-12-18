@@ -55,7 +55,7 @@ void loop()
         // Use 'startSend' rather than 'send' when using interrupts.
         // 'startSend' will not wait for transmission to complete, instead you'll
         // need to wait for the radio to notify you via the interrupt to see if
-        // the send was successful.
+        // the send was successful. Any data up to 32 bytes can be sent.
         _radio.startSend(DESTINATION_RADIO_ID, &_data, sizeof(_data));
         
         // Note that sending data puts the radio into TX mode.  If you want to be able to receive data again,
