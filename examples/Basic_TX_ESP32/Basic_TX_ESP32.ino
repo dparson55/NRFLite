@@ -31,7 +31,7 @@ const static uint8_t PIN_RADIO_MOSI = 23;
 const static uint8_t PIN_RADIO_MISO = 19;
 const static uint8_t PIN_RADIO_SCK = 18;
 
-struct __attribute__((packed)) RadioPacket // Note the packed attribute.
+struct __attribute__((packed)) RadioPacket // Note the packed attribute and any packet up to 32 bytes can be sent.
 {
     uint8_t FromRadioId;
     uint32_t OnTimeMillis;
