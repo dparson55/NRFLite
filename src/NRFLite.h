@@ -31,8 +31,8 @@ class NRFLite {
     // readData   = Loads a received data packet or acknowledgment data packet into the specified data parameter.
     // powerDown  = Power down the radio.  Turn the radio back on by calling one of the 'hasData' or 'send' methods.
     // printDetails = Prints many of the radio registers.  Requires a serial object in the constructor, e.g. NRFLite _radio(Serial);
-    // scanChannel  = Returns 0-measurementCount to indicate the strength of any existing signal on a channel.  Radio communication will
-    //                work best on channels with no existing signals, meaning a 0 is returned.
+    // scanChannel  = Returns a number from 0 up to measurementCount to indicate the strength of any existing signal on a channel.
+    //                Radio communication will work best on channels with no existing signals, so channels where a 0 is returned.
     uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100, uint8_t callSpiBegin = 1);
 #if defined(__AVR__)
     uint8_t initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
