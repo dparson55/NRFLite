@@ -306,7 +306,7 @@ void NRFLite::printDetails()
 
 uint8_t NRFLite::scanChannel(uint8_t channel, uint8_t measurementCount)
 {
-    uint8_t strength = 0;
+    uint8_t detectedSignalCount = 0;
 
     // Put radio into Standby-I mode.
     digitalWrite(_cePin, LOW);
@@ -325,11 +325,11 @@ uint8_t NRFLite::scanChannel(uint8_t channel, uint8_t measurementCount)
         uint8_t signalWasReceived = readRegister(CD);
         if (signalWasReceived)
         {
-            strength++;
+            detectedSignalCount++;
         }
     } while (measurementCount--);
     
-    return strength;
+    return detectedSignalCount;
 }
 
 /////////////////////
