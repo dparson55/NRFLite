@@ -306,7 +306,7 @@ void NRFLite::printDetails()
 
 uint8_t NRFLite::scanChannel(uint8_t channel, uint8_t measurementCount)
 {
-    uint8_t detectedSignalCount = 0;
+    uint8_t strength = 0;
 
     // Put radio into Standby-I mode.
     digitalWrite(_cePin, LOW);
@@ -325,11 +325,11 @@ uint8_t NRFLite::scanChannel(uint8_t channel, uint8_t measurementCount)
         uint8_t signalWasReceived = readRegister(CD);
         if (signalWasReceived)
         {
-            detectedSignalCount++;
+            strength++;
         }
     } while (measurementCount--);
     
-    return detectedSignalCount;
+    return strength;
 }
 
 /////////////////////
@@ -342,7 +342,7 @@ uint8_t NRFLite::getPipeOfFirstRxPacket()
     // 000-101 = Data Pipe Number
     //     110 = Not Used
     //     111 = RX FIFO Empty
-    return (readRegister(STATUS_NRF) & B1110) >> 1;
+    return (readRegister(STATUS_NRF) & 0b1110) >> 1;
 }
 
 uint8_t NRFLite::getRxPacketLength()
@@ -381,22 +381,22 @@ uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     // For 250 Kbps operation, a 1500 uS retry time is necessary.
     if (bitrate == BITRATE2MBPS)
     {
-        writeRegister(RF_SETUP, B00001110);   // 2 Mbps, 0 dBm output power
-        writeRegister(SETUP_RETR, B00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
+        writeRegister(RF_SETUP, 0b00001110);   // 2 Mbps, 0 dBm output power
+        writeRegister(SETUP_RETR, 0b00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
         _transmissionRetryWaitMicros = 600;   // 100 more than the retry delay
         _maxHasDataIntervalMicros = 1200;
     }
     else if (bitrate == BITRATE1MBPS)
     {
-        writeRegister(RF_SETUP, B00000110);   // 1 Mbps, 0 dBm output power
-        writeRegister(SETUP_RETR, B00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
+        writeRegister(RF_SETUP, 0b00000110);   // 1 Mbps, 0 dBm output power
+        writeRegister(SETUP_RETR, 0b00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
         _transmissionRetryWaitMicros = 600;   // 100 more than the retry delay
         _maxHasDataIntervalMicros = 1700;
     }
     else
     {
-        writeRegister(RF_SETUP, B00100110);   // 250 Kbps, 0 dBm output power
-        writeRegister(SETUP_RETR, B01011111); // 0101 = 1500 uS between retries, 1111 = 15 retries
+        writeRegister(RF_SETUP, 0b00100110);   // 250 Kbps, 0 dBm output power
+        writeRegister(SETUP_RETR, 0b01011111); // 0101 = 1500 uS between retries, 1111 = 15 retries
         _transmissionRetryWaitMicros = 1600;  // 100 more than the retry delay
         _maxHasDataIntervalMicros = 5000;
     }
@@ -554,15 +554,17 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
 
     if (_useTwoPinSpiTransfer)
     {
-        digitalWrite(_csnPin, LOW);              // Signal radio to listen to the SPI bus.
-        delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to discharge.
-        twoPinTransfer(regName);
-        for (uint8_t i = 0; i < length; ++i) {
-            uint8_t newData = twoPinTransfer(intData[i]);
-            if (transferType == READ_OPERATION) { intData[i] = newData; }
-        }
-        digitalWrite(_csnPin, HIGH);             // Stop radio from listening to the SPI bus.
-        delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to recharge.
+        #if defined(__AVR__)
+            digitalWrite(_csnPin, LOW);              // Signal radio to listen to the SPI bus.
+            delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to discharge.
+            twoPinTransfer(regName);
+            for (uint8_t i = 0; i < length; ++i) {
+                uint8_t newData = twoPinTransfer(intData[i]);
+                if (transferType == READ_OPERATION) { intData[i] = newData; }
+            }
+            digitalWrite(_csnPin, HIGH);             // Stop radio from listening to the SPI bus.
+            delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to recharge.
+	    #endif
     }
     else
     {
@@ -609,6 +611,8 @@ uint8_t NRFLite::usiTransfer(uint8_t data)
 
 #endif
 
+#if defined(__AVR__)
+
 uint8_t NRFLite::twoPinTransfer(uint8_t data)
 {
     uint8_t byteFromRadio = 0;
@@ -636,6 +640,8 @@ uint8_t NRFLite::twoPinTransfer(uint8_t data)
     
     return byteFromRadio;
 }
+
+#endif
 
 void NRFLite::printRegister(const char name[], uint8_t reg)
 {
