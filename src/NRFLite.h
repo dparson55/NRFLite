@@ -31,8 +31,8 @@ class NRFLite {
     // readData   = Loads a received data packet or acknowledgment data packet into the specified data parameter.
     // powerDown  = Power down the radio.  Turn the radio back on by calling one of the 'hasData' or 'send' methods.
     // printDetails = Prints many of the radio registers.  Requires a serial object in the constructor, e.g. NRFLite _radio(Serial);
-    // scanChannel  = Returns a number from 0 up to measurementCount to indicate the strength of any existing signal on a channel.
-    //                Radio communication will work best on channels with no existing signals, so channels where a 0 is returned.
+    // scanChannel  = Returns 0-measurementCount to indicate the strength of any existing signal on a channel.  Radio communication will
+    //                work best on channels with no existing signals, meaning a 0 is returned.
     uint8_t init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100, uint8_t callSpiBegin = 1);
 #if defined(__AVR__)
     uint8_t initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bitrates bitrate = BITRATE2MBPS, uint8_t channel = 100);
@@ -43,9 +43,9 @@ class NRFLite {
     uint8_t scanChannel(uint8_t channel, uint8_t measurementCount = 255);
 
     // Methods for transmitters.
-    // send = Sends a data packet and waits for success or failure.  Maximum length/size is 32 bytes.
-    //        The default REQUIRE_ACK sendType causes the radio to attempt sending the packet up to 16 times.  If successful a 1 is
-    //        returned.  Optionally the NO_ACK sendType can be used to transmit the packet a single time without any acknowledgement.
+    // send = Sends a data packet and waits for success or failure.  The default REQUIRE_ACK sendType causes the radio
+    //        to attempt sending the packet up to 16 times.  If successful a 1 is returned.  Optionally the NO_ACK sendType
+    //        can be used to transmit the packet a single time without any acknowledgement.
     // hasAckData = Checks to see if an ACK data packet was received and returns its length.
     uint8_t send(uint8_t toRadioId, void *data, uint8_t length, SendType sendType = REQUIRE_ACK);
     uint8_t hasAckData();
@@ -66,7 +66,7 @@ class NRFLite {
     // hasDataISR   = Same as hasData(1), it will greatly speed up the receive bitrate when CE and CSN share the same pin.
     // startRx      = Allows switching the radio into RX mode rather than calling 'hasData'.
     //                Returns 0 if it cannot communicate with the radio.
-    // startSend    = Start sending a data packet without waiting for it to complete.  Maximum length/size is 32 bytes.
+    // startSend    = Start sending a data packet without waiting for it to complete.
     // whatHappened = Use this inside the interrupt handler to see what caused the interrupt.
     uint8_t hasDataISR(); 
     uint8_t startRx();
@@ -114,8 +114,9 @@ class NRFLite {
 #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
     uint8_t usiTransfer(uint8_t data);
 #endif
+#if defined(__AVR__)
     uint8_t twoPinTransfer(uint8_t data);
-
+#endif
     void printRegister(const char name[], uint8_t regName);
 };
 
