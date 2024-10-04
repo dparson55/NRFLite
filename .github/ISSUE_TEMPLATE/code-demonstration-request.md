@@ -7,4 +7,4 @@ assignees: ''
 
 ---
 
-Describe how the program should function and I will try to provide a short example of how it can be implemented with NRFLite:
+Describe the project and the behavior you would like to see demonstrated with NRFLite:
