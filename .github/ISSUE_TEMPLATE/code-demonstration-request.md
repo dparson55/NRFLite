@@ -7,4 +7,4 @@ assignees: ''
 
 ---
 
-Describe the logic that you would like to see implemented:
+Describe how the program should function and we will try to provide a short example of how it can be implemented with NRFLite:
