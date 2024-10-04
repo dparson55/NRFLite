@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-Does the improvement align with NRFLite's design goal? (see design goal below)
+Does the feature align with NRFLite's design goal? (see below)
 
 Describe the feature:
 
