@@ -7,9 +7,9 @@ assignees: ''
 
 ---
 
-Describe the bug:
+1. Describe the bug:
 
-Provide a short program that demonstrates the bug. DO NOT post your entire program, instead create a small program with no extraneous code: it should only include the logic necessary to reproduce the issue.
+2. Provide a short program that demonstrates the bug. DO NOT post your entire program, instead create a small program with no extraneous code: it should only include the logic necessary to reproduce the issue.
 
 ```
 // TX code
