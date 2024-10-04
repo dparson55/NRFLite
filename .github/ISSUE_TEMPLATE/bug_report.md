@@ -7,11 +7,9 @@ assignees: ''
 
 ---
 
-**Description**
-_Insert description_
+Describe the bug:
 
-**Short program that demonstrates the bug**
-_DO NOT paste your entire program, instead create a small sample program that demonstrates the bug. The program should not include any extraneous code: it should only include the logic necessary to reproduce the issue._
+Provide a short program that demonstrates the bug. DO NOT post your entire program, instead create a small program that demonstrates the bug. The program should not include any extraneous code: it should only include the logic necessary to reproduce the issue.
 
 ```
 // TX code
