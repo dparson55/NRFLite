@@ -1,8 +1,8 @@
 ---
 name: Feature request
 about: Suggest an improvement
-title: "[FEATURE] "
-labels: ''
+title: ''
+labels: feature request
 assignees: ''
 
 ---
