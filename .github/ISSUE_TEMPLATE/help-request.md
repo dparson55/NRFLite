@@ -1,10 +1,10 @@
 ---
 name: Help request
-about: Request a code sample that is not already included in the examples
+about: Ask a question or request a code sample
 title: ''
 labels: help request
 assignees: ''
 
 ---
 
-1. Describe the project and the behavior you would like to see demonstrated with NRFLite:
+1. If you would like a code sample, describe your project and the behavior you would like to see demonstrated with NRFLite:
