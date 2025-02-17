@@ -1,5 +1,7 @@
 /*
 
+Arduino 1.x IDE may be required if using the ATtiny board library https://github.com/damellis/attiny.
+
 Demonstrates simple TX operation with an ATtiny85.  Note in this example the same pin is used for CE and CSN.
 This slows the communication between the microcontroller and radio, but it frees up one pin.
 
