@@ -64,7 +64,9 @@ void loop()
 * 2-pin operation on many ATtiny and ATmega microcontrollers, inspired by [NerdRalph's article](http://nerdralph.blogspot.ca/2015/05/nrf24l01-control-with-2-mcu-pins-using.html).
 * 4-pin operation using shared CE and CSN pins while continuing to use the high-speed SPI and USI peripherals of the supported microcontrollers.
 * Operation with or without interrupts using the radio's IRQ pin.
-* ATtiny84/85 support when used with the [MIT High-Low Tech](http://highlowtech.org/?p=1695) library https://github.com/damellis/attiny.  This library uses much less memory than https://github.com/SpenceKonde/ATTinyCore and is required for the [ATtiny85 sensor example](https://github.com/dparson55/NRFLite/tree/master/examples/Sensor_TX_ATtiny85_2Pin).
+* ATtiny84/85 support when used with the [MIT High-Low Tech](http://highlowtech.org/?p=1695) library https://github.com/damellis/attiny.
+  * This library requires Arduino IDE 1.x as discovered in [issue 91](https://github.com/dparson55/NRFLite/issues/91).
+  * This library uses much less memory than https://github.com/SpenceKonde/ATTinyCore and is required for the [ATtiny85 sensor example](https://github.com/dparson55/NRFLite/tree/master/examples/Sensor_TX_ATtiny85_2Pin).
 * Small number of public methods.  Please see [NRFLite.h](https://github.com/dparson55/NRFLite/blob/master/src/NRFLite.h) for their descriptions.
 * No need to enable features like retries, auto-acknowledgment packets, and dynamic packet sizes.
 * No long radio addresses to manage.
