@@ -1,8 +1,6 @@
 /*
 
-Requires the use of https://github.com/damellis/attiny for the ATtiny85 rather than
-https://github.com/SpenceKonde/ATTinyCore since ATTinyCore takes up too much memory.
-And note this library requires usage of the Arduino 1.x IDE.
+Uses https://github.com/damellis/attiny which requires usage of the Arduino 1.x IDE.
 
 Demonstrates TX operation with an ATtiny85 using 2 pins for the radio.
 * The ATtiny powers up, takes sensor readings, sends the data, and then powers down.
