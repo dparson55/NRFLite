@@ -351,8 +351,9 @@ uint8_t NRFLite::getRxPacketLength()
     uint8_t dataLength;
     spiTransfer(READ_OPERATION, R_RX_PL_WID, &dataLength, 1);
 
-    // Verify the data length is valid (0 - 32 bytes).
-    if (dataLength > 32)
+    // Verify the data length is valid. This private method is only called if getPipeOfFirstRxPacket indicates a packet exists,
+    // so the datalength should never be 0. Likewise the datalength should never be > 32 since that's the largest possible packet the radio supports.
+    if (dataLength > 32 || !dataLength)
     {
         spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0); // Clear invalid data in the RX buffer.
         writeRegister(STATUS_NRF, readRegister(STATUS_NRF) | _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
