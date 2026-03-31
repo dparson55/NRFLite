@@ -371,6 +371,7 @@ uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     _resetInterruptFlags = 1;
     _usingSeparateCeAndCsnPins = _cePin != _csnPin;
 
+    powerDown();
     delay(OFF_TO_POWERDOWN_MILLIS);
 
     // Valid channel range is 2400 - 2525 MHz, in 1 MHz increments.
