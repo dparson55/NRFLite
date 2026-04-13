@@ -18,10 +18,10 @@ class NRFLite {
     NRFLite() {}
     NRFLite(Stream &serial) : _serial(&serial) {}
     
-    enum Bitrates { BITRATE2MBPS, BITRATE1MBPS, BITRATE250KBPS };
-    enum SendType { REQUIRE_ACK, NO_ACK };
+    enum Bitrates : uint8_t { BITRATE2MBPS, BITRATE1MBPS, BITRATE250KBPS };
+    enum SendType : uint8_t { REQUIRE_ACK, NO_ACK };
 
-    const static uint8_t MAX_NRF_CHANNEL = 125; // Maximum channel number.
+    static const uint8_t MAX_NRF_CHANNEL = 125; // Maximum channel number.
     
     // Methods for receivers and transmitters.
     // init       = Turns the radio on and puts it into receiving mode.  Returns 0 if it cannot communicate with the radio.
@@ -75,37 +75,31 @@ class NRFLite {
     
   private:
 
+    enum SpiTransferType : uint8_t { READ_OPERATION, WRITE_OPERATION };
+    
     constexpr static uint8_t ADDRESS_PREFIX[4] = { 1, 2, 3, 4 }; // 1st 4 bytes of addresses, 5th byte will be RadioId.
-    const static uint8_t CONFIG_REG_SETTINGS_FOR_RX_MODE = _BV(PWR_UP) | _BV(PRIM_RX) | _BV(EN_CRC);
-    const static uint32_t NRF_SPICLOCK = 4000000; // Speed to use for SPI communication with the transceiver.
-
-    // Delay used to discharge the radio's CSN pin when operating in 2-pin mode.
-    // Determined by measuring time to discharge CSN on a 1MHz ATtiny using 0.1uF capacitor and 1K resistor.
-    const static uint16_t CSN_DISCHARGE_MICROS = 500;
-
-    const static uint8_t OFF_TO_POWERDOWN_MILLIS = 100;     // Vcc > 1.9V power on reset time.
-    const static uint8_t POWERDOWN_TO_RXTX_MODE_MILLIS = 5; // 4500uS to Standby + 130uS to RX or TX mode, so 5ms is enough.
-    const static uint8_t CE_TRANSMISSION_MICROS = 10;       // Time to initiate data transmission.
-
-    enum SpiTransferType { READ_OPERATION, WRITE_OPERATION };
+    static const uint8_t CONFIG_REG_SETTINGS_FOR_RX_MODE = _BV(PWR_UP) | _BV(PRIM_RX) | _BV(EN_CRC);
+    static const uint32_t NRF_SPICLOCK = 4000000; // Speed to use for SPI communication with the transceiver.
+    static const uint16_t CSN_DISCHARGE_MICROS = 500; // Delay used to discharge the radio's CSN pin when operating in 2-pin mode.
+    static const uint8_t OFF_TO_POWERDOWN_MILLIS = 100;     // Vcc > 1.9V power on reset time.
+    static const uint8_t POWERDOWN_TO_RXTX_MODE_MILLIS = 5; // 4500uS to Standby + 130uS to RX or TX mode, so 5ms is enough.
 
     Stream *_serial;
-    volatile uint8_t *_momi_PORT;
-    volatile uint8_t *_momi_DDR;
-    volatile uint8_t *_momi_PIN;
-    volatile uint8_t *_sck_PORT;
-    uint8_t _cePin, _csnPin, _momi_MASK, _sck_MASK;
-    volatile uint8_t _resetInterruptFlags;
-    uint8_t _useTwoPinSpiTransfer, _usingSeparateCeAndCsnPins;
+    Bitrates _savedBitrate;
+    int8_t _lastToRadioId = -1;
+    uint8_t _savedRadioId, _savedChannel;
+    uint8_t _cePin, _csnPin, _momi_MASK, _sck_MASK, _useTwoPinSpiTransfer, _usingSeparateCeAndCsnPins;
     uint16_t _transmissionRetryWaitMicros, _maxHasDataIntervalMicros;
-    int16_t _lastToRadioId = -1;
     uint32_t _microsSinceLastDataCheck;
+    volatile uint8_t *_momi_PORT, *_momi_DDR, *_momi_PIN, *_sck_PORT, _enableInterruptFlagReset;
     
     uint8_t getPipeOfFirstRxPacket();
     uint8_t getRxPacketLength();
     uint8_t initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel);
-    void prepForTx(uint8_t toRadioId, SendType sendType);
+    void printRegister(const char name[], uint8_t regName);
+    void startTx(uint8_t toRadioId, SendType sendType);
     uint8_t waitForTxToComplete();
+    
     uint8_t readRegister(uint8_t regName);
     void readRegister(uint8_t regName, void* data, uint8_t length);
     void writeRegister(uint8_t regName, uint8_t data);
@@ -117,7 +111,6 @@ class NRFLite {
 #if defined(__AVR__)
     uint8_t twoPinTransfer(uint8_t data);
 #endif
-    void printRegister(const char name[], uint8_t regName);
 };
 
 #endif
