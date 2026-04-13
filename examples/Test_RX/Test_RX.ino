@@ -9,7 +9,6 @@ Manually adjusted for shared CE/CSN operation, and 2-pin operation.
 
 */
 
-#include "SPI.h"
 #include "NRFLite.h"
 
 const static uint8_t RADIO_ID = 0;
@@ -114,6 +113,7 @@ void startSync()
     {
         if (_radio.hasData())
         {
+            break;
             _radio.readData(&_radioData);
             if (_radioData.RadioState == StartSync) break;
         }
@@ -248,10 +248,13 @@ void demoPowerOff()
     delay(DEMO_INTERVAL_MILLIS);
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
-    debugln("Power off");
+    static const uint16_t POWER_DOWN_MS = 500;
 
-    debugln("  Radio power down");
+    debugln("Power off");
+    debugln("  Radio power down for " + String(POWER_DOWN_MS) + "ms");
+    
     _radio.powerDown();
+    delay(POWER_DOWN_MS);
 
     while (millis() < _endMillis)
     {

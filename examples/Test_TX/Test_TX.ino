@@ -15,7 +15,6 @@ Reset shared variables necessary for the demo.
 Run a loop that lasts until the end time.
 */
 
-#include "SPI.h"
 #include "NRFLite.h"
 
 const static uint8_t RADIO_ID = 1;
@@ -307,17 +306,20 @@ void demoPowerOff()
     debugln("Power off");
     _lastMillis = millis();
 
-    debug("  Send "); debug(++_radioData.Counter);
+    debugln("  Waiting for RX to power off");
+    delay(100);
+
+    debug("  Send when RX is off"); ++_radioData.Counter;
     if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
     {
-        debugln("...Success");
+        debugln("...Failed - RX responded, it should have been off");
     }
     else
     {
-        debugln("...Failed");
+        debugln("...Success");
     }
 
-    debugln("  Radio power down");
+    debugln("  Radio power down and wait for RX to power on");
     _radio.powerDown();
     delay(1000);
 
