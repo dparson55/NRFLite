@@ -91,7 +91,6 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
     uint8_t notInRxModeOrRadioNotConfigured = readRegister(CONFIG) != CONFIG_REG_SETTINGS_FOR_RX_MODE;
     if (notInRxModeOrRadioNotConfigured)
     {
-        printRegister("CONFIG", readRegister(CONFIG));
         initRadio(_savedRadioId, _savedBitrate, _savedChannel);
     }
 
@@ -300,8 +299,8 @@ uint8_t NRFLite::startRx()
     }
     
     writeRegister(CONFIG, CONFIG_REG_SETTINGS_FOR_RX_MODE); // RX configuration and Power on.
-    delay(POWERDOWN_TO_RXTX_MODE_MILLIS);                   // Power on delay. Radio is now in Standby-I mode.
     digitalWrite(_cePin, HIGH);                             // RX mode.
+    delay(POWERDOWN_TO_RXTX_MODE_MILLIS);                   // Power on delay. Radio is now in Standby-I mode.
 
     uint8_t readyForRx = readRegister(CONFIG) == CONFIG_REG_SETTINGS_FOR_RX_MODE;
     return readyForRx;
@@ -492,8 +491,8 @@ void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
         }
 
         writeRegister(CONFIG, CONFIG_REG_SETTINGS_FOR_RX_MODE & ~_BV(PRIM_RX)); // TX configuration, Power on, and then Standby-I mode.
-        delay(POWERDOWN_TO_RXTX_MODE_MILLIS);                                   // Power on delay. Radio is now in Standby-I mode.
         digitalWrite(_cePin, HIGH);                                             // Standby-II mode.
+        delay(POWERDOWN_TO_RXTX_MODE_MILLIS);                                   // Power on delay. Radio is now in Standby-I mode.
     }
     
     uint8_t fifoReg = readRegister(FIFO_STATUS);
