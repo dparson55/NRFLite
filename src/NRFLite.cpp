@@ -91,6 +91,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
     uint8_t notInRxModeOrRadioNotConfigured = readRegister(CONFIG) != CONFIG_REG_SETTINGS_FOR_RX_MODE;
     if (notInRxModeOrRadioNotConfigured)
     {
+        printRegister("CONFIG", readRegister(CONFIG));
         initRadio(_savedRadioId, _savedBitrate, _savedChannel);
     }
 
@@ -441,17 +442,13 @@ uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
 
 void NRFLite::printRegister(const char name[], uint8_t reg)
 {
-    String msg = name;
-    msg += " ";
+    debug(name); debug(' ');
 
-    uint8_t i = 8;
-    do
-    {
-        msg += bitRead(reg, --i);
+    for (int8_t i = 7; i >= 0; i--) {
+        debug((reg >> i) & 1);
     }
-    while (i);
 
-    debugln(msg);
+    debugln();
 }
 
 void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
