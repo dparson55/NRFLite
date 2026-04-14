@@ -25,7 +25,7 @@ void NRFLite::addAckData(void *data, uint8_t length, uint8_t removeExistingAcks)
     {
         spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0); // Clear the TX buffer.
     }
-    
+
     // Add the packet to the TX buffer for pipe 1, the pipe used to receive packets from radios that
     // send us data.  When we receive the next transmission from a radio, we'll provide this ACK data in the
     // auto-acknowledgment packet that goes back.
@@ -84,7 +84,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
             }
         }
     }
-    
+
     // When the radio is initially power on its CONFIG defaults to TX mode.
     // So verifying CONFIG is in RX mode also verifies the radio has not lost the configuration NRFLite has applied.
     // This can occur due to a power issue that only impacts the radio and not the microcontroller.
@@ -124,7 +124,7 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
     pinMode(_cePin, OUTPUT);
     pinMode(_csnPin, OUTPUT);
     digitalWrite(_csnPin, HIGH);
-    
+
     // Setup the microcontroller for SPI communication with the radio.
     #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
         pinMode(USI_DI, INPUT ); digitalWrite(USI_DI, HIGH);
@@ -181,7 +181,7 @@ void NRFLite::powerDown()
     {
         digitalWrite(_cePin, LOW);
     }
-    
+
     // Turn off the radio.
     writeRegister(CONFIG, CONFIG_REG_SETTINGS_FOR_RX_MODE & ~_BV(PWR_UP));
 }
@@ -202,14 +202,14 @@ void NRFLite::printDetails()
     printRegister("FIFO_STATUS", readRegister(FIFO_STATUS));
     printRegister("DYNPD", readRegister(DYNPD));
     printRegister("FEATURE", readRegister(FEATURE));
-    
+
     uint8_t data[5];
-    
+
     String msg = "TX_ADDR ";
     readRegister(TX_ADDR, &data, 5);
     for (uint8_t i = 0; i < 4; i++) { msg += data[i]; msg += ','; }
     msg += data[4];
-    
+
     msg += "\nRX_ADDR_P0 ";
     readRegister(RX_ADDR_P0, &data, 5);
     for (uint8_t i = 0; i < 4; i++) { msg += data[i]; msg += ','; }
@@ -229,7 +229,7 @@ void NRFLite::readData(void *data)
     uint8_t dataLength;
     spiTransfer(READ_OPERATION, R_RX_PL_WID, &dataLength, 1);
     spiTransfer(READ_OPERATION, R_RX_PAYLOAD, data, dataLength);
-    
+
     // Clear data received flag if it was set.
     writeRegister(STATUS_NRF, _BV(RX_DR));
 }
@@ -258,7 +258,7 @@ uint8_t NRFLite::scanChannel(uint8_t channel, uint8_t measurementCount)
             strength++;
         }
     } while (measurementCount--);
-    
+
     return strength;
 }
 
@@ -282,9 +282,9 @@ uint8_t NRFLite::startRx()
 {
     // Ensure any queued packets are sent before switching into RX mode.
     waitForTxToComplete();
-    
+
     // Mode transition: Standby-II -> Standby-I or PowerDown -> Standby-I -> RX.
-    
+
     // When using shared CE and CSN pins the radio is turned on and off whenever
     // we interact with it via SPI, so we can't hold it in Standby-I to reconfigure
     // it for RX operation. Because of this, we'll enter PowerDown mode instead.
@@ -297,7 +297,7 @@ uint8_t NRFLite::startRx()
     {
         powerDown(); // PowerDown mode.
     }
-    
+
     writeRegister(CONFIG, CONFIG_REG_SETTINGS_FOR_RX_MODE); // RX configuration and Power on, then Standby-I mode.
     digitalWrite(_cePin, HIGH);                             // RX mode.
     delay(POWERDOWN_TO_RXTX_MODE_MILLIS);                   // Power on delay.
@@ -310,22 +310,22 @@ void NRFLite::startSend(uint8_t toRadioId, void *data, uint8_t length, SendType 
 {
     // Ensure radio is in Standby-II mode.
     startTx(toRadioId, sendType);
-    
+
     // Add data to the TX buffer, with or without an ACK request.
     if (sendType == NO_ACK) { spiTransfer(WRITE_OPERATION, W_TX_PAYLOAD_NO_ACK, data, length); }
     else                    { spiTransfer(WRITE_OPERATION, W_TX_PAYLOAD       , data, length); }
-    
+
     // It is up to the caller to determine if the packet was sent using 'whatHappened'.
 }
 
 void NRFLite::whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady)
 {
     uint8_t statusReg = readRegister(STATUS_NRF);
-    
+
     txOk = statusReg & _BV(TX_DS);
     txFail = statusReg & _BV(MAX_RT);
     rxReady = statusReg & _BV(RX_DR);
-    
+
     // When we need to see interrupt flags, we disable the logic here which clears them.
     // Programs that have an interrupt handler for the radio's IRQ pin will use 'whatHappened'
     // and if we don't disable this logic, it's not possible for us to check these flags.
@@ -373,7 +373,7 @@ uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     _lastToRadioId = -1;
     _enableInterruptFlagReset = 1;
     _usingSeparateCeAndCsnPins = _cePin != _csnPin;
-    
+
     // Store these in case the radio loses its register configuration (potentially
     // from a power fluctuation) that hasn't affected the microcontroller.
     // We'll check the register configuration during sends and receives and if a
@@ -476,7 +476,7 @@ void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
     if (!readyForTx)
     {
         // Mode transition: RX -> Standby-I or PowerDown -> Standby-I -> Standby-II.
-        
+
         // When using shared CE and CSN pins the radio is turned on and off whenever
         // we interact with it via SPI, so we can't hold it in Standby-I to reconfigure
         // it for TX operation. Because of this, we'll enter PowerDown mode instead.
@@ -494,7 +494,7 @@ void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
         digitalWrite(_cePin, HIGH);                                             // Standby-II mode.
         delay(POWERDOWN_TO_RXTX_MODE_MILLIS);                                   // Power on delay.
     }
-    
+
     uint8_t fifoReg = readRegister(FIFO_STATUS);
 
     // If RX buffer is full and we require an ACK, clear it so we can receive the ACK response.
@@ -503,7 +503,7 @@ void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
     {
         spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0);
     }
-    
+
     // If TX buffer is full, wait for all queued packets to be sent.
     uint8_t txBufferIsFull = fifoReg & _BV(FIFO_FULL);
     if (txBufferIsFull)
@@ -517,15 +517,15 @@ uint8_t NRFLite::waitForTxToComplete()
     // TX buffer can store 3 packets, sends retry up to 15 times, and the retry wait time is about half
     // the time necessary to send a 32 byte packet and receive a 32 byte ACK response.  3 x 15 x 2 = 90
     static const uint8_t MAX_TX_ATTEMPT_COUNT = 90;
-    
-    uint8_t txAttemptCount = MAX_TX_ATTEMPT_COUNT;    
-    uint8_t txBufferIsEmpty = readRegister(FIFO_STATUS) & _BV(TX_EMPTY);    
-    
+
+    uint8_t txAttemptCount = MAX_TX_ATTEMPT_COUNT;
+    uint8_t txBufferIsEmpty = readRegister(FIFO_STATUS) & _BV(TX_EMPTY);
+
     if (txBufferIsEmpty)
     {
         return 0; // There are no packets to send.
     }
-    
+
     _enableInterruptFlagReset = 0; // Disable interrupt flag reset logic in 'whatHappened'.
 
     while (txAttemptCount--)
@@ -533,7 +533,7 @@ uint8_t NRFLite::waitForTxToComplete()
         delayMicroseconds(_transmissionRetryWaitMicros); // Wait for transmission.
 
         txBufferIsEmpty = readRegister(FIFO_STATUS) & _BV(TX_EMPTY);
-        
+
         uint8_t statusReg = readRegister(STATUS_NRF);
         uint8_t packetWasSent = statusReg & _BV(TX_DS);
         uint8_t packetCouldNotBeSent = statusReg & _BV(MAX_RT);
@@ -547,15 +547,15 @@ uint8_t NRFLite::waitForTxToComplete()
             writeRegister(STATUS_NRF, _BV(MAX_RT)); // Clear max retry flag.
             break;
         }
-        
+
         if (txBufferIsEmpty)
         {
             break;
         }
     }
-    
+
     _enableInterruptFlagReset = 1; // Re-enable interrupt reset logic in 'whatHappened'.
-    
+
     if (txBufferIsEmpty)
     {
         // All packets were sent.
@@ -666,27 +666,27 @@ uint8_t NRFLite::twoPinTransfer(uint8_t data)
 {
     uint8_t byteFromRadio = 0;
     uint8_t currentBitIndex = 8;
-    
+
     do
     {
         byteFromRadio <<= 1; // Shift the byte we are building to the left.
-        
+
         if (*_momi_PIN & _momi_MASK) { byteFromRadio++; } // Read bit from radio on MOMI pin.  If HIGH, set bit position 0 of our byte to 1.
         *_momi_DDR |= _momi_MASK;                         // Change MOMI to be an OUTPUT pin.
-        
+
         if (data & 0x80) { *_momi_PORT |=  _momi_MASK; }  // Set MOMI HIGH if bit position 7 of the byte we are sending is 1.
 
         *_sck_PORT |= _sck_MASK;  // Set SCK HIGH to transfer the bit to the radio.  CSN will remain LOW while the capacitor begins charging.
         *_sck_PORT &= ~_sck_MASK; // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
-        
+
         *_momi_PORT &= ~_momi_MASK; // Set MOMI LOW.
-        *_momi_DDR &= ~_momi_MASK;  // Change MOMI back to an INPUT.  Since we previously ensured it was LOW, its PULLUP resistor will never 
+        *_momi_DDR &= ~_momi_MASK;  // Change MOMI back to an INPUT.  Since we previously ensured it was LOW, its PULLUP resistor will never
                                     // be enabled which would prevent MOMI from fully reaching a LOW state.
 
         data <<= 1; // Shift the byte we are sending to the left.
     }
     while (--currentBitIndex);
-    
+
     return byteFromRadio;
 }
 
