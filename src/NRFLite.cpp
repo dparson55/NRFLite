@@ -39,11 +39,7 @@ void NRFLite::discardData(uint8_t unexpectedDataLength)
     spiTransfer(READ_OPERATION, R_RX_PAYLOAD, &data, unexpectedDataLength);
 
     // Clear data received flag.
-    uint8_t statusReg = readRegister(STATUS_NRF);
-    if (statusReg & _BV(RX_DR))
-    {
-        writeRegister(STATUS_NRF, statusReg | _BV(RX_DR));
-    }
+    writeRegister(STATUS_NRF, _BV(RX_DR));
 }
 
 uint8_t NRFLite::hasAckData()
@@ -175,13 +171,6 @@ uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bi
 
 void NRFLite::powerDown()
 {
-    // If we have separate CE and CSN pins, we can gracefully transition into
-    // Power Down mode by first entering Standby-I mode.
-    if (_usingSeparateCeAndCsnPins)
-    {
-        digitalWrite(_cePin, LOW);
-    }
-
     // Turn off the radio.
     writeRegister(CONFIG, CONFIG_REG_SETTINGS_FOR_RX_MODE & ~_BV(PWR_UP));
 }
@@ -230,24 +219,30 @@ void NRFLite::readData(void *data)
     spiTransfer(READ_OPERATION, R_RX_PL_WID, &dataLength, 1);
     spiTransfer(READ_OPERATION, R_RX_PAYLOAD, data, dataLength);
 
-    // Clear data received flag if it was set.
+    // Clear data received flag.
     writeRegister(STATUS_NRF, _BV(RX_DR));
 }
 
 uint8_t NRFLite::scanChannel(uint8_t channel, uint8_t measurementCount)
 {
     uint8_t strength = 0;
+    
+    // Ensure radio is configured for RX.
+    uint8_t notInRxModeOrRadioNotConfigured = readRegister(CONFIG) != CONFIG_REG_SETTINGS_FOR_RX_MODE;
+    if (notInRxModeOrRadioNotConfigured)
+    {
+        initRadio(_savedRadioId, _savedBitrate, _savedChannel);
+    }
 
-    // Put radio into Standby-I mode.
+    // Turn off radio.
     digitalWrite(_cePin, LOW);
 
     // Set the channel.
+    if (channel > MAX_NRF_CHANNEL) channel = MAX_NRF_CHANNEL;
     writeRegister(RF_CH, channel);
 
-    // Take a bunch of measurements.
-    do
-    {
-        // Put the radio into RX mode and wait a little time for a signal to be received.
+    while (measurementCount--) {
+        // Turn on radio and wait for any signals to be received.
         digitalWrite(_cePin, HIGH);
         delayMicroseconds(400);
         digitalWrite(_cePin, LOW);
@@ -257,7 +252,7 @@ uint8_t NRFLite::scanChannel(uint8_t channel, uint8_t measurementCount)
         {
             strength++;
         }
-    } while (measurementCount--);
+    }
 
     return strength;
 }
@@ -354,12 +349,14 @@ uint8_t NRFLite::getRxPacketLength()
     uint8_t dataLength;
     spiTransfer(READ_OPERATION, R_RX_PL_WID, &dataLength, 1);
 
-    // Verify the data length is valid. This private method is only called if getPipeOfFirstRxPacket indicates a packet exists,
-    // so the datalength should never be 0. Likewise the datalength should never be > 32 since that's the largest possible packet the radio supports.
+    // Verify the data length is valid. This method is only called if getPipeOfFirstRxPacket
+    // indicates a packet exists, so the datalength should never be 0. Likewise the datalength
+    // should never be > 32 since that's the largest possible packet the radio supports.
     if (dataLength == 0 || dataLength > 32)
     {
-        spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0); // Clear invalid data in the RX buffer.
-        writeRegister(STATUS_NRF, readRegister(STATUS_NRF) | _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
+        // Clear invalid data in the RX buffer and data received flag.
+        spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0);
+        writeRegister(STATUS_NRF, _BV(RX_DR));
         return 0;
     }
     else
@@ -386,7 +383,7 @@ uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     delay(OFF_TO_POWERDOWN_MILLIS);
 
     // Valid channel range is 2400 - 2525 MHz, in 1 MHz increments.
-    if (channel > MAX_NRF_CHANNEL) { channel = MAX_NRF_CHANNEL; }
+    if (channel > MAX_NRF_CHANNEL) channel = MAX_NRF_CHANNEL;
     writeRegister(RF_CH, channel);
 
     // Transmission speed, retry times, and output power setup.
@@ -464,14 +461,14 @@ void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
     }
 
     // We enable several features so if none are on, the radio must have lost its configuration.
-    // This can occur due to a power issue that only impacts the radio and not the microcontroller.
+    // This might occur due to a power issue that only impacts the radio and not the microcontroller.
     uint8_t radioIsNotConfigured = readRegister(FEATURE) == 0;
     if (radioIsNotConfigured)
     {
         initRadio(_savedRadioId, _savedBitrate, _savedChannel);
     }
 
-    // Ensure radio is in Standby-II mode.
+    // Ensure radio is configured for TX.
     uint8_t readyForTx = readRegister(CONFIG) == (CONFIG_REG_SETTINGS_FOR_RX_MODE & ~_BV(PRIM_RX));
     if (!readyForTx)
     {
@@ -497,7 +494,7 @@ void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
 
     uint8_t fifoReg = readRegister(FIFO_STATUS);
 
-    // If RX buffer is full and we require an ACK, clear it so we can receive the ACK response.
+    // If RX buffer is full and we require an ACK, it must be cleared to receive the ACK response.
     uint8_t rxBufferIsFull = fifoReg & _BV(RX_FULL);
     if (sendType == REQUIRE_ACK && rxBufferIsFull)
     {
@@ -558,12 +555,11 @@ uint8_t NRFLite::waitForTxToComplete()
 
     if (txBufferIsEmpty)
     {
-        // All packets were sent.
-        return 1;
+        return 1; // All packets were sent.
     }
     else
     {
-        // Clear the buffer since packets could not be sent.
+        // Clear the TX buffer since packets could not be sent.
         spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0);
         return 0;
     }
@@ -671,10 +667,10 @@ uint8_t NRFLite::twoPinTransfer(uint8_t data)
     {
         byteFromRadio <<= 1; // Shift the byte we are building to the left.
 
-        if (*_momi_PIN & _momi_MASK) { byteFromRadio++; } // Read bit from radio on MOMI pin.  If HIGH, set bit position 0 of our byte to 1.
-        *_momi_DDR |= _momi_MASK;                         // Change MOMI to be an OUTPUT pin.
+        if (*_momi_PIN & _momi_MASK) byteFromRadio++; // Read bit from radio on MOMI pin.  If HIGH, set bit position 0 of our byte to 1.
+        *_momi_DDR |= _momi_MASK;                     // Change MOMI to be an OUTPUT pin.
 
-        if (data & 0x80) { *_momi_PORT |=  _momi_MASK; }  // Set MOMI HIGH if bit position 7 of the byte we are sending is 1.
+        if (data & 0x80) *_momi_PORT |=  _momi_MASK;  // Set MOMI HIGH if bit position 7 of the byte we are sending is 1.
 
         *_sck_PORT |= _sck_MASK;  // Set SCK HIGH to transfer the bit to the radio.  CSN will remain LOW while the capacitor begins charging.
         *_sck_PORT &= ~_sck_MASK; // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
