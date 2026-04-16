@@ -317,9 +317,9 @@ void NRFLite::whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady)
 {
     uint8_t statusReg = readRegister(STATUS_NRF);
 
-    txOk = statusReg & _BV(TX_DS);
-    txFail = statusReg & _BV(MAX_RT);
-    rxReady = statusReg & _BV(RX_DR);
+    txOk = (statusReg >> TX_DS) & 1;
+    txFail = (statusReg >> MAX_RT) & 1;
+    rxReady = (statusReg >> RX_DR) & 1;
 
     // When we need to see interrupt flags, we disable the logic here which clears them.
     // Programs that have an interrupt handler for the radio's IRQ pin will use 'whatHappened'
@@ -620,7 +620,7 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
             usiTransfer(regName);
             for (uint8_t i = 0; i < length; ++i) {
                 uint8_t newData = usiTransfer(intData[i]);
-                if (transferType == READ_OPERATION) { intData[i] = newData; }
+                if (transferType == READ_OPERATION) intData[i] = newData;
             }
         #else
             // Transfer with the Arduino SPI library.
@@ -628,7 +628,7 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
             SPI.transfer(regName);
             for (uint8_t i = 0; i < length; ++i) {
                 uint8_t newData = SPI.transfer(intData[i]);
-                if (transferType == READ_OPERATION) { intData[i] = newData; }
+                if (transferType == READ_OPERATION) intData[i] = newData;
             }
             SPI.endTransaction();
         #endif
@@ -658,32 +658,40 @@ uint8_t NRFLite::usiTransfer(uint8_t data)
 
 #if defined(__AVR__)
 
-uint8_t NRFLite::twoPinTransfer(uint8_t data)
+uint8_t NRFLite::twoPinTransfer(uint8_t outputByte)
 {
-    uint8_t byteFromRadio = 0;
-    uint8_t currentBitIndex = 8;
+    uint8_t bit = 8;
+    uint8_t inputByte = 0;
+    
+    // Inspired by https://nerdralph.blogspot.com/2015/05/nrf24l01-control-with-2-mcu-pins-using.html
+    // NRFLite uses different capacitor and resistor values, see schematic on https://github.com/dparson55/NRFLite
 
-    do
+    // Starting state: MOMI = INPUT  and LOW (connected to radio MISO and MOSI)
+    //                  SCK = OUTPUT and LOW (connected to radio CE, CSN, and SCK)
+    // MOMI changes between INPUT and OUTPUT during reads and writes to radio.
+    // SCK remains OUTPUT and remains LOW for the majority to the time which prevents the radio's CSN from going HIGH.
+
+    while (bit--)
     {
-        byteFromRadio <<= 1; // Shift the byte we are building to the left.
+        // Read bit from radio.
+        inputByte <<= 1;                          // Shift byte we are building to the left.
+        if (*_momi_PIN & _momi_MASK) inputByte++; // Read bit on MOMI. If HIGH set bit position 0 to 1.
+        
+        // Ready bit to write.
+        *_momi_DDR |= _momi_MASK;                               // Change MOMI to OUTPUT.
+        if (outputByte & 0b10000000) *_momi_PORT |= _momi_MASK; // Set MOMI HIGH if bit position 7 of the byte we are sending is 1.
+        outputByte <<= 1;                                       // Shift the byte we are sending to the left.
 
-        if (*_momi_PIN & _momi_MASK) byteFromRadio++; // Read bit from radio on MOMI pin.  If HIGH, set bit position 0 of our byte to 1.
-        *_momi_DDR |= _momi_MASK;                     // Change MOMI to be an OUTPUT pin.
+        // Pulse SCK. Radio will read the bit we prepared and set the next bit it is outputing on its MISO pin.
+        *_sck_PORT |= _sck_MASK;    // Set SCK HIGH. CSN will remain LOW while the capacitor begins charging.
+        *_sck_PORT &= ~_sck_MASK;   // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
 
-        if (data & 0x80) *_momi_PORT |=  _momi_MASK;  // Set MOMI HIGH if bit position 7 of the byte we are sending is 1.
-
-        *_sck_PORT |= _sck_MASK;  // Set SCK HIGH to transfer the bit to the radio.  CSN will remain LOW while the capacitor begins charging.
-        *_sck_PORT &= ~_sck_MASK; // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
-
-        *_momi_PORT &= ~_momi_MASK; // Set MOMI LOW.
-        *_momi_DDR &= ~_momi_MASK;  // Change MOMI back to an INPUT.  Since we previously ensured it was LOW, its PULLUP resistor will never
-                                    // be enabled which would prevent MOMI from fully reaching a LOW state.
-
-        data <<= 1; // Shift the byte we are sending to the left.
+        // Get read to read next bit.
+        *_momi_PORT &= ~_momi_MASK; // Set MOMI LOW so its PULL_UP resistor won't be enabled when we change it to INPUT.
+        *_momi_DDR  &= ~_momi_MASK; // Change MOMI to INPUT.
     }
-    while (--currentBitIndex);
-
-    return byteFromRadio;
+    
+    return inputByte;
 }
 
 #endif
