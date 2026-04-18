@@ -85,7 +85,7 @@ class NRFLite {
 
     Stream *_serial;
     Bitrates _savedBitrate;
-    
+
     int8_t _lastToRadioId;
     uint8_t _savedChannel, _savedRadioId;
     uint8_t _cePin, _csnPin, _momi_MASK, _sck_MASK, _useTwoPinSpiTransfer, _usingSeparateCeAndCsnPins;

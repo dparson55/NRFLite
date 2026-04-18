@@ -329,7 +329,7 @@ void NRFLite::whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady)
     {
         // Clear all interrupt flags.
         writeRegister(STATUS_NRF, _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
-        
+
         if (txFail)
         {
             // Clear the packet that failed to send.
