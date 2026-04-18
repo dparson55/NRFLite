@@ -58,34 +58,29 @@ uint8_t NRFLite::hasAckData()
 
 uint8_t NRFLite::hasData(uint8_t usingInterrupts)
 {
-    // If using the same pins for CE and CSN, we need to ensure CE is left HIGH long enough to receive data.
-    // If we don't limit the calling program, CE could be LOW so often that no data packets can be received.
-    if (!_usingSeparateCeAndCsnPins)
-    {
-        if (usingInterrupts)
-        {
-            // Since the calling program is using interrupts, we can trust that it only calls hasData when an
-            // interrupt is received, meaning only when data is received.  So we don't need to limit it.
-        }
-        else
-        {
-            uint8_t giveRadioMoreTimeToReceive = micros() - _microsSinceLastDataCheck < _maxHasDataIntervalMicros;
-            if (giveRadioMoreTimeToReceive)
+    static uint32_t microsSinceLastRxCheck;
+    
+    if (!_usingSeparateCeAndCsnPins) {
+        // Shared CE and CSN ping operation requires CE to stay HIGH long enough for the radio to receive data.
+        // If not using interrupts, we must rate-limit checks to prevent CE from being LOW too frequently.
+        // When using interrupts we assume the calling program knows data was received, so we bypass this rate limiter.
+        if (!usingInterrupts) {
+            uint8_t giveRadioMoreRxTime = micros() - microsSinceLastRxCheck < _minRxTimeMicros;
+            
+            if (giveRadioMoreRxTime)
             {
-                return 0; // Prevent the calling program from forcing us to bring CE low, making the radio stop receiving.
+                return 0; // Prevent calling program from forcing us to bring CE low, making the radio stop receiving.
             }
-            else
-            {
-                _microsSinceLastDataCheck = micros();
-            }
+            
+            microsSinceLastRxCheck = micros();
         }
     }
 
     // When the radio is initially power on its CONFIG defaults to TX mode.
-    // So verifying CONFIG is in RX mode also verifies the radio has not lost the configuration NRFLite has applied.
+    // So verifying CONFIG is in RX mode also verifies the radio has not lost its NRFLite configuration.
     // This can occur due to a power issue that only impacts the radio and not the microcontroller.
-    uint8_t notInRxModeOrRadioNotConfigured = readRegister(CONFIG) != CONFIG_REG_SETTINGS_FOR_RX_MODE;
-    if (notInRxModeOrRadioNotConfigured)
+    uint8_t notInRxModeOrNotConfigured = readRegister(CONFIG) != CONFIG_REG_FOR_RX_MODE;
+    if (notInRxModeOrNotConfigured)
     {
         initRadio(_savedRadioId, _savedBitrate, _savedChannel);
     }
@@ -171,8 +166,14 @@ uint8_t NRFLite::initTwoPin(uint8_t radioId, uint8_t momiPin, uint8_t sckPin, Bi
 
 void NRFLite::powerDown()
 {
-    // Turn off the radio.
-    writeRegister(CONFIG, CONFIG_REG_SETTINGS_FOR_RX_MODE & ~_BV(PWR_UP));
+    if (_usingSeparateCeAndCsnPins)
+    {
+        // Turn off RX or TX operation (enter Standby-I mode).
+        digitalWrite(_cePin, LOW);
+    }
+    
+    // Enter PowerDown mode.
+    writeRegister(CONFIG, CONFIG_REG_FOR_RX_MODE & ~_BV(PWR_UP));
 }
 
 void NRFLite::printDetails()
@@ -228,7 +229,7 @@ uint8_t NRFLite::scanChannel(uint8_t channel, uint8_t measurementCount)
     uint8_t strength = 0;
     
     // Ensure radio is configured for RX.
-    uint8_t notInRxModeOrRadioNotConfigured = readRegister(CONFIG) != CONFIG_REG_SETTINGS_FOR_RX_MODE;
+    uint8_t notInRxModeOrRadioNotConfigured = readRegister(CONFIG) != CONFIG_REG_FOR_RX_MODE;
     if (notInRxModeOrRadioNotConfigured)
     {
         initRadio(_savedRadioId, _savedBitrate, _savedChannel);
@@ -293,11 +294,11 @@ uint8_t NRFLite::startRx()
         powerDown(); // PowerDown mode.
     }
 
-    writeRegister(CONFIG, CONFIG_REG_SETTINGS_FOR_RX_MODE); // RX configuration and Power on, then Standby-I mode.
+    writeRegister(CONFIG, CONFIG_REG_FOR_RX_MODE); // RX configuration and Power on, then Standby-I mode.
     digitalWrite(_cePin, HIGH);                             // RX mode.
     delay(POWERDOWN_TO_RXTX_MODE_MILLIS);                   // Power on delay.
 
-    uint8_t readyForRx = readRegister(CONFIG) == CONFIG_REG_SETTINGS_FOR_RX_MODE;
+    uint8_t readyForRx = readRegister(CONFIG) == CONFIG_REG_FOR_RX_MODE;
     return readyForRx;
 }
 
@@ -324,7 +325,7 @@ void NRFLite::whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady)
     // When we need to see interrupt flags, we disable the logic here which clears them.
     // Programs that have an interrupt handler for the radio's IRQ pin will use 'whatHappened'
     // and if we don't disable this logic, it's not possible for us to check these flags.
-    if (_enableInterruptFlagReset)
+    if (_enableIrqReset)
     {
         writeRegister(STATUS_NRF, _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
     }
@@ -367,19 +368,19 @@ uint8_t NRFLite::getRxPacketLength()
 
 uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
 {
-    _lastToRadioId = -1;
-    _enableInterruptFlagReset = 1;
+    _enableIrqReset = 1;
     _usingSeparateCeAndCsnPins = _cePin != _csnPin;
 
     // Store these in case the radio loses its register configuration (potentially
     // from a power fluctuation) that hasn't affected the microcontroller.
-    // We'll check the register configuration during sends and receives and if a
+    // We'll check the register configuration during sends and receives and if an
     // invalid configuration is detected, we'll call initRadio with these saved values
     // to re-configure the radio.
     _savedRadioId = radioId;
     _savedBitrate = bitrate;
     _savedChannel = channel;
 
+    static const uint8_t OFF_TO_POWERDOWN_MILLIS = 100; // Vcc > 1.9V power on reset time.
     delay(OFF_TO_POWERDOWN_MILLIS);
 
     // Valid channel range is 2400 - 2525 MHz, in 1 MHz increments.
@@ -393,36 +394,36 @@ uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
     {
         writeRegister(RF_SETUP, 0b00001110);   // 2 Mbps, 0 dBm output power
         writeRegister(SETUP_RETR, 0b00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
-        _transmissionRetryWaitMicros = 600;    // 100 uS more than the retry delay
-        _maxHasDataIntervalMicros = 1200;
+        _txRetryMicros = 600;                  // 100 uS more than the retry delay
+        _minRxTimeMicros = 1200;               // Required RX time for shared CE and CSN pin operation (just a time vs speed compromise determined by experimentation).
     }
     else if (bitrate == BITRATE1MBPS)
     {
         writeRegister(RF_SETUP, 0b00000110);   // 1 Mbps, 0 dBm output power
         writeRegister(SETUP_RETR, 0b00011111); // 0001 =  500 uS between retries, 1111 = 15 retries
-        _transmissionRetryWaitMicros = 600;    // 100 uS more than the retry delay
-        _maxHasDataIntervalMicros = 1700;
+        _txRetryMicros = 600;                  // 100 uS more than the retry delay
+        _minRxTimeMicros = 1700;
     }
     else
     {
         writeRegister(RF_SETUP, 0b00100110);   // 250 Kbps, 0 dBm output power
         writeRegister(SETUP_RETR, 0b01011111); // 0101 = 1500 uS between retries, 1111 = 15 retries
-        _transmissionRetryWaitMicros = 1600;   // 100 uS more than the retry delay
-        _maxHasDataIntervalMicros = 5000;
+        _txRetryMicros = 1600;                 // 100 uS more than the retry delay
+        _minRxTimeMicros = 5000;
     }
 
     // Assign this radio's address to RX pipe 1.  When another radio sends us data, this is the address
     // it will use.  We use RX pipe 1 to store our address since the address in RX pipe 0 is reserved
-    // for use with auto-acknowledgment packets.
+    // for use with auto-acknowledgment (ACK) packets.
     uint8_t address[5] = { ADDRESS_PREFIX[0], ADDRESS_PREFIX[1], ADDRESS_PREFIX[2], ADDRESS_PREFIX[3], radioId };
     writeRegister(RX_ADDR_P1, &address, 5);
 
     // Enable dynamically sized packets on the 2 RX pipes we use, 0 and 1.
     // RX pipe address 1 is used to for normal packets from radios that send us data.
-    // RX pipe address 0 is used to for auto-acknowledgment packets from radios we transmit to.
+    // RX pipe address 0 is used to for ACK packets from radios we transmit to.
     writeRegister(DYNPD, _BV(DPL_P0) | _BV(DPL_P1));
 
-    // Enable dynamically sized payloads, ACK payloads, and TX support with or without an ACK request.
+    // Enable dynamically sized payloads, ACK data packet payloads, and TX support with or without an ACK request.
     writeRegister(FEATURE, _BV(EN_DPL) | _BV(EN_ACK_PAY) | _BV(EN_DYN_ACK));
 
     // Ensure RX and TX buffers are empty.  Each buffer can hold 3 packets.
@@ -449,14 +450,17 @@ void NRFLite::printRegister(const char name[], uint8_t reg)
 
 void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
 {
-    if (_lastToRadioId != toRadioId)
+    static int8_t lastToRadioId = -1;
+    
+    if (toRadioId != lastToRadioId)
     {
-        _lastToRadioId = toRadioId;
+        lastToRadioId = toRadioId;
 
-        // TX pipe address sets the destination radio for the data.
-        // RX pipe 0 is special and needs the same address in order to receive ACK packets from the destination radio.
+        // TX pipe address sets the destination radio.
         uint8_t address[5] = { ADDRESS_PREFIX[0], ADDRESS_PREFIX[1], ADDRESS_PREFIX[2], ADDRESS_PREFIX[3], toRadioId };
         writeRegister(TX_ADDR, &address, 5);
+        
+        // RX pipe 0 needs the same address in order to receive ACK packets from the destination radio.
         writeRegister(RX_ADDR_P0, &address, 5);
     }
 
@@ -469,7 +473,7 @@ void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
     }
 
     // Ensure radio is configured for TX.
-    uint8_t readyForTx = readRegister(CONFIG) == (CONFIG_REG_SETTINGS_FOR_RX_MODE & ~_BV(PRIM_RX));
+    uint8_t readyForTx = readRegister(CONFIG) == (CONFIG_REG_FOR_RX_MODE & ~_BV(PRIM_RX));
     if (!readyForTx)
     {
         // Mode transition: RX -> Standby-I or PowerDown -> Standby-I -> Standby-II.
@@ -487,7 +491,7 @@ void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
             powerDown(); // PowerDown mode.
         }
 
-        writeRegister(CONFIG, CONFIG_REG_SETTINGS_FOR_RX_MODE & ~_BV(PRIM_RX)); // TX configuration, Power on, then Standby-I mode.
+        writeRegister(CONFIG, CONFIG_REG_FOR_RX_MODE & ~_BV(PRIM_RX)); // TX configuration, Power on, then Standby-I mode.
         digitalWrite(_cePin, HIGH);                                             // Standby-II mode.
         delay(POWERDOWN_TO_RXTX_MODE_MILLIS);                                   // Power on delay.
     }
@@ -523,11 +527,11 @@ uint8_t NRFLite::waitForTxToComplete()
         return 0; // There are no packets to send.
     }
 
-    _enableInterruptFlagReset = 0; // Disable interrupt flag reset logic in 'whatHappened'.
+    _enableIrqReset = 0; // Disable interrupt flag reset logic in 'whatHappened'.
 
     while (txAttemptCount--)
     {
-        delayMicroseconds(_transmissionRetryWaitMicros); // Wait for transmission.
+        delayMicroseconds(_txRetryMicros); // Wait for transmission.
 
         txBufferIsEmpty = readRegister(FIFO_STATUS) & _BV(TX_EMPTY);
 
@@ -551,7 +555,7 @@ uint8_t NRFLite::waitForTxToComplete()
         }
     }
 
-    _enableInterruptFlagReset = 1; // Re-enable interrupt reset logic in 'whatHappened'.
+    _enableIrqReset = 1; // Re-enable interrupt reset logic in 'whatHappened'.
 
     if (txBufferIsEmpty)
     {
@@ -600,20 +604,25 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
     if (_useTwoPinSpiTransfer)
     {
         #if defined(__AVR__)
-            digitalWrite(_csnPin, LOW);              // Signal radio to listen to the SPI bus.
-            delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to discharge.
+            // Signal radio to listen to SPI.
+            static const uint16_t CSN_DISCHARGE_MICROS = 500;
+            digitalWrite(_csnPin, LOW);            
+            delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN to discharge (CSN reaches LOW state).
+            
             twoPinTransfer(regName);
             for (uint8_t i = 0; i < length; ++i) {
                 uint8_t newData = twoPinTransfer(intData[i]);
-                if (transferType == READ_OPERATION) { intData[i] = newData; }
+                if (transferType == READ_OPERATION) intData[i] = newData;
             }
-            digitalWrite(_csnPin, HIGH);             // Stop radio from listening to the SPI bus.
-            delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN pin to recharge.
+            
+            // Signal radio to stop listening to SPI.
+            digitalWrite(_csnPin, HIGH);
+            delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor to recharge (CSN reaches HIGH state).
 	    #endif
     }
     else
     {
-        digitalWrite(_csnPin, LOW); // Signal radio to listen to the SPI bus.
+        digitalWrite(_csnPin, LOW); // Signal radio to listen to SPI.
 
         #if defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
             // ATtiny transfer with USI.
@@ -624,6 +633,7 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
             }
         #else
             // Transfer with the Arduino SPI library.
+            static const uint32_t NRF_SPICLOCK = 4000000;
             SPI.beginTransaction(SPISettings(NRF_SPICLOCK, MSBFIRST, SPI_MODE0));
             SPI.transfer(regName);
             for (uint8_t i = 0; i < length; ++i) {
@@ -633,7 +643,7 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
             SPI.endTransaction();
         #endif
 
-        digitalWrite(_csnPin, HIGH); // Stop radio from listening to the SPI bus.
+        digitalWrite(_csnPin, HIGH); // Stop radio from listening to SPI.
     }
 
     interrupts();
@@ -666,10 +676,10 @@ uint8_t NRFLite::twoPinTransfer(uint8_t outputByte)
     // Inspired by https://nerdralph.blogspot.com/2015/05/nrf24l01-control-with-2-mcu-pins-using.html
     // NRFLite uses different capacitor and resistor values, see schematic on https://github.com/dparson55/NRFLite
 
-    // Starting state: MOMI = INPUT  and LOW (connected to radio MISO and MOSI)
-    //                  SCK = OUTPUT and LOW (connected to radio CE, CSN, and SCK)
     // MOMI changes between INPUT and OUTPUT during reads and writes to radio.
     // SCK remains OUTPUT and remains LOW for the majority to the time which prevents the radio's CSN from going HIGH.
+    // Starting state: MOMI = INPUT  and LOW (controls radio MISO and MOSI)
+    //                  SCK = OUTPUT and LOW (controls radio CE, CSN, and SCK)
 
     while (bit--)
     {
