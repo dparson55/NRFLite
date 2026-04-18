@@ -61,7 +61,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
     static uint32_t microsSinceLastRxCheck;
     
     if (!_usingSeparateCeAndCsnPins) {
-        // Shared CE and CSN ping operation requires CE to stay HIGH long enough for the radio to receive data.
+        // Shared CE and CSN pin operation requires CE to stay HIGH long enough for the radio to receive data.
         // If not using interrupts, we must rate-limit checks to prevent CE from being LOW too frequently.
         // When using interrupts we assume the calling program knows data was received, so we bypass this rate limiter.
         if (!usingInterrupts) {
@@ -76,7 +76,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
         }
     }
 
-    // When the radio is initially power on its CONFIG defaults to TX mode.
+    // When the radio is initially powered on its CONFIG defaults to TX mode.
     // So verifying CONFIG is in RX mode also verifies the radio has not lost its NRFLite configuration.
     // This can occur due to a power issue that only impacts the radio and not the microcontroller.
     uint8_t notInRxModeOrNotConfigured = readRegister(CONFIG) != CONFIG_REG_FOR_RX_MODE;
@@ -98,9 +98,6 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
 
 uint8_t NRFLite::hasDataISR()
 {
-    // This method should be used inside an interrupt handler for the radio's IRQ pin to bypass
-    // the limit on how often the radio is checked for data.  This optimization greatly increases
-    // the receiving bitrate when CE and CSN share the same pin.
     return hasData(1);
 }
 
@@ -132,7 +129,7 @@ uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates b
         }
     #endif
 
-    // With the microcontroller's pins setup, we can now initialize the radio.
+    // With the microcontroller's pins setup, we can initialize the radio.
     uint8_t success = initRadio(radioId, bitrate, channel);
     return success;
 }
@@ -238,7 +235,7 @@ uint8_t NRFLite::scanChannel(uint8_t channel, uint8_t measurementCount)
     // Turn off radio.
     digitalWrite(_cePin, LOW);
 
-    // Set the channel.
+    // Set the channel to scan.
     if (channel > MAX_NRF_CHANNEL) channel = MAX_NRF_CHANNEL;
     writeRegister(RF_CH, channel);
 
@@ -295,8 +292,8 @@ uint8_t NRFLite::startRx()
     }
 
     writeRegister(CONFIG, CONFIG_REG_FOR_RX_MODE); // RX configuration and Power on, then Standby-I mode.
-    digitalWrite(_cePin, HIGH);                             // RX mode.
-    delay(POWERDOWN_TO_RXTX_MODE_MILLIS);                   // Power on delay.
+    digitalWrite(_cePin, HIGH);                    // RX mode.
+    delay(POWERDOWN_TO_RXTX_MODE_MILLIS);          // Power on delay.
 
     uint8_t readyForRx = readRegister(CONFIG) == CONFIG_REG_FOR_RX_MODE;
     return readyForRx;
@@ -492,8 +489,8 @@ void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
         }
 
         writeRegister(CONFIG, CONFIG_REG_FOR_RX_MODE & ~_BV(PRIM_RX)); // TX configuration, Power on, then Standby-I mode.
-        digitalWrite(_cePin, HIGH);                                             // Standby-II mode.
-        delay(POWERDOWN_TO_RXTX_MODE_MILLIS);                                   // Power on delay.
+        digitalWrite(_cePin, HIGH);                                    // Standby-II mode.
+        delay(POWERDOWN_TO_RXTX_MODE_MILLIS);                          // Power on delay.
     }
 
     uint8_t fifoReg = readRegister(FIFO_STATUS);
@@ -541,7 +538,7 @@ uint8_t NRFLite::waitForTxToComplete()
 
         if (packetWasSent)
         {
-            writeRegister(STATUS_NRF, _BV(TX_DS));  // Clear TX success flag.
+            writeRegister(STATUS_NRF, _BV(TX_DS)); // Clear TX success flag.
         }
         else if (packetCouldNotBeSent)
         {
@@ -604,20 +601,20 @@ void NRFLite::spiTransfer(SpiTransferType transferType, uint8_t regName, void *d
     if (_useTwoPinSpiTransfer)
     {
         #if defined(__AVR__)
-            // Signal radio to listen to SPI.
+            // Signal radio to listen to SPI and allow the capacitor on CSN to discharge (CSN reaches LOW state).
             static const uint16_t CSN_DISCHARGE_MICROS = 500;
-            digitalWrite(_csnPin, LOW);            
-            delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor on CSN to discharge (CSN reaches LOW state).
-            
+            digitalWrite(_csnPin, LOW);
+            delayMicroseconds(CSN_DISCHARGE_MICROS);
+
             twoPinTransfer(regName);
             for (uint8_t i = 0; i < length; ++i) {
                 uint8_t newData = twoPinTransfer(intData[i]);
                 if (transferType == READ_OPERATION) intData[i] = newData;
             }
-            
-            // Signal radio to stop listening to SPI.
+
+            // Signal radio to stop listening to SPI and allow the capacitor to recharge.
             digitalWrite(_csnPin, HIGH);
-            delayMicroseconds(CSN_DISCHARGE_MICROS); // Allow capacitor to recharge (CSN reaches HIGH state).
+            delayMicroseconds(CSN_DISCHARGE_MICROS);
 	    #endif
     }
     else
@@ -677,7 +674,7 @@ uint8_t NRFLite::twoPinTransfer(uint8_t outputByte)
     // NRFLite uses different capacitor and resistor values, see schematic on https://github.com/dparson55/NRFLite
 
     // MOMI changes between INPUT and OUTPUT during reads and writes to radio.
-    // SCK remains OUTPUT and remains LOW for the majority to the time which prevents the radio's CSN from going HIGH.
+    // SCK remains OUTPUT and remains LOW for the majority of the time which prevents the radio's CSN from going HIGH.
     // Starting state: MOMI = INPUT  and LOW (controls radio MISO and MOSI)
     //                  SCK = OUTPUT and LOW (controls radio CE, CSN, and SCK)
 
@@ -693,8 +690,8 @@ uint8_t NRFLite::twoPinTransfer(uint8_t outputByte)
         outputByte <<= 1;                                       // Shift the byte we are sending to the left.
 
         // Pulse SCK. Radio will read the bit we prepared and set the next bit it is outputing on its MISO pin.
-        *_sck_PORT |= _sck_MASK;    // Set SCK HIGH. CSN will remain LOW while the capacitor begins charging.
-        *_sck_PORT &= ~_sck_MASK;   // Set SCK LOW.  CSN will have remained LOW due to the capacitor.
+        *_sck_PORT |= _sck_MASK;    // Set SCK HIGH. The capacitor keeping CSN LOW will begin charging so we need to go back to LOW.
+        *_sck_PORT &= ~_sck_MASK;   // Set SCK LOW. CSN will hopefully have remained LOW due to the capacitor, otherwise SPI communication will have stopped.
 
         // Get read to read next bit.
         *_momi_PORT &= ~_momi_MASK; // Set MOMI LOW so its PULL_UP resistor won't be enabled when we change it to INPUT.
