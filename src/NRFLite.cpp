@@ -100,7 +100,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
 
 uint8_t NRFLite::hasDataISR()
 {
-    static const uint8_t USING_INTERRUPTS = 1; 
+    static const uint8_t USING_INTERRUPTS = 1;
     return hasData(USING_INTERRUPTS);
 }
 
@@ -324,10 +324,17 @@ void NRFLite::whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady)
 
     // When we need to see interrupt flags, we disable the logic here which clears them.
     // Programs that have an interrupt handler for the radio's IRQ pin will use 'whatHappened'
-    // and if we don't disable this logic, it's not possible for us to check these flags.
+    // and if we don't disable this logic, it might not be possible for us to check these flags.
     if (_enableIrqReset)
     {
+        // Clear all interrupt flags.
         writeRegister(STATUS_NRF, _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
+        
+        if (txFail)
+        {
+            // Clear the packet that failed to send.
+            spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0);
+        }
     }
 }
 
@@ -369,6 +376,7 @@ uint8_t NRFLite::getRxPacketLength()
 uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
 {
     _enableIrqReset = 1;
+    _lastToRadioId = -1;
     _usingSeparateCeAndCsnPins = _cePin != _csnPin;
 
     // Store these in case the radio loses its register configuration (potentially
@@ -450,11 +458,9 @@ void NRFLite::printRegister(const char name[], uint8_t reg)
 
 void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
 {
-    static int8_t lastToRadioId = -1;
-
-    if (toRadioId != lastToRadioId)
+    if (toRadioId != _lastToRadioId)
     {
-        lastToRadioId = toRadioId;
+        _lastToRadioId = toRadioId;
 
         // TX pipe address sets the destination radio.
         uint8_t address[5] = { ADDRESS_PREFIX[0], ADDRESS_PREFIX[1], ADDRESS_PREFIX[2], ADDRESS_PREFIX[3], toRadioId };
