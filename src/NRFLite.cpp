@@ -59,19 +59,21 @@ uint8_t NRFLite::hasAckData()
 uint8_t NRFLite::hasData(uint8_t usingInterrupts)
 {
     static uint32_t microsSinceLastRxCheck;
-    
-    if (!_usingSeparateCeAndCsnPins) {
+
+    if (!_usingSeparateCeAndCsnPins)
+    {
         // Shared CE and CSN pin operation requires CE to stay HIGH long enough for the radio to receive data.
         // If not using interrupts, we must rate-limit checks to prevent CE from being LOW too frequently.
         // When using interrupts we assume the calling program knows data was received, so we bypass this rate limiter.
-        if (!usingInterrupts) {
+        if (!usingInterrupts)
+        {
             uint8_t giveRadioMoreRxTime = micros() - microsSinceLastRxCheck < _minRxTimeMicros;
-            
+
             if (giveRadioMoreRxTime)
             {
                 return 0; // Prevent calling program from forcing us to bring CE low, making the radio stop receiving.
             }
-            
+
             microsSinceLastRxCheck = micros();
         }
     }
@@ -98,7 +100,8 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
 
 uint8_t NRFLite::hasDataISR()
 {
-    return hasData(1);
+    static const uint8_t USING_INTERRUPTS = 1; 
+    return hasData(USING_INTERRUPTS);
 }
 
 uint8_t NRFLite::init(uint8_t radioId, uint8_t cePin, uint8_t csnPin, Bitrates bitrate, uint8_t channel, uint8_t callSpiBegin)
@@ -168,7 +171,7 @@ void NRFLite::powerDown()
         // Turn off RX or TX operation (enter Standby-I mode).
         digitalWrite(_cePin, LOW);
     }
-    
+
     // Enter PowerDown mode.
     writeRegister(CONFIG, CONFIG_REG_FOR_RX_MODE & ~_BV(PWR_UP));
 }
@@ -224,7 +227,7 @@ void NRFLite::readData(void *data)
 uint8_t NRFLite::scanChannel(uint8_t channel, uint8_t measurementCount)
 {
     uint8_t strength = 0;
-    
+
     // Ensure radio is configured for RX.
     uint8_t notInRxModeOrRadioNotConfigured = readRegister(CONFIG) != CONFIG_REG_FOR_RX_MODE;
     if (notInRxModeOrRadioNotConfigured)
@@ -448,7 +451,7 @@ void NRFLite::printRegister(const char name[], uint8_t reg)
 void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
 {
     static int8_t lastToRadioId = -1;
-    
+
     if (toRadioId != lastToRadioId)
     {
         lastToRadioId = toRadioId;
@@ -456,7 +459,7 @@ void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
         // TX pipe address sets the destination radio.
         uint8_t address[5] = { ADDRESS_PREFIX[0], ADDRESS_PREFIX[1], ADDRESS_PREFIX[2], ADDRESS_PREFIX[3], toRadioId };
         writeRegister(TX_ADDR, &address, 5);
-        
+
         // RX pipe 0 needs the same address in order to receive ACK packets from the destination radio.
         writeRegister(RX_ADDR_P0, &address, 5);
     }
@@ -669,7 +672,7 @@ uint8_t NRFLite::twoPinTransfer(uint8_t outputByte)
 {
     uint8_t bit = 8;
     uint8_t inputByte = 0;
-    
+
     // Inspired by https://nerdralph.blogspot.com/2015/05/nrf24l01-control-with-2-mcu-pins-using.html
     // NRFLite uses different capacitor and resistor values, see schematic on https://github.com/dparson55/NRFLite
 
@@ -683,7 +686,7 @@ uint8_t NRFLite::twoPinTransfer(uint8_t outputByte)
         // Read bit from radio.
         inputByte <<= 1;                          // Shift byte we are building to the left.
         if (*_momi_PIN & _momi_MASK) inputByte++; // Read bit on MOMI. If HIGH set bit position 0 to 1.
-        
+
         // Ready bit to write.
         *_momi_DDR |= _momi_MASK;                               // Change MOMI to OUTPUT.
         if (outputByte & 0b10000000) *_momi_PORT |= _momi_MASK; // Set MOMI HIGH if bit position 7 of the byte we are sending is 1.
@@ -697,7 +700,7 @@ uint8_t NRFLite::twoPinTransfer(uint8_t outputByte)
         *_momi_PORT &= ~_momi_MASK; // Set MOMI LOW so its PULL_UP resistor won't be enabled when we change it to INPUT.
         *_momi_DDR  &= ~_momi_MASK; // Change MOMI to INPUT.
     }
-    
+
     return inputByte;
 }
 
