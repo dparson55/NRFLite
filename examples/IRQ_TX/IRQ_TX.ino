@@ -26,8 +26,14 @@ const static uint8_t PIN_RADIO_IRQ = 3;
 NRFLite _radio;
 uint8_t _data;
 uint32_t _lastSendTime;
-volatile uint8_t _sendSucceeded, _sendFailed; // Note usage of volatile since the variables are used in the radio
-                                              // interrupt while also being used outside the interrupt.
+volatile uint8_t _hadIrq; // Note usage of volatile since the variable is used in the radio
+                          // interrupt while also being used outside the interrupt.
+
+void radioInterrupt()
+{
+    _hadIrq = 1;
+}
+
 void setup()
 {
     Serial.begin(115200);
@@ -55,45 +61,36 @@ void loop()
         // Use 'startSend' rather than 'send' when using interrupts.
         // 'startSend' will not wait for transmission to complete, instead you'll
         // need to wait for the radio to notify you via the interrupt to see if
-        // the send was successful. Any data up to 32 bytes can be sent.
+        // the send was successful.
         _radio.startSend(DESTINATION_RADIO_ID, &_data, sizeof(_data));
         
         // Note that sending data puts the radio into TX mode.  If you want to be able to receive data again,
         // call 'startRx'.  The radio will complete any pending transmissions and then switch into RX mode.
     }
 
-    if (_sendSucceeded)
+    // Check to see if we had an interrupt.
+    if (_hadIrq)
     {
-        _sendSucceeded = false;
-        Serial.println("...Success");
-    }
-    
-    if (_sendFailed)
-    {
-        _sendFailed = false;
-        Serial.println("...Failed");
-    }
-}
+        _hadIrq = 0;
 
-void radioInterrupt()
-{
-    // Ask the radio what caused the interrupt.  This also resets the IRQ pin on the
-    // radio so a new interrupt can be triggered.
+        // Ask the radio what caused the interrupt.
+        // This resets the radio's IRQ pin so a new interrupt can be triggered.
+        // It also removes any packets from the radio if one could not be sent.
+        uint8_t txOk, txFail, rxReady;
+        _radio.whatHappened(txOk, txFail, rxReady);
 
-    uint8_t txOk, txFail, rxReady;
-    _radio.whatHappened(txOk, txFail, rxReady);
+        // txOk = the radio successfully transmitted data.
+        // txFail = the radio failed to transmit data.
+        // rxReady = the radio received data.
 
-    // txOk = the radio successfully transmitted data.
-    // txFail = the radio failed to transmit data.
-    // rxReady = the radio received data.
-
-    if (txOk)
-    {
-        _sendSucceeded = true;
-    }
-    
-    if (txFail)
-    {
-        _sendFailed = true;
+        if (txOk)
+        {
+            Serial.println("...Success");
+        }
+        
+        if (txFail)
+        {
+            Serial.println("...Failed");
+        }
     }
 }
