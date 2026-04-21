@@ -65,11 +65,13 @@ class NRFLite {
 
     // Methods when using the radio's IRQ pin for interrupts.
     // If interrupts are used, do not use the 'send' and 'hasData' functions above and instead use the below functions.
-    // hasDataISR   = Same as hasData(1), it will greatly speed up the receive bitrate when CE and CSN share the same pin.
+    // hasDataISR   = Same as hasData(1).
     // startRx      = Allows switching the radio into RX mode rather than calling 'hasDataISR'.
     //                Returns 0 if it cannot communicate with the radio.
     // startSend    = Start sending a data packet without waiting for it to complete.
-    // whatHappened = Use this inside the interrupt handler to see what caused the interrupt.
+    // whatHappened = Use this to see what caused the interrupt. It also resets the radio's IRQ pin so a new interrupt
+    //                can be triggered and also removes any packets from the radio if one failed to send. This removal
+    //                is required in order for the radio to send any additional packets.
     uint8_t hasDataISR();
     uint8_t startRx();
     void startSend(uint8_t toRadioId, void *data, uint8_t length, SendType sendType = REQUIRE_ACK);
@@ -88,7 +90,7 @@ class NRFLite {
 
     int8_t _lastToRadioId;
     uint8_t _savedChannel, _savedRadioId;
-    uint8_t _cePin, _csnPin, _momi_MASK, _sck_MASK, _useTwoPinSpiTransfer, _usingSeparateCeAndCsnPins;
+    uint8_t _cePin, _csnPin, _momi_MASK, _sck_MASK, _usingInterrupts, _useTwoPinSpiTransfer, _usingSeparateCeAndCsnPins;
     uint16_t _minRxTimeMicros, _txRetryMicros;
     volatile uint8_t _enableIrqReset, *_momi_DDR, *_momi_PORT, *_momi_PIN, *_sck_PORT;
 
@@ -97,7 +99,7 @@ class NRFLite {
     uint8_t initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel);
     void printRegister(const char name[], uint8_t regName);
     void startTx(uint8_t toRadioId, SendType sendType);
-    uint8_t waitForTxToComplete();
+    uint8_t waitForTx(uint8_t usingInterrupts);
 
     uint8_t readRegister(uint8_t regName);
     void readRegister(uint8_t regName, void* data, uint8_t length);
