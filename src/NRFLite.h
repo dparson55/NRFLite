@@ -92,7 +92,7 @@ class NRFLite {
     uint8_t _savedChannel, _savedRadioId;
     uint8_t _cePin, _csnPin, _momi_MASK, _sck_MASK, _usingInterrupts, _useTwoPinSpiTransfer, _usingSeparateCeAndCsnPins;
     uint16_t _minRxTimeMicros, _txRetryMicros;
-    volatile uint8_t _enableIrqReset, *_momi_DDR, *_momi_PORT, *_momi_PIN, *_sck_PORT;
+    volatile uint8_t *_momi_DDR, *_momi_PORT, *_momi_PIN, *_sck_PORT;
 
     uint8_t getPipeOfFirstRxPacket();
     uint8_t getRxPacketLength();

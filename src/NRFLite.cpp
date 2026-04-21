@@ -90,7 +90,7 @@ uint8_t NRFLite::hasData(uint8_t usingInterrupts)
     }
     else
     {
-        // Start RX mode.
+        // Just start RX mode if needed.
         uint8_t notInRxMode = readRegister(CONFIG) != CONFIG_REG_FOR_RX_MODE;
         if (notInRxMode) startRx();
     }
@@ -342,10 +342,7 @@ void NRFLite::whatHappened(uint8_t &txOk, uint8_t &txFail, uint8_t &rxReady)
     writeRegister(STATUS_NRF, _BV(TX_DS) | _BV(MAX_RT) | _BV(RX_DR));
 
     // Clear TX buffer if a packet could not be sent.
-    if (txFail)
-    {
-        spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0);
-    }
+    if (txFail) spiTransfer(WRITE_OPERATION, FLUSH_TX, NULL, 0);
 }
 
 /////////////
@@ -385,9 +382,7 @@ uint8_t NRFLite::getRxPacketLength()
 
 uint8_t NRFLite::initRadio(uint8_t radioId, Bitrates bitrate, uint8_t channel)
 {
-    _enableIrqReset = 1;
     _lastToRadioId = -1;
-    _usingInterrupts = 0;
     _usingSeparateCeAndCsnPins = _cePin != _csnPin;
 
     // Store these in case the radio loses its register configuration (potentially
@@ -512,19 +507,25 @@ void NRFLite::startTx(uint8_t toRadioId, SendType sendType)
         digitalWrite(_cePin, HIGH);                                    // Standby-II mode.
         delay(POWERDOWN_TO_RXTX_MODE_MILLIS);                          // Power on delay.
     }
+    
+    // Ensure the RX and TX buffers are in an acceptable state.
 
     uint8_t fifoReg = readRegister(FIFO_STATUS);
 
-    // If RX buffer is full and we require an ACK, the buffer must be cleared to receive it.
     uint8_t rxBufferIsFull = fifoReg & _BV(RX_FULL);
     if (sendType == REQUIRE_ACK && rxBufferIsFull)
     {
+        // We need to clear the RX buffer in order to receive the ACK response.
         spiTransfer(WRITE_OPERATION, FLUSH_RX, NULL, 0);
     }
 
-    // Wait for 1 empty spot in the TX buffer.
-    static const uint8_t ONE_EMPTY_SPOT = 1;
-    waitForTx(ONE_EMPTY_SPOT);
+    uint8_t txBufferIsFull = fifoReg & _BV(FIFO_FULL);
+    if (txBufferIsFull)
+    {
+        // We need at least 1 empty spot in the TX buffer.
+        static const uint8_t ONE_EMPTY_SPOT = 1;
+        waitForTx(ONE_EMPTY_SPOT);
+    }
 }
 
 uint8_t NRFLite::waitForTx(uint8_t usingInterrupts)
