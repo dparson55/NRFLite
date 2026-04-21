@@ -8,7 +8,9 @@ RxTx switching
   Received 1
   Received 2
   Received 3
-  Send 4...Success
+  Waiting for transmitter to start RX
+  Starting TX by sending 4...Success
+  Starting RX
 Power off
   Radio power down for 500ms
   Received 6
@@ -26,231 +28,113 @@ ACK payloads
   Received 15, Added ACK B 255
   Received 16, Added ACK B 254
 Polling bitrate
-  244 packets 62464 bps
-  256 packets 65536 bps
-  260 packets 66560 bps
-  260 packets 66560 bps
+  188 packets 48128 bps
+  202 packets 51660 bps
+  205 packets 52480 bps
+  207 packets 52992 bps
 Polling bitrate NO_ACK
-  475 packets 121600 bps
-  495 packets 126720 bps
-  488 packets 124928 bps
-  498 packets 127488 bps
+  455 packets 116480 bps
+  485 packets 124160 bps
+  479 packets 122624 bps
+  483 packets 123648 bps
 Polling bitrate ACK payload
-  213 packets A140 B73 54528 bps
-  222 packets A159 B63 56832 bps
-  201 packets A140 B61 51456 bps
-  217 packets A142 B75 55552 bps
+  124 packets A84 B40 31744 bps
+  143 packets A91 B52 36608 bps
+  151 packets A108 B43 38656 bps
+  137 packets A99 B38 35072 bps
 Interrupts bitrate
-  275 packets 70400 bps
-  296 packets 75776 bps
-  299 packets 76544 bps
-  306 packets 78336 bps
+  266 packets 68096 bps
+  268 packets 68608 bps
+  305 packets 78080 bps
+  302 packets 77312 bps
 Interrupts bitrate NO_ACK
-  54 packets 13824 bps
-  48 packets 12288 bps
-  55 packets 14065 bps
-  44 packets 11264 bps
+  705 packets 180480 bps
+  731 packets 187136 bps
+  726 packets 185856 bps
+  709 packets 181504 bps
 Interrupts bitrate ACK payload
-  191 packets A130 B61 48896 bps
-  203 packets A125 B78 51968 bps
-  201 packets A121 B80 51456 bps
-  199 packets A124 B75 50944 bps
+  151 packets A99 B52 38656 bps
+  155 packets A105 B50 39680 bps
+  141 packets A93 B48 36096 bps
+  156 packets A101 B55 39936 bps
 Polling bitrate all packet sizes
-  Size 1 958 packets 3832 bps
-  Size 2 817 packets 6536 bps
-  Size 3 786 packets 9432 bps
-  Size 4 796 packets 12736 bps
-  Size 5 781 packets 15612 bps
-  Size 6 774 packets 18576 bps
-  Size 7 767 packets 21476 bps
-  Size 8 756 packets 24192 bps
-  Size 9 673 packets 24228 bps
-  Size 10 666 packets 26640 bps
-  Size 11 665 packets 29260 bps
-  Size 12 664 packets 31872 bps
-  Size 13 642 packets 33384 bps
-  Size 14 657 packets 36792 bps
-  Size 15 658 packets 39480 bps
-  Size 16 557 packets 35648 bps
-  Size 17 603 packets 41004 bps
-  Size 18 627 packets 45144 bps
-  Size 19 600 packets 45600 bps
-  Size 20 573 packets 45840 bps
-  Size 21 553 packets 46452 bps
-  Size 22 583 packets 51304 bps
-  Size 23 562 packets 51704 bps
-  Size 24 568 packets 54528 bps
-  Size 25 471 packets 47100 bps
-  Size 26 374 packets 38896 bps
-  Size 27 363 packets 39204 bps
-  Size 28 346 packets 38752 bps
-  Size 29 357 packets 41412 bps
-  Size 30 341 packets 40920 bps
-  Size 31 361 packets 44764 bps
-  Size 32 349 packets 44672 bps
+  Size 1 708 packets 2832 bps
+  Size 2 589 packets 4712 bps
+  Size 3 547 packets 6564 bps
+  Size 4 534 packets 8544 bps
+  Size 5 545 packets 10900 bps
+  Size 6 500 packets 12000 bps
+  Size 7 488 packets 13664 bps
+  Size 8 508 packets 16256 bps
+  Size 9 426 packets 15336 bps
+  Size 10 427 packets 17080 bps
+  Size 11 435 packets 19140 bps
+  Size 12 427 packets 20496 bps
+  Size 13 426 packets 22152 bps
+  Size 14 413 packets 23128 bps
+  Size 15 419 packets 25140 bps
+  Size 16 403 packets 25792 bps
+  Size 17 401 packets 27268 bps
+  Size 18 392 packets 28224 bps
+  Size 19 388 packets 29488 bps
+  Size 20 373 packets 29840 bps
+  Size 21 335 packets 28140 bps
+  Size 22 329 packets 28952 bps
+  Size 23 346 packets 31832 bps
+  Size 24 363 packets 34848 bps
+  Size 25 349 packets 34900 bps
+  Size 26 286 packets 29744 bps
+  Size 27 271 packets 29268 bps
+  Size 28 271 packets 30352 bps
+  Size 29 261 packets 30276 bps
+  Size 30 275 packets 33000 bps
+  Size 31 277 packets 34348 bps
+  Size 32 250 packets 32000 bps
 Polling bitrate all ACK sizes
-  ACK Size 1 424 packets 54272 bps
-  ACK Size 2 362 packets 46336 bps
-  ACK Size 3 346 packets 44288 bps
-  ACK Size 4 363 packets 46464 bps
-  ACK Size 5 347 packets 44416 bps
-  ACK Size 6 324 packets 41472 bps
-  ACK Size 7 336 packets 43008 bps
-  ACK Size 8 324 packets 41472 bps
-  ACK Size 9 318 packets 40704 bps
-  ACK Size 10 324 packets 41472 bps
-  ACK Size 11 316 packets 40448 bps
-  ACK Size 12 310 packets 39680 bps
-  ACK Size 13 302 packets 38656 bps
-  ACK Size 14 304 packets 38912 bps
-  ACK Size 15 309 packets 39552 bps
-  ACK Size 16 294 packets 37632 bps
-  ACK Size 17 298 packets 38144 bps
-  ACK Size 18 286 packets 36608 bps
-  ACK Size 19 270 packets 34560 bps
-  ACK Size 20 265 packets 33920 bps
-  ACK Size 21 275 packets 35200 bps
-  ACK Size 22 259 packets 33152 bps
-  ACK Size 23 277 packets 35456 bps
-  ACK Size 24 277 packets 35456 bps
-  ACK Size 25 271 packets 34688 bps
-  ACK Size 26 265 packets 33920 bps
-  ACK Size 27 275 packets 35200 bps
-  ACK Size 28 269 packets 34432 bps
-  ACK Size 29 265 packets 33920 bps
-  ACK Size 30 240 packets 30720 bps
-  ACK Size 31 243 packets 31104 bps
-  ACK Size 32 27 packets 3456 bps
+  ACK Size 1 326 packets 41728 bps
+  ACK Size 2 271 packets 34688 bps
+  ACK Size 3 278 packets 35584 bps
+  ACK Size 4 257 packets 32896 bps
+  ACK Size 5 242 packets 30976 bps
+  ACK Size 6 224 packets 28672 bps
+  ACK Size 7 206 packets 26368 bps
+  ACK Size 8 205 packets 26240 bps
+  ACK Size 9 193 packets 24704 bps
+  ACK Size 10 202 packets 25856 bps
+  ACK Size 11 191 packets 24448 bps
+  ACK Size 12 189 packets 24192 bps
+  ACK Size 13 187 packets 23936 bps
+  ACK Size 14 181 packets 23168 bps
+  ACK Size 15 178 packets 22784 bps
+  ACK Size 16 186 packets 23808 bps
+  ACK Size 17 196 packets 25088 bps
+  ACK Size 18 151 packets 19328 bps
+  ACK Size 19 141 packets 18048 bps
+  ACK Size 20 142 packets 18176 bps
+  ACK Size 21 145 packets 18560 bps
+  ACK Size 22 158 packets 20224 bps
+  ACK Size 23 156 packets 19968 bps
+  ACK Size 24 142 packets 18176 bps
+  ACK Size 25 154 packets 19712 bps
+  ACK Size 26 151 packets 19328 bps
+  ACK Size 27 128 packets 16384 bps
+  ACK Size 28 134 packets 17152 bps
+  ACK Size 29 143 packets 18304 bps
+  ACK Size 30 112 packets 14336 bps
+  ACK Size 31 127 packets 16256 bps
+  ACK Size 32 32 packets 4096 bps
 
 1MBPS bitrate
   Starting sync
 RxTx switching
-  Received 0
-  Received 1
-  Received 2
-  Received 3
-  Send 4...Success
-Power off
-  Radio power down for 500ms
-  Received 6
-Polling
-  Received 7
-  Received 8
-  Received 9
-  Received 10
-Interrupts
-  Received 11
-  Received 12
-  Received 13
-  Received 14
-ACK payloads
-  Received 15, Added ACK B 255
-  Received 16, Added ACK B 254
-Polling bitrate
-  494 packets 126464 bps
-  532 packets 136192 bps
-  522 packets 133632 bps
-  532 packets 136192 bps
-Polling bitrate NO_ACK
-  983 packets 251648 bps
-  1017 packets 260351 bps
-  1025 packets 262400 bps
-  1029 packets 263424 bps
-Polling bitrate ACK payload
-  324 packets A221 B103 82861 bps
-  331 packets A232 B99 84736 bps
-  333 packets A217 B116 85248 bps
-  356 packets A229 B127 91136 bps
-Interrupts bitrate
-  725 packets 185600 bps
-  767 packets 196352 bps
-  789 packets 201984 bps
-  770 packets 197120 bps
-Interrupts bitrate NO_ACK
-  1238 packets 316928 bps
-  1302 packets 333312 bps
-  1317 packets 337152 bps
-  1365 packets 349440 bps
-Interrupts bitrate ACK payload
-  393 packets A253 B140 100608 bps
-  415 packets A283 B132 106240 bps
-  434 packets A316 B118 111104 bps
-  395 packets A246 B149 101120 bps
-Polling bitrate all packet sizes
-  Size 1 1726 packets 6904 bps
-  Size 2 1462 packets 11696 bps
-  Size 3 1461 packets 17532 bps
-  Size 4 1406 packets 22496 bps
-  Size 5 1454 packets 29080 bps
-  Size 6 1323 packets 31752 bps
-  Size 7 1320 packets 36960 bps
-  Size 8 1332 packets 42624 bps
-  Size 9 1293 packets 46548 bps
-  Size 10 1320 packets 52800 bps
-  Size 11 1279 packets 56276 bps
-  Size 12 1157 packets 55536 bps
-  Size 13 1121 packets 58292 bps
-  Size 14 1061 packets 59416 bps
-  Size 15 1075 packets 64500 bps
-  Size 16 1058 packets 67712 bps
-  Size 17 996 packets 67728 bps
-  Size 18 1030 packets 74160 bps
-  Size 19 989 packets 75164 bps
-  Size 20 1039 packets 83120 bps
-  Size 21 1025 packets 86100 bps
-  Size 22 968 packets 85184 bps
-  Size 23 1017 packets 93564 bps
-  Size 24 964 packets 92544 bps
-  Size 25 984 packets 98400 bps
-  Size 26 855 packets 88920 bps
-  Size 27 862 packets 93096 bps
-  Size 28 912 packets 102144 bps
-  Size 29 864 packets 100224 bps
-  Size 30 736 packets 88320 bps
-  Size 31 707 packets 87668 bps
-  Size 32 701 packets 89728 bps
-Polling bitrate all ACK sizes
-  ACK Size 1 792 packets 101376 bps
-  ACK Size 2 660 packets 84480 bps
-  ACK Size 3 653 packets 83584 bps
-  ACK Size 4 638 packets 81664 bps
-  ACK Size 5 626 packets 80128 bps
-  ACK Size 6 586 packets 75008 bps
-  ACK Size 7 590 packets 75520 bps
-  ACK Size 8 580 packets 74240 bps
-  ACK Size 9 567 packets 72576 bps
-  ACK Size 10 567 packets 72576 bps
-  ACK Size 11 534 packets 68352 bps
-  ACK Size 12 561 packets 71808 bps
-  ACK Size 13 527 packets 67456 bps
-  ACK Size 14 508 packets 65024 bps
-  ACK Size 15 519 packets 66432 bps
-  ACK Size 16 484 packets 61952 bps
-  ACK Size 17 494 packets 63232 bps
-  ACK Size 18 479 packets 61312 bps
-  ACK Size 19 440 packets 56320 bps
-  ACK Size 20 462 packets 59136 bps
-  ACK Size 21 457 packets 58496 bps
-  ACK Size 22 432 packets 55296 bps
-  ACK Size 23 428 packets 54784 bps
-  ACK Size 24 421 packets 53888 bps
-  ACK Size 25 402 packets 51456 bps
-  ACK Size 26 405 packets 51840 bps
-  ACK Size 27 409 packets 52352 bps
-  ACK Size 28 422 packets 54016 bps
-  ACK Size 29 405 packets 51840 bps
-  ACK Size 30 412 packets 52736 bps
-  ACK Size 31 377 packets 48256 bps
-  ACK Size 32 33 packets 4224 bps
-
-2MBPS bitrate
-  Starting sync
-RxTx switching
+  Received 16
   Received 16
   Received 17
   Received 18
   Received 19
-  Send 20...Success
+  Waiting for transmitter to start RX
+  Starting TX by sending 20...Success
+  Starting RX
 Power off
   Radio power down for 500ms
   Received 22
@@ -265,101 +149,224 @@ Interrupts
   Received 29
   Received 30
 ACK payloads
-  Received 31, Added ACK B 253
-  Received 32, Added ACK A 1
+  Received 31, Added ACK A 1
+  Received 32, Added ACK A 2
 Polling bitrate
-  1026 packets 262656 bps
-  1076 packets 275456 bps
-  1077 packets 275712 bps
-  1075 packets 275200 bps
+  494 packets 126464 bps
+  521 packets 133376 bps
+  532 packets 136192 bps
+  543 packets 139008 bps
 Polling bitrate NO_ACK
-  1026 packets 262656 bps
-  1080 packets 276480 bps
-  1079 packets 276224 bps
-  1080 packets 276480 bps
+  966 packets 247296 bps
+  1023 packets 261888 bps
+  1009 packets 258303 bps
+  1027 packets 262912 bps
 Polling bitrate ACK payload
-  813 packets A531 B282 208128 bps
-  852 packets A583 B269 218112 bps
-  852 packets A569 B283 218112 bps
-  854 packets A553 B301 218624 bps
+  401 packets A244 B157 102656 bps
+  426 packets A286 B140 109056 bps
+  419 packets A300 B119 107264 bps
+  420 packets A287 B133 107520 bps
 Interrupts bitrate
-  1615 packets 413440 bps
-  1699 packets 434944 bps
-  1701 packets 435456 bps
-  1703 packets 435968 bps
+  877 packets 224512 bps
+  967 packets 247552 bps
+  1005 packets 257280 bps
+  1007 packets 257792 bps
 Interrupts bitrate NO_ACK
-  3383 packets 824022 bps
-  3375 packets 864000 bps
-  3380 packets 865280 bps
-  3379 packets 864159 bps
+  2583 packets 661248 bps
+  2719 packets 696064 bps
+  2731 packets 699136 bps
+  2741 packets 701696 bps
 Interrupts bitrate ACK payload
-  1192 packets A785 B407 305152 bps
-  1248 packets A853 B395 319488 bps
-  1251 packets A868 B383 320256 bps
-  1247 packets A795 B452 319232 bps
+  544 packets A366 B178 139264 bps
+  565 packets A369 B196 144640 bps
+  562 packets A370 B192 143872 bps
+  603 packets A420 B183 154368 bps
 Polling bitrate all packet sizes
-  Size 1 2364 packets 9456 bps
-  Size 2 1982 packets 15856 bps
-  Size 3 1977 packets 23724 bps
-  Size 4 1968 packets 31488 bps
-  Size 5 1945 packets 38900 bps
-  Size 6 1939 packets 46536 bps
-  Size 7 1919 packets 53732 bps
-  Size 8 1911 packets 61152 bps
-  Size 9 1898 packets 68328 bps
-  Size 10 1875 packets 75000 bps
-  Size 11 1858 packets 81752 bps
-  Size 12 1846 packets 88608 bps
-  Size 13 1843 packets 95836 bps
-  Size 14 1834 packets 102704 bps
-  Size 15 1815 packets 108900 bps
-  Size 16 1794 packets 114816 bps
-  Size 17 1776 packets 120768 bps
-  Size 18 1767 packets 127224 bps
-  Size 19 1752 packets 133152 bps
-  Size 20 1745 packets 139600 bps
-  Size 21 1737 packets 145908 bps
-  Size 22 1719 packets 151272 bps
-  Size 23 1713 packets 157596 bps
-  Size 24 1707 packets 163872 bps
-  Size 25 1687 packets 168700 bps
-  Size 26 1680 packets 174720 bps
-  Size 27 1662 packets 179496 bps
-  Size 28 1656 packets 185472 bps
-  Size 29 1637 packets 189892 bps
-  Size 30 1616 packets 193920 bps
-  Size 31 1612 packets 199888 bps
-  Size 32 1606 packets 205568 bps
+  Size 1 1946 packets 7784 bps
+  Size 2 1596 packets 12768 bps
+  Size 3 1565 packets 18780 bps
+  Size 4 1576 packets 25216 bps
+  Size 5 1562 packets 31240 bps
+  Size 6 1470 packets 35280 bps
+  Size 7 1452 packets 40656 bps
+  Size 8 1450 packets 46400 bps
+  Size 9 1463 packets 52668 bps
+  Size 10 1469 packets 58760 bps
+  Size 11 1420 packets 62480 bps
+  Size 12 1311 packets 62928 bps
+  Size 13 1241 packets 64531 bps
+  Size 14 1248 packets 69888 bps
+  Size 15 1234 packets 74040 bps
+  Size 16 1223 packets 78272 bps
+  Size 17 1196 packets 81328 bps
+  Size 18 1200 packets 86400 bps
+  Size 19 1182 packets 89832 bps
+  Size 20 1225 packets 98000 bps
+  Size 21 1202 packets 100968 bps
+  Size 22 1187 packets 104456 bps
+  Size 23 1197 packets 110124 bps
+  Size 24 1138 packets 109248 bps
+  Size 25 1145 packets 114500 bps
+  Size 26 1169 packets 121576 bps
+  Size 27 1124 packets 121392 bps
+  Size 28 1124 packets 125888 bps
+  Size 29 1096 packets 127136 bps
+  Size 30 838 packets 100560 bps
+  Size 31 798 packets 98952 bps
+  Size 32 771 packets 98688 bps
 Polling bitrate all ACK sizes
-  ACK Size 1 1630 packets 208640 bps
-  ACK Size 2 1357 packets 173696 bps
-  ACK Size 3 1349 packets 172672 bps
-  ACK Size 4 1347 packets 172416 bps
-  ACK Size 5 1344 packets 172032 bps
-  ACK Size 6 1339 packets 171392 bps
-  ACK Size 7 1337 packets 171136 bps
-  ACK Size 8 1330 packets 170240 bps
-  ACK Size 9 1328 packets 169984 bps
-  ACK Size 10 1324 packets 169472 bps
-  ACK Size 11 1319 packets 168832 bps
-  ACK Size 12 1311 packets 167808 bps
-  ACK Size 13 1305 packets 167040 bps
-  ACK Size 14 1300 packets 166400 bps
-  ACK Size 15 1302 packets 166656 bps
-  ACK Size 16 1295 packets 165760 bps
-  ACK Size 17 1289 packets 164992 bps
-  ACK Size 18 1292 packets 165376 bps
-  ACK Size 19 1270 packets 162560 bps
-  ACK Size 20 1279 packets 163712 bps
-  ACK Size 21 1270 packets 162560 bps
-  ACK Size 22 1268 packets 162304 bps
-  ACK Size 23 1260 packets 161280 bps
-  ACK Size 24 1263 packets 161664 bps
-  ACK Size 25 1260 packets 161280 bps
-  ACK Size 26 1251 packets 160128 bps
-  ACK Size 27 1249 packets 159872 bps
-  ACK Size 28 1251 packets 160128 bps
-  ACK Size 29 1245 packets 159360 bps
-  ACK Size 30 1242 packets 158976 bps
-  ACK Size 31 1239 packets 158592 bps
-  ACK Size 32 18 packets 2304 bps
+  ACK Size 1 851 packets 108928 bps
+  ACK Size 2 709 packets 90752 bps
+  ACK Size 3 695 packets 88960 bps
+  ACK Size 4 676 packets 86528 bps
+  ACK Size 5 660 packets 84480 bps
+  ACK Size 6 629 packets 80512 bps
+  ACK Size 7 644 packets 82432 bps
+  ACK Size 8 636 packets 81408 bps
+  ACK Size 9 596 packets 76288 bps
+  ACK Size 10 600 packets 76800 bps
+  ACK Size 11 593 packets 75904 bps
+  ACK Size 12 590 packets 75520 bps
+  ACK Size 13 606 packets 77568 bps
+  ACK Size 14 603 packets 77184 bps
+  ACK Size 15 588 packets 75264 bps
+  ACK Size 16 581 packets 74368 bps
+  ACK Size 17 565 packets 72320 bps
+  ACK Size 18 576 packets 73728 bps
+  ACK Size 19 555 packets 71040 bps
+  ACK Size 20 533 packets 68224 bps
+  ACK Size 21 546 packets 69888 bps
+  ACK Size 22 550 packets 70400 bps
+  ACK Size 23 561 packets 71808 bps
+  ACK Size 24 549 packets 70272 bps
+  ACK Size 25 532 packets 68096 bps
+  ACK Size 26 558 packets 71424 bps
+  ACK Size 27 511 packets 65407 bps
+  ACK Size 28 535 packets 68480 bps
+  ACK Size 29 542 packets 69376 bps
+  ACK Size 30 525 packets 67200 bps
+  ACK Size 31 528 packets 67584 bps
+  ACK Size 32 16 packets 2048 bps
+
+2MBPS bitrate
+  Starting sync
+RxTx switching
+  Received 32
+  Received 33
+  Received 34
+  Received 35
+  Waiting for transmitter to start RX
+  Starting TX by sending 36...Success
+  Starting RX
+Power off
+  Radio power down for 500ms
+  Received 38
+Polling
+  Received 39
+  Received 40
+  Received 41
+  Received 42
+Interrupts
+  Received 43
+  Received 44
+  Received 45
+  Received 46
+ACK payloads
+  Received 47, Added ACK A 3
+  Received 48, Added ACK B 253
+Polling bitrate
+  992 packets 253952 bps
+  1044 packets 267264 bps
+  1043 packets 267008 bps
+  1045 packets 267520 bps
+Polling bitrate NO_ACK
+  1001 packets 256000 bps
+  1051 packets 269056 bps
+  1051 packets 269056 bps
+  1050 packets 268800 bps
+Polling bitrate ACK payload
+  792 packets A525 B267 202752 bps
+  828 packets A534 B294 211968 bps
+  826 packets A548 B278 211456 bps
+  828 packets A562 B266 211968 bps
+Interrupts bitrate
+  1985 packets 508160 bps
+  2091 packets 535296 bps
+  2120 packets 542720 bps
+  2092 packets 535552 bps
+Interrupts bitrate NO_ACK
+  3750 packets 958083 bps
+  3916 packets 1002496 bps
+  3914 packets 1001984 bps
+  3915 packets 1002240 bps
+Interrupts bitrate ACK payload
+  1559 packets A1079 B480 399104 bps
+  1632 packets A1055 B577 417792 bps
+  1655 packets A1091 B564 423680 bps
+  1646 packets A1095 B551 421376 bps
+Polling bitrate all packet sizes
+  Size 1 2282 packets 9128 bps
+  Size 2 1920 packets 15360 bps
+  Size 3 1911 packets 22932 bps
+  Size 4 1883 packets 30128 bps
+  Size 5 1879 packets 37580 bps
+  Size 6 1859 packets 44616 bps
+  Size 7 1853 packets 51884 bps
+  Size 8 1847 packets 59104 bps
+  Size 9 1833 packets 65988 bps
+  Size 10 1826 packets 73040 bps
+  Size 11 1809 packets 79596 bps
+  Size 12 1785 packets 85680 bps
+  Size 13 1781 packets 92612 bps
+  Size 14 1760 packets 98560 bps
+  Size 15 1754 packets 105240 bps
+  Size 16 1736 packets 111104 bps
+  Size 17 1729 packets 117572 bps
+  Size 18 1723 packets 124056 bps
+  Size 19 1708 packets 129808 bps
+  Size 20 1702 packets 136160 bps
+  Size 21 1700 packets 142800 bps
+  Size 22 1691 packets 148808 bps
+  Size 23 1675 packets 154100 bps
+  Size 24 1667 packets 160032 bps
+  Size 25 1651 packets 165100 bps
+  Size 26 1642 packets 170768 bps
+  Size 27 1633 packets 176364 bps
+  Size 28 1612 packets 180544 bps
+  Size 29 1601 packets 185716 bps
+  Size 30 1593 packets 191160 bps
+  Size 31 1588 packets 196912 bps
+  Size 32 1576 packets 201728 bps
+Polling bitrate all ACK sizes
+  ACK Size 1 1603 packets 205184 bps
+  ACK Size 2 1331 packets 170368 bps
+  ACK Size 3 1318 packets 168704 bps
+  ACK Size 4 1308 packets 167424 bps
+  ACK Size 5 1306 packets 167168 bps
+  ACK Size 6 1304 packets 166912 bps
+  ACK Size 7 1294 packets 165632 bps
+  ACK Size 8 1293 packets 165504 bps
+  ACK Size 9 1279 packets 163712 bps
+  ACK Size 10 1286 packets 164608 bps
+  ACK Size 11 1264 packets 161792 bps
+  ACK Size 12 1267 packets 162176 bps
+  ACK Size 13 1265 packets 161920 bps
+  ACK Size 14 1271 packets 162688 bps
+  ACK Size 15 1260 packets 161280 bps
+  ACK Size 16 1258 packets 161024 bps
+  ACK Size 17 1241 packets 158848 bps
+  ACK Size 18 1240 packets 158720 bps
+  ACK Size 19 1234 packets 157952 bps
+  ACK Size 20 1230 packets 157440 bps
+  ACK Size 21 1221 packets 156288 bps
+  ACK Size 22 1223 packets 156544 bps
+  ACK Size 23 1222 packets 156416 bps
+  ACK Size 24 1225 packets 156800 bps
+  ACK Size 25 1217 packets 155776 bps
+  ACK Size 26 1206 packets 154368 bps
+  ACK Size 27 1205 packets 154240 bps
+  ACK Size 28 1194 packets 152832 bps
+  ACK Size 29 1198 packets 153344 bps
+  ACK Size 30 1182 packets 151296 bps
+  ACK Size 31 1198 packets 153344 bps
+  ACK Size 32 8 packets 1024 bps

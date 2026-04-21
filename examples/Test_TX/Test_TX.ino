@@ -42,7 +42,7 @@ RadioAckPacketB _radioDataAckB;
 const uint16_t DEMO_LENGTH_MILLIS = 4200;
 const uint16_t DEMO_INTERVAL_MILLIS = 300;
 
-volatile uint8_t _hadTxOkInterrupt, _hadTxFailInterrupt;
+volatile uint8_t _hadIrq;
 volatile uint32_t _successPacketCount, _failedPacketCount;
 uint32_t _bitsPerSecond, _packetCount, _ackAPacketCount, _ackBPacketCount;
 uint32_t _currentMillis, _lastMillis, _endMillis;
@@ -83,20 +83,7 @@ void loop() {}
 
 void radioInterrupt()
 {
-    uint8_t txOk, txFail, rxReady;
-    _radio.whatHappened(txOk, txFail, rxReady);
-
-    if (txOk)
-    {
-        _hadTxOkInterrupt = 1;
-        _successPacketCount++;
-    }
-
-    if (txFail)
-    {
-        _hadTxFailInterrupt = 1;
-        _failedPacketCount++;
-    }
+    _hadIrq = 1;
 }
 
 void runDemos()
@@ -172,11 +159,8 @@ void demoInterrupts()
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Interrupts");
-    radioInterrupt(); // Clear any previously asserted interrupt.
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
     _lastMillis = millis();
-    _hadTxOkInterrupt = 0;
-    _hadTxFailInterrupt = 0;
 
     while (millis() < _endMillis)
     {
@@ -187,16 +171,15 @@ void demoInterrupts()
             _radio.startSend(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData));
         }
 
-        if (_hadTxOkInterrupt)
+        if (_hadIrq)
         {
-            _hadTxOkInterrupt = 0;
-            debugln("...Success");
-        }
+            _hadIrq = 0;
 
-        if (_hadTxFailInterrupt)
-        {
-            _hadTxFailInterrupt = 0;
-            debugln("...Failed");
+            uint8_t txOk, txFail, rxReady;
+            _radio.whatHappened(txOk, txFail, rxReady);
+
+            if (txOk) debugln("...Success");
+            if (txFail) debugln("...Failed");
         }
     }
 
@@ -258,7 +241,6 @@ void demoRxTxSwitching()
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("RxTx switching");
-    radioInterrupt(); // Clear any previously asserted interrupt.
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
     String msg;
     uint16_t endCount = _radioData.Counter + 3;
@@ -266,15 +248,17 @@ void demoRxTxSwitching()
     // Send 3 packets, filling the TX buffer.
     while (_radioData.Counter++ < endCount)
     {
-        msg = "  Start send ";
+        msg = "  Sending ";
         msg += _radioData.Counter;
         debugln(msg);
         _radio.startSend(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData));
     }
 
     // Immediately switch into RX mode to verify all 3 packets are sent before the mode switch.
+    debugln("  Starting RX");
     _radio.startRx();
 
+    uint8_t dataWasReceived = 0;
     uint8_t expectedReturnCount = _radioData.Counter;
     detachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ));
 
@@ -285,17 +269,20 @@ void demoRxTxSwitching()
             _radio.readData(&_radioData);
             debug("  Received ");
             debug(_radioData.Counter);
+            dataWasReceived = 1;
 
             if (expectedReturnCount == _radioData.Counter)
             {
-                debugln(" - wait for Tx success");
+                debugln("...Success - count is correct");
             }
             else
             {
-                debugln(" - wait for Tx failed");
+                debugln("...Failed - incorrect count");
             }
         }
     }
+
+    if (!dataWasReceived) debugln("  Failed - did not receive a transmission");
 }
 
 void demoPowerOff()
@@ -418,7 +405,6 @@ void demoInterruptsBitrate()
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Interrupts bitrate");
-    radioInterrupt(); // Clear any previously asserted interrupt.
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
     _successPacketCount = 0;
     _failedPacketCount = 0;
@@ -442,26 +428,15 @@ void demoInterruptsBitrate()
             _lastMillis = _currentMillis;
         }
 
-        if (_hadTxOkInterrupt)
+        if (_hadIrq)
         {
-            _hadTxOkInterrupt = 0;
-            uint8_t ackLength = _radio.hasAckData();
+            _hadIrq = 0;
 
-            while (ackLength > 0)
-            {
-                if (ackLength == sizeof(_radioDataAckA))
-                {
-                    _radio.readData(&_radioDataAckA);
-                    _ackAPacketCount++;
-                }
-                else if (ackLength == sizeof(_radioDataAckB))
-                {
-                    _radio.readData(&_radioDataAckB);
-                    _ackBPacketCount++;
-                }
+            uint8_t txOk, txFail, rxReady;
+            _radio.whatHappened(txOk, txFail, rxReady);
 
-                ackLength = _radio.hasAckData();
-            }
+            if (txOk) _successPacketCount++;
+            if (txFail) _failedPacketCount++;
         }
 
         _radio.startSend(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData));
@@ -476,7 +451,6 @@ void demoInterruptsBitrateNoAck()
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Interrupts bitrate NO_ACK");
-    radioInterrupt(); // Clear any previously asserted interrupt.
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
     _successPacketCount = 0;
     _failedPacketCount = 0;
@@ -499,11 +473,15 @@ void demoInterruptsBitrateNoAck()
 
         _radio.startSend(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData), NRFLite::NO_ACK);
 
-        // Found that using _successPacketCount set in the interrupt handler was giving
-        // inconsistent results and not agreeing with the received packet counts.
-        // Sends are always considered a success when NO_ACK is used so we'll just track
-        // the number of sends that we do and use it for the bitrate calculation.
-        sendCount++;
+        if (_hadIrq)
+        {
+            _hadIrq = 0;
+
+            uint8_t txOk, txFail, rxReady;
+            _radio.whatHappened(txOk, txFail, rxReady);
+
+            if (txOk) sendCount++;
+        }
     }
 
     detachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ));
@@ -579,10 +557,7 @@ void demoInterruptsBitrateAckPayload()
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Interrupts bitrate ACK payload");
-    radioInterrupt(); // Clear any previously asserted interrupt.
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
-    _hadTxOkInterrupt = 0;
-    _hadTxFailInterrupt = 0;
     _successPacketCount = 0;
     _failedPacketCount = 0;
     _ackAPacketCount = 0;
@@ -612,25 +587,37 @@ void demoInterruptsBitrateAckPayload()
             _lastMillis = _currentMillis;
         }
 
-        if (_hadTxOkInterrupt)
+        if (_hadIrq)
         {
-            _hadTxOkInterrupt = 0;
-            uint8_t ackLength = _radio.hasAckData();
+            _hadIrq = 0;
 
-            while (ackLength > 0)
+            uint8_t txOk, txFail, rxReady;
+            _radio.whatHappened(txOk, txFail, rxReady);
+
+            if (txOk)
             {
-                if (ackLength == sizeof(_radioDataAckA))
-                {
-                    _radio.readData(&_radioDataAckA);
-                    _ackAPacketCount++;
-                }
-                else if (ackLength == sizeof(_radioDataAckB))
-                {
-                    _radio.readData(&_radioDataAckB);
-                    _ackBPacketCount++;
-                }
+                _successPacketCount++;
 
-                ackLength = _radio.hasAckData();
+                uint8_t ackLength;
+
+                while (ackLength = _radio.hasAckData())
+                {
+                    if (ackLength == sizeof(_radioDataAckA))
+                    {
+                        _radio.readData(&_radioDataAckA);
+                        _ackAPacketCount++;
+                    }
+                    else if (ackLength == sizeof(_radioDataAckB))
+                    {
+                        _radio.readData(&_radioDataAckB);
+                        _ackBPacketCount++;
+                    }
+                }
+            }
+
+            if (txFail)
+            {
+                _failedPacketCount++;
             }
         }
 

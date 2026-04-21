@@ -36,7 +36,7 @@ RadioAckPacketB _radioDataAckB;
 const uint16_t DEMO_LENGTH_MILLIS = 4250;
 const uint16_t DEMO_INTERVAL_MILLIS = 250;
 
-volatile uint8_t _hadRxReadyInterrupt;
+volatile uint8_t _hadIrq;
 uint32_t _bitsPerSecond, _packetCount, _ackAPacketCount, _ackBPacketCount;
 uint32_t _currentMillis, _lastMillis, _endMillis;
 
@@ -71,13 +71,7 @@ void loop()
 
 void radioInterrupt()
 {
-    uint8_t txOk, txFail, rxReady;
-    _radio.whatHappened(txOk, txFail, rxReady);
-
-    if (rxReady)
-    {
-        _hadRxReadyInterrupt = 1;
-    }
+    _hadIrq = 1;
 }
 
 void runDemos()
@@ -143,19 +137,24 @@ void demoInterrupts()
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Interrupts");
-    radioInterrupt(); // Clear any previously asserted interrupt.
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
 
     while (millis() < _endMillis)
     {
-        if (_hadRxReadyInterrupt)
+        if (_hadIrq)
         {
-            _hadRxReadyInterrupt = 0;
+            _hadIrq = 0;
 
-            while (_radio.hasDataISR())
+            uint8_t txOk, txFail, rxReady;
+            _radio.whatHappened(txOk, txFail, rxReady);
+
+            if (rxReady)
             {
-                _radio.readData(&_radioData);
-                debugln2("  Received ", _radioData.Counter);
+                while (_radio.hasDataISR())
+                {
+                    _radio.readData(&_radioData);
+                    debugln2("  Received ", _radioData.Counter);
+                }
             }
         }
     }
@@ -204,26 +203,37 @@ void demoRxTxSwitching()
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("RxTx switching");
-    radioInterrupt(); // Clear any previously asserted interrupt.
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
     _lastMillis = millis() + 1500;
 
     while (millis() < _lastMillis)
     {
-        if (_hadRxReadyInterrupt)
+        if (_hadIrq)
         {
-            _hadRxReadyInterrupt = 0;
-            _radio.readData(&_radioData);
-            debugln2("  Received ", _radioData.Counter);
+            _hadIrq = 0;
+
+            uint8_t txOk, txFail, rxReady;
+            _radio.whatHappened(txOk, txFail, rxReady);
+
+            if (rxReady)
+            {
+                while (_radio.hasDataISR())
+                {
+                    _radio.readData(&_radioData);
+                    debugln2("  Received ", _radioData.Counter);
+                }
+            }
         }
     }
 
     detachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ));
+
+    debugln("  Waiting for transmitter to start RX");
     delay(500); // Wait for transmitter to become a receiver.
 
-                // Send back the last received count, plus 1.  The primary transmitter will verify this value.
+    // Send back the last received count, plus 1.  The transmitter will verify this value.
     _radioData.Counter++;
-    debug("  Send ");
+    debug("  Starting TX by sending ");
     debug(_radioData.Counter);
 
     if (_radio.send(DESTINATION_RADIO_ID, &_radioData, sizeof(_radioData)))
@@ -235,7 +245,8 @@ void demoRxTxSwitching()
         debugln("...Failed");
     }
 
-    _radio.hasData(); // Switch back to RX mode to allow the next demo to start.
+    debugln("  Starting RX");
+    _radio.startRx(); // Switch back to RX mode to allow the next demo to start.
 
     while (millis() < _endMillis)
     {
@@ -333,24 +344,28 @@ void demoInterruptsBitrate()
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Interrupts bitrate");
-    radioInterrupt(); // Clear any previously asserted interrupt.
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
     _packetCount = 0;
-
     _lastMillis = millis();
 
     while (millis() < _endMillis)
     {
         _currentMillis = millis();
 
-        if (_hadRxReadyInterrupt)
+        if (_hadIrq)
         {
-            _hadRxReadyInterrupt = 0;
+            _hadIrq = 0;
 
-            while (_radio.hasDataISR())
+            uint8_t txOk, txFail, rxReady;
+            _radio.whatHappened(txOk, txFail, rxReady);
+
+            if (rxReady)
             {
-                _packetCount++;
-                _radio.readData(&_radioData);
+                while (_radio.hasDataISR())
+                {
+                    _packetCount++;
+                    _radio.readData(&_radioData);
+                }
             }
         }
 
@@ -373,7 +388,6 @@ void demoInterruptsBitrateNoAck()
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Interrupts bitrate NO_ACK");
-    radioInterrupt(); // Clear any previously asserted interrupt.
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
     _packetCount = 0;
     _lastMillis = millis();
@@ -382,14 +396,20 @@ void demoInterruptsBitrateNoAck()
     {
         _currentMillis = millis();
 
-        if (_hadRxReadyInterrupt)
+        if (_hadIrq)
         {
-            _hadRxReadyInterrupt = 0;
+            _hadIrq = 0;
 
-            while (_radio.hasDataISR())
+            uint8_t txOk, txFail, rxReady;
+            _radio.whatHappened(txOk, txFail, rxReady);
+
+            if (rxReady)
             {
-                _packetCount++;
-                _radio.readData(&_radioData);
+                while (_radio.hasDataISR())
+                {
+                    _packetCount++;
+                    _radio.readData(&_radioData);
+                }
             }
         }
 
@@ -464,7 +484,6 @@ void demoInterruptsBitrateAckPayload()
     _endMillis = millis() + DEMO_LENGTH_MILLIS;
 
     debugln("Interrupts bitrate ACK payload");
-    radioInterrupt(); // Clear any previously asserted interrupt.
     attachInterrupt(digitalPinToInterrupt(PIN_RADIO_IRQ), radioInterrupt, FALLING);
     _lastMillis = millis();
     _packetCount = 0;
@@ -475,24 +494,30 @@ void demoInterruptsBitrateAckPayload()
     {
         _currentMillis = millis();
 
-        if (_hadRxReadyInterrupt)
+        if (_hadIrq)
         {
-            _hadRxReadyInterrupt = 0;
+            _hadIrq = 0;
 
-            while (_radio.hasDataISR())
+            uint8_t txOk, txFail, rxReady;
+            _radio.whatHappened(txOk, txFail, rxReady);
+
+            if (rxReady)
             {
-                _packetCount++;
-                _radio.readData(&_radioData);
+                while (_radio.hasDataISR())
+                {
+                    _packetCount++;
+                    _radio.readData(&_radioData);
 
-                if (random(3) == 1)
-                {
-                    _radio.addAckData(&_radioDataAckB, sizeof(_radioDataAckB));
-                    _ackBPacketCount++;
-                }
-                else
-                {
-                    _radio.addAckData(&_radioDataAckA, sizeof(_radioDataAckA));
-                    _ackAPacketCount++;
+                    if (random(3) == 1)
+                    {
+                        _radio.addAckData(&_radioDataAckB, sizeof(_radioDataAckB));
+                        _ackBPacketCount++;
+                    }
+                    else
+                    {
+                        _radio.addAckData(&_radioDataAckA, sizeof(_radioDataAckA));
+                        _ackAPacketCount++;
+                    }
                 }
             }
         }
