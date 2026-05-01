@@ -9,7 +9,7 @@ uint8_t _data;
 void setup()
 {
     Serial.begin(115200);
-    _radio.init(0, 9, 10); // Set radio to Id = 0, along with its CE and CSN pins
+    _radio.init(0, 9, 10); // Set radio to Id = 0, along with its CE (9) and CSN (10) pins
 }
 
 void loop()
@@ -32,7 +32,7 @@ uint8_t _data;
 
 void setup()
 {
-    _radio.init(1, 9, 10); // Set radio to Id = 1, along with the CE and CSN pins
+    _radio.init(1, 9, 10); // Set radio to Id = 1, along with the CE (9) and CSN (10) pins
 }
 
 void loop()
